@@ -13,6 +13,11 @@ from memory.ltm import LongTermMemory
 def ltm():
     store = LongTermMemory()
     store.init_schema()
+    # Clean slate: earlier manual runs (quick_test.py, python -m memory.ltm)
+    # may have left rows behind in this real database.
+    with store._connect(register_vector_type=False) as conn:
+        conn.execute("DELETE FROM reports")
+        conn.commit()
     yield store
     # no teardown needed — each test uses fresh unique report_ids implicitly
 
@@ -33,7 +38,7 @@ def test_store_and_find_similar_returns_closest_match(ltm):
     results = ltm.find_similar(embed(query), top_k=1)
 
     assert len(results) == 1
-    assert results[0]["id"] == laptop_id
+    assert str(results[0]["id"]) == laptop_id
     assert results[0]["similarity"] > 0.5
 
     ltm.delete_report(laptop_id)

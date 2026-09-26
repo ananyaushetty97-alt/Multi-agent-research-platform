@@ -35,14 +35,20 @@ class LongTermMemory:
     def __init__(self, dsn: str | None = None):
         self._dsn = dsn or settings.postgres_dsn
 
-    def _connect(self) -> psycopg.Connection:
+    def _connect(self, register_vector_type: bool = True) -> psycopg.Connection:
         conn = psycopg.connect(self._dsn, row_factory=dict_row)
-        register_vector(conn)
+        if register_vector_type:
+            register_vector(conn)
         return conn
 
     def init_schema(self) -> None:
-        """Run once (or every startup — it's idempotent) to ensure the table exists."""
-        with self._connect() as conn:
+        """
+        Run once (or every startup — it's idempotent) to ensure the extension
+        and table exist. Uses a plain connection (register_vector_type=False)
+        because the 'vector' type doesn't exist in a brand-new database until
+        CREATE EXTENSION runs here — registering it any earlier would fail.
+        """
+        with self._connect(register_vector_type=False) as conn:
             conn.execute(CREATE_TABLE_SQL)
             conn.commit()
 

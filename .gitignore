@@ -57,3 +57,5 @@ htmlcov/
 # LangSmith / logs
 *.trace
 logs/
+logs/*.jsonl
+.pytest_cache/

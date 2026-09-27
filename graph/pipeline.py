@@ -33,3 +33,17 @@ def build_pipeline():
     return graph.compile()
 
 pipeline = build_pipeline()
+def run_pipeline(topic: str) -> str:
+    """Pure agent execution, no caching — the API layer owns caching separately."""
+    initial_state = {
+        "topic": topic,
+        "search_results": None,
+        "summary": None,
+        "report": None,
+        "verification_notes": None,
+        "is_verified": False,
+        "revision_count": 0,
+        "cache_hit": False
+    }
+    final_state = pipeline.invoke(initial_state)
+    return final_state["report"]

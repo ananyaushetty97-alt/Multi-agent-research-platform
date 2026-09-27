@@ -8,3 +8,4 @@ class ResearchState(TypedDict):
     verification_notes: Optional[str]
     is_verified: bool
     revision_count: int
+    cache_hit: bool

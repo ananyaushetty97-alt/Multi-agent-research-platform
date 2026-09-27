@@ -4,3 +4,10 @@ groq
 ollama
 tavily-python
 python-dotenv
+redis>=5.0.0
+psycopg[binary]>=3.1.0
+pgvector>=0.2.5
+sentence-transformers>=2.7.0
+numpy>=1.26.0
+pytest>=8.0.0
+pydantic-settings>=2.2.0

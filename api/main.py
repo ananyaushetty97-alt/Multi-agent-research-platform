@@ -1,17 +1,12 @@
 """
-FastAPI app — the front door of the whole system.
-
-Run locally:   uvicorn api.main:app --reload
-Test UI:       http://localhost:8000/docs
-
-Request flow for POST /generate:
-  input guardrail -> cache check (B) -> pipeline (A) -> output guardrail
-  -> grading (C) -> save to long-term memory (B) -> response
+FastAPI app: the front door of the whole system.
+Run:  python -m uvicorn api.main:app
 """
 import time
 import logging
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 import llm_link
@@ -23,8 +18,9 @@ log = logging.getLogger("api")
 app = FastAPI(
     title="Multi-Agent Research Platform",
     description="Guardrails + semantic cache + LangGraph agents + LLM-as-judge",
-    version="0.1.0",
+    version="0.2.0",
 )
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
 class TopicRequest(BaseModel):
@@ -35,14 +31,22 @@ class TopicRequest(BaseModel):
 class ReportResponse(BaseModel):
     topic: str
     report: str
+    sources: list[dict] = []
     cached: bool
     score: dict | None = None
     seconds: float
 
 
+def _sources_from(search_results):
+    """[{n: 1, title, url}, ...]. The position matches the [N] markers in the report."""
+    return [
+        {"n": i + 1, "title": r.get("title") or r.get("url"), "url": r.get("url")}
+        for i, r in enumerate(search_results or [])
+    ]
+
+
 @app.get("/health")
 def health():
-    """Shows which parts are connected (real) vs stubbed."""
     _, gateway_name = llm_link.find_call_llm()
     return {
         "status": "ok",
@@ -62,7 +66,7 @@ def generate(req: TopicRequest):
     if not ok:
         raise HTTPException(status_code=400, detail=reason)
 
-    # 2. Semantic cache (Person B) — a failure here must not break the request
+    # 2. Semantic cache: a failure here must not break the request
     try:
         cached = parts.check_cache(req.topic)
     except Exception as e:
@@ -70,41 +74,48 @@ def generate(req: TopicRequest):
         cached = None
     if cached:
         if isinstance(cached, dict) and "report" in cached:
-            cached_report = cached["report"]
-            cached_score = cached.get("score")
+            c_report = cached["report"]
+            c_score = cached.get("score")
+            c_results = cached.get("search_results")
         else:
-            cached_report = parts.report_to_text(cached)
-            cached_score = None
-        return ReportResponse(topic=req.topic, report=cached_report,
-                          cached=True, score=cached_score, seconds=round(time.time() - start, 2))
-    # 3. Agent pipeline (Person A)
+            c_report, c_score, c_results = parts.report_to_text(cached), None, None
+        return ReportResponse(topic=req.topic, report=c_report, sources=_sources_from(c_results),
+                              cached=True, score=c_score, seconds=round(time.time() - start, 2))
+
+    # 3. Agent pipeline
     try:
-        report = parts.report_to_text(parts.run_pipeline(req.topic))
+        result = parts.run_pipeline(req.topic)
     except Exception as e:
         if "LLMUnavailable" in type(e).__name__ or "No gateway found" in str(e):
             raise HTTPException(status_code=503, detail=f"LLM unavailable: {e}")
         log.exception("pipeline failed")
         raise HTTPException(status_code=500, detail=f"Pipeline error: {e}")
 
+    report = parts.report_to_text(result)
+    is_dict = isinstance(result, dict)
+    search_results = result.get("search_results") if is_dict else None
+    verified = result.get("is_verified", True) if is_dict else True
+
     # 4. Output guardrail
     ok, reason = check_output(report)
     if not ok:
         raise HTTPException(status_code=422, detail=reason)
 
-    # 5. Grading (LLM-as-judge)
+    # 5. Grading
     score = grade_report(req.topic, report) if req.grade else None
 
-    # 6. Long-term memory (Person B) — also must not break the request
-    try:
-        parts.save_to_ltm(report, topic=req.topic, score=score)
-    except Exception as e:
-        log.warning(f"save_to_ltm failed: {e}")
+    # 6. Cache + long-term memory: verified reports only
+    if verified:
+        try:
+            parts.save_to_ltm(report, topic=req.topic, score=score, search_results=search_results)
+        except Exception as e:
+            log.warning(f"save_to_ltm failed: {e}")
 
-    return ReportResponse(topic=req.topic, report=report, cached=False,
-                          score=score, seconds=round(time.time() - start, 2))
+    return ReportResponse(topic=req.topic, report=report, sources=_sources_from(search_results),
+                          cached=False, score=score, seconds=round(time.time() - start, 2))
 
 
 @app.get("/scores")
 def scores(limit: int = 20):
-    """Recent grading results — the demo's stand-in for a LangSmith dashboard."""
+    """Recent grading results."""
     return score_history(limit)

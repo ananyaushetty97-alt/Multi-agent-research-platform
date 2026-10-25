@@ -35,7 +35,7 @@ def stub_check_cache(topic: str):
     return None  # always a cache miss
 
 
-def stub_save_to_ltm(report, topic: str | None = None):
+def stub_save_to_ltm(report, topic=None, score=None, search_results=None):
     return None  # does nothing
 
 

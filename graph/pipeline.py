@@ -7,10 +7,12 @@ from agents.verify_agent import verify_agent
 
 MAX_REVISIONS = 2
 
+
 def should_revise(state: ResearchState) -> str:
     if state["is_verified"] or state["revision_count"] >= MAX_REVISIONS:
         return "end"
     return "revise"
+
 
 def build_pipeline():
     graph = StateGraph(ResearchState)
@@ -23,19 +25,16 @@ def build_pipeline():
     graph.add_edge("search", "summarize")
     graph.add_edge("summarize", "write")
     graph.add_edge("write", "verify")
-
-    graph.add_conditional_edges(
-        "verify",
-        should_revise,
-        {"revise": "write", "end": END}
-    )
-
+    graph.add_conditional_edges("verify", should_revise, {"revise": "write", "end": END})
     return graph.compile()
 
+
 pipeline = build_pipeline()
-def run_pipeline(topic: str) -> str:
-    """Pure agent execution, no caching — the API layer owns caching separately."""
-    initial_state = {
+
+
+def run_pipeline(topic: str) -> dict:
+    """Returns the whole final state (report, search_results, is_verified, ...)."""
+    return pipeline.invoke({
         "topic": topic,
         "search_results": None,
         "summary": None,
@@ -43,7 +42,5 @@ def run_pipeline(topic: str) -> str:
         "verification_notes": None,
         "is_verified": False,
         "revision_count": 0,
-        "cache_hit": False
-    }
-    final_state = pipeline.invoke(initial_state)
-    return final_state["report"]
+        "cache_hit": False,
+    })

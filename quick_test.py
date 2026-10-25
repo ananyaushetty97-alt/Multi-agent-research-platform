@@ -1,10 +1,7 @@
-# test_cache_direct.py
-from memory import check_cache, save_to_ltm
+from graph.pipeline import run_pipeline
 
-topic = "direct cache test topic"
-
-print("Before saving:", check_cache(topic))
-
-save_to_ltm("This is a test report for caching.", topic=topic)
-
-print("After saving:", check_cache(topic))
+r = run_pipeline("Impact of renewable energy on grid stability")
+print(r["report"])
+print("\nverified:", r["is_verified"], "| revisions:", r["revision_count"])
+print("sources:", [s["url"] for s in r["search_results"]])
+print("has [1]:", "[1]" in r["report"], "| has Sources block:", "## Sources" in r["report"])

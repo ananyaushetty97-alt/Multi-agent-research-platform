@@ -79,7 +79,7 @@ from api import integration as parts
 parts.run_pipeline = lambda topic: {"report": good_report}
 parts.check_cache = lambda topic: None
 saved = []
-parts.save_to_ltm = lambda report: saved.append(report)
+parts.save_to_ltm = lambda report, topic=None, score=None, search_results=None: saved.append(report)
 api_main.check_input = lambda t: check_input(t, use_llm=False)
 api_main.check_output = lambda r: check_output(r, use_llm=False)
 api_main.grade_report = lambda t, r: grade_report(t, r, llm=lambda p: fenced)

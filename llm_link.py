@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
-import traceback
 
 CANDIDATES = [
     ("gateway.llm", "call_llm"),
@@ -37,10 +36,7 @@ def find_call_llm():
                 fn = getattr(importlib.import_module(module_name), fn_name)
                 _found = (fn, f"{module_name}.{fn_name}")
                 break
-            except (ImportError, AttributeError) as e:
-                if module_name == "gateway.llm_gateway":
-                    print(f"[DEBUG] FULL TRACEBACK for {module_name}:")
-                    traceback.print_exc()
+            except (ImportError, AttributeError):
                 continue
     return _found
 

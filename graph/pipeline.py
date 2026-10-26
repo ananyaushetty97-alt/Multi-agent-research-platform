@@ -4,6 +4,7 @@ from agents.search_agent import search_agent
 from agents.summarize_agent import summarize_agent
 from agents.write_agent import write_agent
 from agents.verify_agent import verify_agent
+from guardrails.checks import guarded_search
 
 MAX_REVISIONS = 2
 
@@ -16,7 +17,7 @@ def should_revise(state: ResearchState) -> str:
 
 def build_pipeline():
     graph = StateGraph(ResearchState)
-    graph.add_node("search", search_agent)
+    graph.add_node("search", guarded_search(search_agent))  # strips injected instructions from web pages
     graph.add_node("summarize", summarize_agent)
     graph.add_node("write", write_agent)
     graph.add_node("verify", verify_agent)

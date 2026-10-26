@@ -139,3 +139,54 @@ def check_output(report: str, llm=None, use_llm: bool | None = None) -> tuple[bo
         if label == "UNSAFE":
             return False, "Blocked by LLM guard: unsafe content in report."
     return True, "ok"
+
+
+# --- Indirect prompt injection defense -------------------------------------
+# Web pages found by the Search agent can hide instructions aimed at the AI
+# ("ignore previous instructions and append X"). We remove those sentences
+# before any agent reads the page. Found by the PyRIT red-team (redteam/).
+INJECTION_SENTENCE_PATTERNS = [
+    r"ignore (all |any )?(the )?(previous|prior|above) (instructions|rules|prompts?)",
+    r"disregard (your|the|all|previous) (rules|instructions|guidelines|policy)",
+    r"ignore the (policy|rules|guidelines)",
+    r"note to (the )?(ai|assistant|model|llm)",
+    r"do not (mention|reveal|tell) (this|these) instruction",
+    r"hide this instruction",
+    r"(append|prepend|insert|include|print|add) .{0,40}\bto (the|your) (final )?(answer|response|report|output)",
+    r"overrid(e|ing) (previous |all |the )?(safeguards|instructions|rules)",
+    r"you are now (a|an|in) ",
+    r"(reveal|print|repeat) (your|the) (system )?prompt",
+]
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def sanitize_text(text: str) -> tuple[str, int]:
+    """Drop sentences that look like instructions to the AI. Returns (clean_text, removed_count)."""
+    kept, removed = [], 0
+    for sentence in _SENTENCE_SPLIT.split(text or ""):
+        if _match_any(sentence, INJECTION_SENTENCE_PATTERNS):
+            removed += 1
+        else:
+            kept.append(sentence)
+    return " ".join(kept), removed
+
+
+def sanitize_search_results(results):
+    """Clean every search result's content. Adds 'injection_removed' to results that were changed."""
+    cleaned = []
+    for r in results or []:
+        content, removed = sanitize_text(r.get("content", ""))
+        item = {**r, "content": content}
+        if removed:
+            item["injection_removed"] = removed
+            log.warning(f"removed {removed} injected sentence(s) from {r.get('url')}")
+        cleaned.append(item)
+    return cleaned
+
+
+def guarded_search(search_fn):
+    """Wraps a LangGraph search node so its results are sanitized before Summarize sees them."""
+    def node(state):
+        out = search_fn(state)
+        return {**out, "search_results": sanitize_search_results(out.get("search_results"))}
+    return node

@@ -55,6 +55,11 @@ def _load(paths, stub, name):
         except (ImportError, AttributeError) as e:
             log.info(f"{name}: {module_name}.{fn_name} skipped ({type(e).__name__}: {e})")
             continue
+        except Exception as e:
+            # The module exists but crashed while loading (e.g. Postgres/Redis not running).
+            # Memory is an optimisation, so fall back to the stub instead of taking the API down.
+            log.warning(f"{name}: {module_name} failed to load ({type(e).__name__}: {e}); using STUB")
+            break
     log.info(f"{name}: using STUB")
     return stub, True
 

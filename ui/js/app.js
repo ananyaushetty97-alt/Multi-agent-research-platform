@@ -659,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showSavedChat(chat) {
     RP.openChat(chat.id);
+    localStorage.setItem('rp_last_active_chat_id', chat.id);
     const first = chat.turns[0];
     state.lastTopic = first.user;
     state.dossier = null;
@@ -695,9 +696,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const li = document.createElement('li');
         li.className = 'history-item' + (c.id === RP.currentId() ? ' active' : '');
         li.dataset.inquiryId = c.id;
-        li.innerHTML = '<div class="history-item-left"><span class="history-indicator"></span><span class="history-title"></span></div>';
+        li.innerHTML = '<div class="history-item-left"><span class="history-indicator"></span><span class="history-title"></span></div><button class="history-item-menu-btn" type="button" title="More options" aria-label="More options"><span class="material-symbols-outlined text-[17px]">more_vert</span></button>';
         li.querySelector('.history-title').textContent = c.title;
-        li.addEventListener('click', () => loadDossier(c.id));
+        li.addEventListener('click', () => {
+          if (li.querySelector('.history-item-edit-wrapper')) return;
+          loadDossier(c.id);
+        });
+        const menuBtn = li.querySelector('.history-item-menu-btn');
+        menuBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openChatMenu(c.id, c.title, menuBtn);
+        });
         ul.append(li);
       });
       wrap.append(t, ul); nav.append(wrap);
@@ -802,6 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const turn = turnFrom(topicText, data);
       state.lastTopic = topicText;
       state.dossier = null;
+      if (data && data.session_id) {
+        localStorage.setItem('rp_last_active_chat_id', data.session_id);
+      }
       showTurnInSlot(turn, Date.now());
       afterTurn(turn);
       scrollToBottom();
@@ -941,14 +953,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Navigation
-  btnNewInquiry?.addEventListener('click', showWelcomeScreen);
+  btnNewInquiry?.addEventListener('click', () => {
+    localStorage.setItem('rp_last_active_chat_id', 'new');
+    showWelcomeScreen();
+  });
 
-  // History item clicks
-  document.querySelectorAll('.history-item').forEach(item => {
-    item.addEventListener('click', () => {
+  // Delegated History item and menu clicks on sidebar-nav
+  const sidebarNav = document.querySelector('.sidebar-nav');
+  sidebarNav?.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.history-item-menu-btn');
+    if (menuBtn) {
+      e.stopPropagation();
+      const item = menuBtn.closest('.history-item');
+      const id = item?.getAttribute('data-inquiry-id');
+      const title = item?.querySelector('.history-title')?.textContent?.trim() || 'this conversation';
+      openChatMenu(id, title, menuBtn);
+      return;
+    }
+    const item = e.target.closest('.history-item');
+    if (item && !item.querySelector('.history-item-edit-wrapper')) {
       const id = item.getAttribute('data-inquiry-id');
-      loadDossier(id);
-    });
+      if (id) loadDossier(id);
+    }
   });
 
   // Curated dossier card clicks
@@ -1119,6 +1145,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <h4 class="modal-result-title">${highlightMatches(item.title, q)}</h4>
               <p class="modal-result-snippet">${highlightMatches(item.snippet, q)}</p>
             </div>
+            <button class="modal-result-delete-btn" data-delete-id="${item.id}" data-delete-title="${escapeHTML(item.title)}" title="Delete inquiry" type="button" aria-label="Delete inquiry">
+              <span class="material-symbols-outlined text-[16px]">delete</span>
+            </button>
             <span class="material-symbols-outlined text-[18px] modal-result-arrow">arrow_forward</span>
           </div>
         `;
@@ -1148,10 +1177,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach click listeners to all items
     modalResultsScroll.querySelectorAll('.modal-result-item').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.modal-result-delete-btn')) return;
         const id = el.getAttribute('data-search-id');
         closeSearchModal();
         loadDossier(id);
+      });
+      const delBtn = el.querySelector('.modal-result-delete-btn');
+      delBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = delBtn.getAttribute('data-delete-id');
+        const title = delBtn.getAttribute('data-delete-title');
+        confirmDeleteConversation(id, title);
       });
     });
   }
@@ -1601,6 +1638,266 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 450);
   });
 
+  // --- Floating Conversation Options Menu (ChatGPT / Gemini style) ---
+  const chatOptionsMenu = document.getElementById('chat-options-menu');
+  const btnChatMenuRename = document.getElementById('btn-chat-menu-rename');
+  const btnChatMenuDelete = document.getElementById('btn-chat-menu-delete');
+  let activeMenuChatId = null;
+  let activeMenuChatTitle = '';
+  let activeMenuTriggerBtn = null;
+  let menuOpenedAt = 0;
+  let menuScrollTop = 0;
+
+  function openChatMenu(chatId, title, triggerBtn) {
+    if (chatOptionsMenu && chatOptionsMenu.style.display !== 'none' && activeMenuTriggerBtn === triggerBtn) {
+      closeChatMenu();
+      return;
+    }
+
+    activeMenuChatId = chatId;
+    activeMenuChatTitle = title;
+    activeMenuTriggerBtn = triggerBtn;
+
+    document.querySelectorAll('.history-item.menu-active').forEach(el => el.classList.remove('menu-active'));
+    document.querySelectorAll('.history-item-menu-btn.active').forEach(el => el.classList.remove('active'));
+
+    const parentItem = triggerBtn.closest('.history-item');
+    if (parentItem) parentItem.classList.add('menu-active');
+    triggerBtn.classList.add('active');
+
+    if (!chatOptionsMenu) return;
+    chatOptionsMenu.style.display = 'flex';
+
+    menuOpenedAt = Date.now();
+    const nav = document.querySelector('.sidebar-nav');
+    menuScrollTop = nav ? nav.scrollTop : 0;
+
+    const rect = triggerBtn.getBoundingClientRect();
+    const menuWidth = 145;
+    const menuHeight = 85;
+
+    let left = rect.right - menuWidth;
+    if (left < 10) left = rect.left;
+    if (left + menuWidth > window.innerWidth - 10) left = window.innerWidth - menuWidth - 10;
+    if (left < 10) left = 10;
+
+    let top = rect.bottom + 4;
+    if (top + menuHeight > window.innerHeight - 10) {
+      top = Math.max(10, rect.top - menuHeight - 4);
+    }
+
+    chatOptionsMenu.style.left = `${left}px`;
+    chatOptionsMenu.style.top = `${top}px`;
+  }
+
+  function closeChatMenu() {
+    activeMenuChatId = null;
+    activeMenuChatTitle = '';
+    if (activeMenuTriggerBtn) {
+      activeMenuTriggerBtn.classList.remove('active');
+      activeMenuTriggerBtn.closest('.history-item')?.classList.remove('menu-active');
+      activeMenuTriggerBtn = null;
+    }
+    document.querySelectorAll('.history-item.menu-active').forEach(el => el.classList.remove('menu-active'));
+    document.querySelectorAll('.history-item-menu-btn.active').forEach(el => el.classList.remove('active'));
+    if (chatOptionsMenu) chatOptionsMenu.style.display = 'none';
+  }
+
+  btnChatMenuRename?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = activeMenuChatId;
+    const btn = activeMenuTriggerBtn;
+    const title = activeMenuChatTitle;
+    closeChatMenu();
+    let parentItem = btn ? btn.closest('.history-item') : null;
+    if (!parentItem && id) {
+      parentItem = document.querySelector(`.history-item[data-inquiry-id="${id}"]`);
+    }
+    if (parentItem) {
+      startInlineRename(id, parentItem);
+    } else {
+      const newTitle = prompt('Enter new conversation title:', title);
+      if (newTitle && newTitle.trim()) {
+        RP.renameChat(id, newTitle.trim());
+        if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = newTitle.trim();
+        renderHistory();
+        showToast('Conversation renamed', 'edit');
+      }
+    }
+  });
+
+  btnChatMenuDelete?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = activeMenuChatId;
+    const title = activeMenuChatTitle;
+    closeChatMenu();
+    confirmDeleteConversation(id, title);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!chatOptionsMenu || chatOptionsMenu.style.display === 'none') return;
+    if (Date.now() - menuOpenedAt < 120) return;
+    if (e.target.closest('#chat-options-menu') || e.target.closest('.history-item-menu-btn')) return;
+    closeChatMenu();
+  });
+
+  window.addEventListener('resize', closeChatMenu);
+  document.querySelector('.sidebar-nav')?.addEventListener('scroll', () => {
+    if (Date.now() - menuOpenedAt < 250) return;
+    const nav = document.querySelector('.sidebar-nav');
+    if (nav && Math.abs(nav.scrollTop - menuScrollTop) > 15) {
+      closeChatMenu();
+    }
+  });
+
+  function startInlineRename(chatId, item) {
+    if (!item) return;
+    const titleEl = item.querySelector('.history-title');
+    if (!titleEl) return;
+    const oldTitle = titleEl.textContent;
+
+    if (item.querySelector('.history-item-edit-wrapper')) return;
+
+    titleEl.style.display = 'none';
+    const menuBtn = item.querySelector('.history-item-menu-btn');
+    if (menuBtn) menuBtn.style.display = 'none';
+
+    const editWrapper = document.createElement('div');
+    editWrapper.className = 'history-item-edit-wrapper';
+    editWrapper.innerHTML = `
+      <input type="text" class="history-item-rename-input" />
+      <button type="button" class="history-item-rename-btn save" title="Save">
+        <span class="material-symbols-outlined text-[15px]">check</span>
+      </button>
+      <button type="button" class="history-item-rename-btn cancel" title="Cancel">
+        <span class="material-symbols-outlined text-[15px]">close</span>
+      </button>
+    `;
+
+    const input = editWrapper.querySelector('.history-item-rename-input');
+    input.value = oldTitle;
+
+    const cleanup = () => {
+      editWrapper.remove();
+      titleEl.style.display = '';
+      if (menuBtn) menuBtn.style.display = '';
+    };
+
+    const commitRename = () => {
+      const newTitle = input.value.trim();
+      cleanup();
+      if (newTitle && newTitle !== oldTitle) {
+        RP.renameChat(chatId, newTitle);
+        titleEl.textContent = newTitle;
+        if (chatId === RP.currentId() && headerBreadcrumbTitle) {
+          headerBreadcrumbTitle.textContent = newTitle;
+        }
+        showToast('Conversation renamed', 'edit');
+      }
+    };
+
+    const cancelRename = () => {
+      cleanup();
+    };
+
+    editWrapper.querySelector('.save').addEventListener('click', (e) => {
+      e.stopPropagation();
+      commitRename();
+    });
+
+    editWrapper.querySelector('.cancel').addEventListener('click', (e) => {
+      e.stopPropagation();
+      cancelRename();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitRename();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelRename();
+      }
+    });
+
+    input.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    item.querySelector('.history-item-left').append(editWrapper);
+    input.focus();
+    input.select();
+  }
+
+  // --- Delete Conversation Modal & Controller ---
+  let pendingDeleteChatId = null;
+  const deleteModalBackdrop = document.getElementById('delete-modal-backdrop');
+  const btnCloseDeleteModal = document.getElementById('btn-close-delete-modal');
+  const btnCancelDelete = document.getElementById('btn-cancel-delete');
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+  const deleteChatPreviewTitle = document.getElementById('delete-chat-preview-title');
+
+  function confirmDeleteConversation(chatId, title) {
+    pendingDeleteChatId = chatId;
+    if (deleteChatPreviewTitle) {
+      deleteChatPreviewTitle.textContent = title ? `"${title}"` : '"This conversation"';
+    }
+    deleteModalBackdrop?.classList.add('active');
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteChatId = null;
+    deleteModalBackdrop?.classList.remove('active');
+  }
+
+  function executeDeleteConversation() {
+    const idToDelete = pendingDeleteChatId;
+    const currentActiveId = RP.currentId();
+    const isActiveChat = (idToDelete && idToDelete === currentActiveId) ||
+                         (!idToDelete && conversationStream.style.display !== 'none');
+
+    if (idToDelete) {
+      RP.deleteChat(idToDelete);
+      if (localStorage.getItem('rp_last_active_chat_id') === idToDelete) {
+        localStorage.removeItem('rp_last_active_chat_id');
+      }
+    }
+
+    closeDeleteModal();
+
+    if (isActiveChat) {
+      showWelcomeScreen();
+    } else {
+      renderHistory();
+    }
+
+    // If search modal is currently active, refresh its list
+    if (searchModalBackdrop?.classList.contains('active')) {
+      renderModalResults(modalSearchInput?.value || '');
+    }
+
+    showToast('Conversation deleted', 'delete');
+  }
+
+  btnCloseDeleteModal?.addEventListener('click', closeDeleteModal);
+  btnCancelDelete?.addEventListener('click', closeDeleteModal);
+  btnConfirmDelete?.addEventListener('click', executeDeleteConversation);
+  deleteModalBackdrop?.addEventListener('click', (e) => {
+    if (e.target === deleteModalBackdrop) closeDeleteModal();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (chatOptionsMenu?.style.display !== 'none') {
+        closeChatMenu();
+      }
+      if (deleteModalBackdrop?.classList.contains('active')) {
+        closeDeleteModal();
+      }
+    }
+  });
+
   // --- Initial Setup: Auto-adapt for mobile & User Mode ---
   if (window.innerWidth <= 768) {
     setSidebarState(false);
@@ -1610,6 +1907,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   setRole('user');
   fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => {});
-  showWelcomeScreen();
+
+  // Restore previous active conversation on page refresh / load
+  const lastActiveChatId = localStorage.getItem('rp_last_active_chat_id');
+  const allChats = RP.listChats();
+
+  if (lastActiveChatId === 'new') {
+    showWelcomeScreen();
+  } else if (lastActiveChatId) {
+    const chat = RP.getChat(lastActiveChatId);
+    if (chat && chat.turns && chat.turns.length) {
+      showSavedChat(chat);
+    } else if (allChats.length) {
+      showSavedChat(allChats[0]);
+    } else {
+      showWelcomeScreen();
+    }
+  } else {
+    // If user has previous chats, open the most recent one; otherwise open welcome screen
+    if (allChats.length) {
+      showSavedChat(allChats[0]);
+    } else {
+      showWelcomeScreen();
+    }
+  }
   composerInput.blur();
 });

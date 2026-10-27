@@ -211,20 +211,14 @@ input, textarea, kbd {
 }
 
 .brand-title {
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.015em;
   color: var(--on-surface);
+  white-space: nowrap;
+  line-height: 1;
 }
 
-.brand-badge {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--primary-container);
-  background: var(--primary-fixed);
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-}
 
 .icon-btn {
   width: 2rem;
@@ -379,6 +373,107 @@ input, textarea, kbd {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Three dots menu button (ChatGPT / Gemini style) - hidden by default, visible ONLY on hover */
+.history-item-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.history-item-menu-btn .material-symbols-outlined {
+  font-size: 20px !important;
+  line-height: 1;
+}
+
+/* Three-dot is visible ONLY when cursor hovers over the researched topic or menu is actively open */
+.history-item:hover .history-item-menu-btn,
+.history-item.menu-active .history-item-menu-btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  color: var(--on-surface) !important;
+}
+
+.history-item-menu-btn:hover,
+.history-item-menu-btn.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  color: var(--on-surface) !important;
+  background-color: var(--surface-container-high) !important;
+}
+
+
+
+@media (hover: none) {
+  .history-item-menu-btn {
+    opacity: 0.7;
+    pointer-events: auto;
+  }
+}
+
+/* Inline Rename Editor inside sidebar item */
+.history-item-edit-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-rename-input {
+  flex: 1;
+  min-width: 0;
+  height: 1.625rem;
+  padding: 0 0.375rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: var(--on-surface);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--primary-container);
+  border-radius: var(--radius-xs);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(15, 107, 107, 0.15);
+}
+
+.history-item-rename-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.history-item-rename-btn.save:hover {
+  color: var(--primary-container);
+  background-color: var(--surface-container-high);
+}
+
+.history-item-rename-btn.cancel:hover {
+  color: #ba1a1a;
+  background-color: rgba(186, 26, 26, 0.08);
 }
 
 /* Sidebar Footer */
@@ -3148,6 +3243,213 @@ input, textarea, kbd {
 .btn-share-channel:hover {
   background-color: var(--surface-container-high);
   color: var(--primary-container);
+}
+
+/* Search Modal Delete Button */
+.modal-result-delete-btn {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--outline);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+.modal-result-item:hover .modal-result-delete-btn {
+  opacity: 0.7;
+}
+
+.modal-result-delete-btn:hover {
+  opacity: 1 !important;
+  color: #ba1a1a;
+  background-color: rgba(186, 26, 26, 0.1);
+  transform: scale(1.1);
+}
+
+/* Floating Conversation Options Dropdown (ChatGPT / Gemini style) */
+.chat-options-menu {
+  position: fixed;
+  z-index: 99999;
+  min-width: 145px;
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  user-select: none;
+  animation: menuPopIn 0.12s cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes menuPopIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.chat-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.4375rem 0.625rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--on-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.chat-menu-item:hover {
+  background-color: var(--surface-container-high);
+  color: var(--primary-container);
+}
+
+.chat-menu-item.danger {
+  color: #ba1a1a;
+}
+
+.chat-menu-item.danger:hover {
+  background-color: rgba(186, 26, 26, 0.08);
+  color: #ba1a1a;
+}
+
+/* Delete Confirmation Modal */
+.delete-dialog {
+  max-width: 440px;
+}
+
+.delete-modal-header {
+  padding: 1.25rem 1.5rem;
+  background-color: var(--surface-container-low);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.delete-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.delete-icon {
+  background-color: rgba(186, 26, 26, 0.1);
+  color: #ba1a1a;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-modal-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.delete-modal-subtitle {
+  font-size: 0.75rem;
+  color: #ba1a1a;
+  font-weight: 500;
+  margin-top: 0.125rem;
+}
+
+.delete-modal-body {
+  padding: 1.25rem 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.delete-modal-description {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+}
+
+.delete-chat-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.delete-chat-preview-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-modal-footer {
+  padding: 1rem 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: var(--surface-container-low);
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-delete-cancel {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-delete-cancel:hover {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.btn-delete-confirm {
+  padding: 0.5rem 1.125rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #ba1a1a;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(186, 26, 26, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.btn-delete-confirm:hover {
+  background-color: #931414;
+  box-shadow: 0 3px 8px rgba(186, 26, 26, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Subtle in-place spin for Retry button */

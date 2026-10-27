@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multi-Agent Research Platform</title>
-  <meta name="description" content="Autonomous multi-agent research platform featuring LangGraph orchestration, three-tier memory, guardrails, and automated LLM-as-a-judge scoring." />
+  <title>Research Hub</title>
+  <meta name="description" content="Autonomous research platform featuring LangGraph orchestration, three-tier memory, guardrails, and automated LLM-as-a-judge scoring." />
 
   <!-- Google Typography: Inter (UI) & Newsreader (Editorial Serif) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,8 +33,7 @@
           <div class="brand-icon">
             <span class="material-symbols-outlined text-[18px]">menu_book</span>
           </div>
-          <span class="brand-title">Research</span>
-          <span class="brand-badge">Multi-Agent</span>
+          <span class="brand-title">Research Hub</span>
         </div>
         <button class="icon-btn" id="sidebar-close-btn" title="Close sidebar" type="button">
           <span class="material-symbols-outlined text-[18px]">dock_to_left</span>
@@ -71,12 +70,18 @@
                 <span class="history-indicator" title="Verified provenance"></span>
                 <span class="history-title">Impact of microplastics on marine life</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
             <li class="history-item" data-inquiry-id="quantum-error">
               <div class="history-item-left">
                 <span class="history-indicator" title="Verified provenance"></span>
                 <span class="history-title">Quantum Error Mitigation Review</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
           </ul>
         </div>
@@ -90,18 +95,27 @@
                 <span class="history-indicator" style="background: var(--tertiary-container);" title="Pending verification"></span>
                 <span class="history-title">CRISPR Prime Editing Mechanisms</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
             <li class="history-item" data-inquiry-id="stellar-dynamics">
               <div class="history-item-left">
                 <span class="history-indicator" title="Verified provenance"></span>
                 <span class="history-title">Stellar Dynamics &amp; Dark Matter Halos</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
             <li class="history-item" data-inquiry-id="llm-consensus">
               <div class="history-item-left">
                 <span class="history-indicator" title="Verified provenance"></span>
                 <span class="history-title">Epistemic Bounds in Multi-Agent Consensus</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
           </ul>
         </div>
@@ -115,6 +129,9 @@
                 <span class="history-indicator" title="Verified provenance"></span>
                 <span class="history-title">Solid-State Electrolyte Interfaces</span>
               </div>
+              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
+                <span class="material-symbols-outlined text-[17px]">more_vert</span>
+              </button>
             </li>
           </ul>
         </div>
@@ -147,7 +164,7 @@
           <div class="header-breadcrumb">
             <span class="breadcrumb-root">Workspace</span>
             <span class="breadcrumb-sep">/</span>
-            <span class="breadcrumb-current" id="header-breadcrumb-title">Impact of microplastics on marine life</span>
+            <span class="breadcrumb-current" id="header-breadcrumb-title">New Inquiry</span>
           </div>
         </div>
 
@@ -248,10 +265,6 @@
                    STATE A: Welcome / Professional Research Start Screen
                    ============================================================ -->
               <div class="welcome-screen" id="welcome-screen" style="display: none;">
-                <div class="welcome-badge">
-                  <span class="corpus-pulse"></span>
-                  <span>Autonomous Research Intelligence • Multi-Agent Platform</span>
-                </div>
                 <h1 class="welcome-headline">What would you like to research today?</h1>
                 <p class="welcome-desc">
                   Explore deep multi-source literature reviews, cross-validated empirical synthesis, and verifiable line-level citations across all academic and scientific fields.
@@ -371,7 +384,7 @@
                     </div>
                     <div class="capability-info">
                       <h4 class="capability-title">Anti-Hallucination</h4>
-                      <p class="capability-desc">Autonomous multi-agent verification eliminates unverified speculation.</p>
+                      <p class="capability-desc">Autonomous empirical verification eliminates unverified speculation.</p>
                     </div>
                   </div>
                 </div>
@@ -485,7 +498,7 @@
                         </div>
                         <div>
                           <div class="credibility-title-row">
-                            <h3 class="credibility-heading">Verified Multi-Agent Synthesis</h3>
+                            <h3 class="credibility-heading">Verified Research Synthesis</h3>
                             <span class="credibility-score-pill">9.6 / 10 Judge Score</span>
                           </div>
                           <p class="credibility-desc">
@@ -1010,6 +1023,58 @@
             <span>Download Document</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       FLOATING CONVERSATION OPTIONS MENU (Rename & Delete like ChatGPT / Gemini)
+       ====================================================================== -->
+  <div class="chat-options-menu" id="chat-options-menu" style="display: none;">
+    <button class="chat-menu-item" id="btn-chat-menu-rename" type="button">
+      <span class="material-symbols-outlined text-[16px]">edit</span>
+      <span>Rename</span>
+    </button>
+    <button class="chat-menu-item danger" id="btn-chat-menu-delete" type="button">
+      <span class="material-symbols-outlined text-[16px]">delete</span>
+      <span>Delete</span>
+    </button>
+  </div>
+
+  <!-- ======================================================================
+       DELETE CONVERSATION CONFIRMATION MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="delete-modal-backdrop">
+    <div class="modal-dialog delete-dialog">
+      <div class="delete-modal-header">
+        <div class="delete-brand-group">
+          <div class="brand-icon delete-icon">
+            <span class="material-symbols-outlined text-[20px]">delete</span>
+          </div>
+          <div>
+            <h3 class="delete-modal-title">Delete conversation?</h3>
+            <p class="delete-modal-subtitle">This action cannot be undone.</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-delete-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="delete-modal-body">
+        <p class="delete-modal-description">Are you sure you want to delete this research inquiry? All synthesized reports, evidence citations, and inspector traces for this conversation will be permanently removed.</p>
+        <div class="delete-chat-preview-box">
+          <span class="material-symbols-outlined text-[16px] text-tertiary">article</span>
+          <span class="delete-chat-preview-title" id="delete-chat-preview-title">Conversation Title</span>
+        </div>
+      </div>
+
+      <div class="delete-modal-footer">
+        <button class="btn-delete-cancel" id="btn-cancel-delete" type="button">Cancel</button>
+        <button class="btn-delete-confirm" id="btn-confirm-delete" type="button">
+          <span class="material-symbols-outlined text-[16px]">delete</span>
+          <span>Delete Conversation</span>
+        </button>
       </div>
     </div>
   </div>

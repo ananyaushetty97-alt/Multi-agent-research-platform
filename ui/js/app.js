@@ -13,7 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     inspectorOpen: true,
     inspectorTab: 'sources', // 'sources' | 'trace' | 'audit'
     activeCitationId: null,
-    currentDossierKey: 'microplastics',
+    currentDossierKey: null,
+    dossier: null,
+    busy: false,
+    lastTopic: '',
+    health: null,
     attachedFiles: []
   };
 
@@ -117,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toastMessage = document.getElementById('toast-message');
 
   // --- Toast Notification Helper ---
-  function showToast(message, icon = 'check_circle') {
+  function showToast(message, icon = 'check_circle', ms = 2500) {
     if (!toastNotice) return;
     toastMessage.textContent = message;
     const toastIcon = toastNotice.querySelector('.material-symbols-outlined');
@@ -125,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toastNotice.classList.add('show');
     setTimeout(() => {
       toastNotice.classList.remove('show');
-    }, 2500);
+    }, ms);
   }
 
   // --- Scroll to Bottom ---
@@ -335,8 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderInspectorContent() {
-    const dossier = MOCK_PLATFORM_DATA.dossiers[state.currentDossierKey];
-    if (!dossier || !inspectorScrollBody) return;
+    const dossier = state.dossier;
+    if (!inspectorScrollBody) return;
+    if (!dossier) {
+      inspectorScrollBody.innerHTML = '<p class="trace-node-detail" style="padding:1rem;">Sources appear here once a report is ready.</p>';
+      return;
+    }
 
     // In USER MODE: Always render ONLY sources!
     if (state.role === 'user' || state.inspectorTab === 'sources') {
@@ -346,20 +354,20 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="source-top-row">
             <div class="source-badge-row">
               <span class="source-citation-num">[${s.id}]</span>
-              <span class="source-domain-name">${s.domain}</span>
+              <span class="source-domain-name">${escapeHTML(String(s.domain))}</span>
             </div>
             <span style="font-size: 0.625rem; font-weight: 600; padding: 1px 6px; border-radius: var(--radius-full); background: var(--surface-container-high);">
               Cited ${s.citationsCount} ${s.citationsCount > 1 ? 'times' : 'time'}
             </span>
           </div>
-          <h4 class="source-card-title">${s.title}</h4>
-          <p class="source-quote-snippet">"${s.snippet}"</p>
+          <h4 class="source-card-title">${escapeHTML(String(s.title))}</h4>
+          ${s.snippet ? `<p class="source-quote-snippet">"${escapeHTML(s.snippet)}"</p>` : ''}
           <div class="source-card-bottom">
-            <span style="color: ${s.isPeerReviewed ? 'var(--primary-container)' : 'var(--tertiary)'}; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
-              <span class="material-symbols-outlined text-[13px]">${s.isPeerReviewed ? 'check_circle' : 'pending'}</span>
-              <span>${s.isPeerReviewed ? 'Peer-Reviewed' : 'Pending Verification'}</span>
+            <span style="color: var(--on-surface-variant); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+              <span class="material-symbols-outlined text-[13px]">link</span>
+              <span>Web source</span>
             </span>
-            <a class="source-outbound-link" href="${s.url}" target="_blank" rel="noopener noreferrer">
+            <a class="source-outbound-link" href="${escapeHTML(s.url)}" target="_blank" rel="noopener noreferrer">
               <span>Open</span>
               <span class="material-symbols-outlined text-[12px]">arrow_outward</span>
             </a>
@@ -368,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
     } else if (state.role === 'admin' && state.inspectorTab === 'trace') {
       tabBtnTrace?.classList.add('active');
-      inspectorScrollBody.innerHTML = dossier.agentTrace.map(step => `
+      inspectorScrollBody.innerHTML = !(dossier.agentTrace || []).length ? '<p class="trace-node-detail" style="padding:1rem;">Per-agent trace is not exposed by the API yet.</p>' : dossier.agentTrace.map(step => `
         <div class="trace-node-card">
           <div class="trace-node-header">
             <span class="trace-node-name">
@@ -390,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="trace-node-name">LLM Gateway</span>
               <span class="status-dot-active"></span>
             </div>
-            <p class="trace-node-detail">${MOCK_PLATFORM_DATA.systemHealth.gateway}</p>
+            <p class="trace-node-detail">${escapeHTML(String((state.health && state.health.gateway) || 'unavailable'))}</p>
           </div>
           <div class="trace-node-card">
             <div class="trace-node-header">
@@ -462,46 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchModalBackdrop?.classList.remove('active');
   }
 
-  function renderModalResults(query) {
-    if (!modalResultsScroll) return;
-    const q = query.trim().toLowerCase();
-
-    let filtered = MOCK_PLATFORM_DATA.historyItems;
-    if (q) {
-      filtered = filtered.filter(item =>
-        item.title.toLowerCase().includes(q) ||
-        item.snippet.toLowerCase().includes(q)
-      );
-    }
-
-    if (filtered.length === 0) {
-      modalResultsScroll.innerHTML = `
-        <div style="text-align: center; padding: 2rem 1rem; color: var(--on-surface-variant);">
-          <span class="material-symbols-outlined text-[28px] text-outline mb-1">find_in_page</span>
-          <div style="font-weight: 600; font-size: 0.875rem;">No indexed dossiers found</div>
-        </div>
-      `;
-      return;
-    }
-
-    modalResultsScroll.innerHTML = filtered.map(item => `
-      <div class="modal-result-item" data-dossier-id="${item.id}">
-        <h4 class="modal-result-title">${item.title}</h4>
-        <p class="modal-result-snippet">${item.snippet}</p>
-        <div style="margin-top: 0.25rem; font-size: 0.6875rem; color: var(--primary-container); font-weight: 600;">
-          ${item.timeGroup} • Verified (Score ${item.score})
-        </div>
-      </div>
-    `).join('');
-
-    modalResultsScroll.querySelectorAll('.modal-result-item').forEach(el => {
-      el.addEventListener('click', () => {
-        closeSearchModal();
-        loadDossier(el.getAttribute('data-dossier-id') || 'microplastics');
-      });
-    });
-  }
-
   const DOSSIER_REGISTRY = {
     'microplastics': {
       title: 'Impact of Microplastics on Marine Life',
@@ -537,165 +505,254 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- Load a Dossier / Topic ---
-  function loadDossier(key) {
-    if (!welcomeScreen || !conversationStream) return;
+  // =========================================================================
+  // Backend wiring (RP is defined in js/api.js)
+  // =========================================================================
+  const INTENT_LABEL = { new_research: 'New report', modify: 'Edited', question: 'Answer' };
+  const STATUS_STEPS = [
+    ['Checking your request', 'Validating the topic and checking the cache.'],
+    ['Searching the web', 'Collecting sources for your topic.'],
+    ['Summarising sources', 'Condensing the evidence.'],
+    ['Writing the report', 'Drafting the report with numbered citations.'],
+    ['Fact-checking', 'Verifying claims against the sources.']
+  ];
+  let activeController = null;
+
+  function safeUrl(u) {
+    try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : '#'; } catch (e) { return '#'; }
+  }
+  function toSources(turn) {
+    return (turn.sources || []).map(s => {
+      const info = RP.sourceInfo(s);
+      return { id: s.n, domain: info.domain || 'source', title: s.title || info.domain || s.url, url: safeUrl(s.url), snippet: '', citationsCount: RP.citationCount(turn.report, s.n) };
+    });
+  }
+  function turnFrom(user, d) {
+    return { user, intent: d.intent, report: d.report, sources: d.sources || [], cached: !!d.cached, score: d.score || null, seconds: d.seconds };
+  }
+  function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function fmtDate(ts) { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  function groupOf(ts) {
+    const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = (day(new Date()) - day(new Date(ts))) / 864e5;
+    return diff <= 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff < 7 ? 'Previous 7 days' : 'Older';
+  }
+
+  // Markdown report -> sanitized DOM with clickable [n] citation chips
+  function reportParts(turn) {
+    let md = String(turn.report || '').split('\n## Sources')[0];
+    let title = '';
+    const m = md.match(/^\s*#\s+(.+)\n/);
+    if (m) { title = m[1].replace(/\*+/g, '').trim(); md = md.slice(m[0].length); }
+    const box = document.createElement('div');
+    box.innerHTML = DOMPurify.sanitize(marked.parse(md));
+    box.querySelectorAll('h1,h2,h3,h4').forEach(h => h.classList.add('section-heading'));
+    box.querySelectorAll('p,li').forEach(p => p.classList.add('article-prose'));
+    const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n => {
+      if (n.parentElement.closest('a,code,pre') || !/\[\d+\]/.test(n.nodeValue)) return;
+      const frag = document.createDocumentFragment();
+      n.nodeValue.split(/(\[\d+\])/).forEach(part => {
+        const mm = part.match(/^\[(\d+)\]$/);
+        if (mm) {
+          const wrap = document.createElement('span'); wrap.className = 'citation-chip-wrapper';
+          const b = document.createElement('button'); b.className = 'citation-chip'; b.type = 'button';
+          b.dataset.citationId = mm[1]; b.textContent = part;
+          wrap.append(b); frag.append(wrap);
+        } else if (part) frag.append(part);
+      });
+      n.replaceWith(frag);
+    });
+    return { title, node: box };
+  }
+  function badgesEl(turn) {
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px';
+    const mk = (t, strong) => {
+      const sp = document.createElement('span'); sp.textContent = t;
+      sp.style.cssText = 'font-size:.6875rem;font-weight:600;padding:2px 8px;border-radius:999px;background:' + (strong ? 'var(--primary-container)' : 'var(--surface-container-high)') + ';color:' + (strong ? '#fff' : 'var(--on-surface-variant)');
+      return sp;
+    };
+    d.append(mk(INTENT_LABEL[turn.intent] || turn.intent || 'Reply'));
+    if (turn.cached) d.append(mk('Instant result', true));
+    if (typeof turn.seconds === 'number') d.append(mk(turn.seconds.toFixed(1) + ' s'));
+    return d;
+  }
+  function fillScore(score) {
+    const ok = score && score.overall != null;
+    const root = document.getElementById('admin-eval-scorecard');
+    if (!root) return;
+    const num = root.querySelector('.judge-score-number');
+    if (num) num.textContent = ok ? score.overall : '\u2013';
+    const vals = root.querySelectorAll('.criterion-score-val');
+    const fills = root.querySelectorAll('.criterion-bar-fill');
+    const descs = root.querySelectorAll('.criterion-desc');
+    ['relevance', 'accuracy', 'clarity'].forEach((k, i) => {
+      const v = ok ? score[k] : null;
+      if (vals[i]) vals[i].textContent = v != null ? v + ' / 10' : '\u2013';
+      if (fills[i]) fills[i].style.width = v != null ? (v * 10) + '%' : '0%';
+      if (descs[i]) descs[i].textContent = '';
+    });
+    const card = root.querySelector('.judge-scorecard');
+    let c = document.getElementById('judge-live-comment');
+    if (card && !c) { c = document.createElement('p'); c.id = 'judge-live-comment'; c.className = 'criterion-desc'; c.style.marginTop = '12px'; card.append(c); }
+    if (c) c.textContent = ok && score.comment ? score.comment : (score && score.error ? 'Grading failed: ' + score.error : 'No score for this reply.');
+  }
+  function afterTurn(turn) {
+    if (turn.sources && turn.sources.length) state.dossier = { sources: toSources(turn), agentTrace: [] };
+    if (turn.score) fillScore(turn.score);
+    renderInspectorContent();
+    setupCitations();
+  }
+  function errorNode(e) {
+    const d = document.createElement('div');
+    d.className = 'definitional-response-card';
+    d.setAttribute('role', 'alert');
+    const p = document.createElement('p'); p.className = 'article-prose';
+    p.textContent = e.name === 'AbortError' ? 'Request cancelled.' : e.message;
+    d.append(p); return d;
+  }
+  function buildAssistant(turn) {
+    const parts = reportParts(turn);
+    if (turn.intent === 'question') {
+      const card = document.createElement('div'); card.className = 'definitional-response-card';
+      card.append(badgesEl(turn), parts.node); return card;
+    }
+    const art = document.createElement('article'); art.className = 'editorial-article';
+    const head = document.createElement('header'); head.className = 'article-header';
+    const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
+    head.append(h); art.append(head, badgesEl(turn), parts.node); return art;
+  }
+  function assistantHolder(turn) {
+    const w = document.createElement('div'); w.className = 'chat-turn-assistant'; w.style.marginTop = '1rem';
+    w.append(buildAssistant(turn)); return w;
+  }
+  function userBubbleNode(text, attachments, when) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-turn-user'; wrap.style.marginTop = '1.5rem';
+    const att = (attachments || []).map(a => `<span class="user-attachment-pill"><span class="material-symbols-outlined text-[13px]">${a.type === 'folder' ? 'folder' : 'draft'}</span><span>${escapeHTML(a.name)}</span></span>`).join('');
+    wrap.innerHTML = `<div class="user-bubble secondary-turn">${att ? `<div class="user-attachments-badge">${att}</div>` : ''}<p class="user-bubble-text"></p></div><div class="user-bubble-actions"><span class="user-bubble-time"></span></div>`;
+    wrap.querySelector('.user-bubble-text').textContent = text;
+    wrap.querySelector('.user-bubble-time').textContent = fmtTime(when);
+    return wrap;
+  }
+
+  // First turn goes into the existing static layout (keeps copy / download / retry bar)
+  function showTurnInSlot(turn, when) {
     welcomeScreen.style.display = 'none';
     conversationStream.style.display = 'flex';
-    if (dynamicFollowups) dynamicFollowups.innerHTML = '';
+    dynamicFollowups.innerHTML = '';
+    const ut = document.querySelector('.chat-turn-user .user-bubble-text'); if (ut) ut.textContent = turn.user;
+    const tm = document.querySelector('.chat-turn-user .user-bubble-time'); if (tm) tm.textContent = fmtTime(when);
+    document.querySelectorAll('#agent-flow-stepper, .provenance-quick-bar').forEach(e => { e.style.display = 'none'; });
+    const art = document.querySelector('.editorial-article');
+    const parts = reportParts(turn);
+    const head = document.createElement('header'); head.className = 'article-header';
+    const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
+    head.append(h);
+    art.replaceChildren(head, badgesEl(turn), parts.node);
+    if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = parts.title || turn.user;
+    if (window.innerWidth <= 768) setSidebarState(false);
+  }
 
-    const dossierInfo = DOSSIER_REGISTRY[key] || {
-      title: key,
-      query: key
-    };
-    const title = dossierInfo.title;
-
-    if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = title;
-
-    // Update first user query bubble text
-    const firstUserQuery = document.querySelector('.chat-turn-user .user-bubble-text');
-    if (firstUserQuery) firstUserQuery.textContent = dossierInfo.query;
-
-    // Update main article headline
-    const headline = document.querySelector('.article-headline');
-    if (headline) headline.textContent = title;
-    
-    document.querySelectorAll('.history-item').forEach(h => {
-      h.classList.toggle('active', h.getAttribute('data-inquiry-id') === key);
+  function showSavedChat(chat) {
+    RP.openChat(chat.id);
+    const first = chat.turns[0];
+    state.lastTopic = first.user;
+    state.dossier = null;
+    showTurnInSlot(first, chat.created);
+    chat.turns.slice(1).forEach(t => {
+      dynamicFollowups.append(userBubbleNode(t.user, [], chat.updated), assistantHolder(t));
     });
-
-    renderInspectorContent();
-    showToast(`Loaded: ${title}`);
-    if (window.innerWidth <= 768) {
-      setSidebarState(false);
+    for (let i = chat.turns.length - 1; i >= 0; i--) {
+      if (chat.turns[i].sources && chat.turns[i].sources.length) { afterTurn(chat.turns[i]); break; }
     }
+    const scored = [...chat.turns].reverse().find(t => t.score);
+    fillScore(scored ? scored.score : null);
+    renderInspectorContent(); setupCitations(); renderHistory();
     scrollToBottom();
+  }
+
+  function renderHistory() {
+    const nav = document.querySelector('.sidebar-nav');
+    if (!nav) return;
+    const chats = RP.listChats();
+    nav.innerHTML = '';
+    if (!chats.length) {
+      const p = document.createElement('p'); p.className = 'history-group-title';
+      p.textContent = 'Your researched topics will appear here.'; nav.append(p); return;
+    }
+    const groups = {};
+    chats.forEach(c => { (groups[groupOf(c.updated)] = groups[groupOf(c.updated)] || []).push(c); });
+    ['Today', 'Yesterday', 'Previous 7 days', 'Older'].forEach(g => {
+      if (!groups[g]) return;
+      const wrap = document.createElement('div');
+      const t = document.createElement('div'); t.className = 'history-group-title'; t.textContent = g;
+      const ul = document.createElement('ul'); ul.className = 'history-list';
+      groups[g].forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'history-item' + (c.id === RP.currentId() ? ' active' : '');
+        li.dataset.inquiryId = c.id;
+        li.innerHTML = '<div class="history-item-left"><span class="history-indicator"></span><span class="history-title"></span></div>';
+        li.querySelector('.history-title').textContent = c.title;
+        li.addEventListener('click', () => loadDossier(c.id));
+        ul.append(li);
+      });
+      wrap.append(t, ul); nav.append(wrap);
+    });
+  }
+
+  // --- Open a saved chat, or start real research for a suggested topic ---
+  function loadDossier(key) {
+    const chat = RP.getChat(key);
+    if (chat && chat.turns.length) return showSavedChat(chat);
+    const reg = DOSSIER_REGISTRY[key];
+    runPipeline(reg ? reg.query : key);
   }
 
   // --- Show Welcome Screen for New Inquiry ---
   function showWelcomeScreen() {
+    RP.newChat();
+    state.dossier = null;
+    if (dynamicFollowups) dynamicFollowups.innerHTML = '';
+    renderInspectorContent();
     welcomeScreen.style.display = 'flex';
     conversationStream.style.display = 'none';
     if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = 'New Inquiry';
     composerInput.value = '';
     composerInput.focus();
     autoResizeTextarea();
-    if (window.innerWidth <= 768) {
-      setSidebarState(false);
-    }
+    renderHistory();
+    if (window.innerWidth <= 768) setSidebarState(false);
   }
 
-  // --- Append a Follow-Up in the Same Continuous Conversation Stream ---
-  function appendFollowUpInStream(questionText, attachments = []) {
+  // --- Follow-ups: edit, question, or new topic, routed by the backend ---
+  async function appendFollowUpInStream(questionText, attachments = []) {
     if (!dynamicFollowups) return;
-
-    // 1. Append User Question Bubble in the SAME thread
-    const userBubble = document.createElement('div');
-    userBubble.className = 'chat-turn-user';
-    userBubble.style.marginTop = '1.5rem';
-
-    const attachmentsHtml = attachments && attachments.length > 0 ? `
-      <div class="user-attachments-badge">
-        ${attachments.map(att => `
-          <span class="user-attachment-pill">
-            <span class="material-symbols-outlined text-[13px]">${att.type === 'folder' ? 'folder' : 'draft'}</span>
-            <span>${escapeHTML(att.name)}</span>
-            ${att.count ? `<span style="opacity:0.75;">(${att.count} files)</span>` : (att.size ? `<span style="opacity:0.75;">(${att.size})</span>` : '')}
-          </span>
-        `).join('')}
-      </div>
-    ` : '';
-
-    userBubble.innerHTML = `
-      <div class="user-bubble secondary-turn">
-        ${attachmentsHtml}
-        <p class="user-bubble-text">${escapeHTML(questionText)}</p>
-      </div>
-      <div class="user-bubble-actions">
-        <span class="user-bubble-time">Just now</span>
-        <button class="btn-copy-prompt" type="button" title="Copy" aria-label="Copy prompt">
-          <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-          </svg>
-          <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none; color: var(--primary-container);">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
-      </div>
-    `;
-    dynamicFollowups.appendChild(userBubble);
+    if (welcomeScreen.style.display !== 'none') return runPipeline(questionText);
+    if (state.busy) { showToast('Still working on the previous request', 'hourglass_empty'); return; }
+    if (attachments.length) showToast('Attachments are not sent to the research backend yet', 'info', 4000);
+    state.busy = true;
+    dynamicFollowups.append(userBubbleNode(questionText, attachments));
+    const holder = document.createElement('div');
+    holder.className = 'chat-turn-assistant'; holder.style.marginTop = '1rem';
+    holder.innerHTML = '<div class="definitional-response-card"><p class="article-prose">Working on it. This can take a few minutes.</p></div>';
+    dynamicFollowups.append(holder);
     scrollToBottom();
-
-    // 2. Append Assistant Definitional Response in the SAME thread
-    setTimeout(() => {
-      const assistantNode = document.createElement('div');
-      assistantNode.className = 'chat-turn-assistant';
-      assistantNode.style.marginTop = '1rem';
-
-      assistantNode.innerHTML = `
-        <div class="definitional-response-card">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <div style="width: 1.75rem; height: 1.75rem; border-radius: var(--radius-md); background: var(--surface-container-highest); color: var(--primary-container); display: flex; align-items: center; justify-content: center;">
-                <span class="material-symbols-outlined text-[16px]">account_balance</span>
-              </div>
-              <div>
-                <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--on-surface);">Synthesis Node</h4>
-                <span style="font-size: 0.6875rem; color: var(--on-surface-variant);">Empirical Definition</span>
-              </div>
-            </div>
-            <span style="font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); background: var(--primary-fixed); color: var(--on-primary-fixed);">
-              Verified Terminology
-            </span>
-          </div>
-
-          <p class="article-prose">
-            ${MOCK_PLATFORM_DATA.followUpExample.answerParagraphs[0]}
-          </p>
-          <p class="article-prose">
-            ${MOCK_PLATFORM_DATA.followUpExample.answerParagraphs[1]}
-          </p>
-
-          <!-- Analytical Distinction Matrix Card -->
-          <div class="analytical-distinction-card">
-            <div class="distinction-column">
-              <span class="distinction-label">
-                <span class="material-symbols-outlined text-[15px]">biotech</span>
-                Bioaccumulation
-              </span>
-              <p class="distinction-body">
-                ${MOCK_PLATFORM_DATA.followUpExample.distinction.leftBody}
-              </p>
-            </div>
-            <div class="distinction-separator"></div>
-            <div class="distinction-column">
-              <span class="distinction-label secondary">
-                <span class="material-symbols-outlined text-[15px]">stacked_line_chart</span>
-                Biomagnification
-              </span>
-              <p class="distinction-body">
-                ${MOCK_PLATFORM_DATA.followUpExample.distinction.rightBody}
-              </p>
-            </div>
-          </div>
-
-          <!-- Utility bar -->
-          <div class="report-action-bar">
-            <div class="action-buttons-group">
-              <button class="btn-report-tool" type="button" onclick="navigator.clipboard.writeText('Bioaccumulation: net gradual accumulation of a xenobiotic compound within somatic tissues...'); alert('Definition copied to clipboard!');">
-                <span class="material-symbols-outlined text-[15px]">content_copy</span>
-                <span>Copy</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      dynamicFollowups.appendChild(assistantNode);
-      scrollToBottom();
-      showToast('Follow-up answered in current thread', 'verified');
-    }, 400);
+    activeController = new AbortController();
+    try {
+      const data = await RP.generate(questionText, activeController.signal);
+      const turn = turnFrom(questionText, data);
+      holder.replaceChildren(buildAssistant(turn));
+      afterTurn(turn);
+    } catch (e) {
+      holder.replaceChildren(errorNode(e));
+    } finally {
+      state.busy = false; activeController = null;
+      renderHistory(); scrollToBottom();
+    }
   }
 
   function escapeHTML(str) {
@@ -708,67 +765,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }[tag] || tag));
   }
 
-  // --- Simulated 4-Agent Pipeline Execution ---
-  function runPipeline(topicText) {
-    if (!pipelineModal) return;
-    pipelineModal.classList.add('active');
-
-    const steps = [
-      { step: 1, title: 'Input Safety Guardrail Check', desc: 'Validating topic against safety & adversarial injection guardrails...' },
-      { step: 2, title: 'Semantic Response Cache Lookup', desc: 'Querying Redis cache for matching past monographs...' },
-      { step: 3, title: 'Search Agent Activating', desc: 'Retrieving relevant peer-reviewed papers from arXiv, PubMed, NOAA & IEEE...' },
-      { step: 4, title: 'Summarize Agent Condensing', desc: 'Deduplicating evidence, extracting key facts and citations...' },
-      { step: 5, title: 'Write Agent Synthesis', desc: 'Drafting structured academic editorial monograph in Newsreader format...' },
-      { step: 6, title: 'Verify Agent Fact-Checking', desc: 'Comparing report claims against search findings (0 revisions needed)...' },
-      { step: 7, title: 'LLM-as-a-Judge Evaluation', desc: 'Applying strict rubric: Relevance, Accuracy, and Clarity (Score: 9.6/10)...' }
-    ];
-
-    let currentStepIndex = 0;
-
-    function stepInterval() {
-      if (currentStepIndex < steps.length) {
-        const s = steps[currentStepIndex];
-        if (pipelineLiveTitle) pipelineLiveTitle.textContent = s.title;
-        if (pipelineLiveDesc) pipelineLiveDesc.textContent = s.desc;
-
-        const miniItem = document.getElementById(`pipeline-step-${s.step}`);
-        if (miniItem) {
-          miniItem.classList.add('active');
-          const icon = miniItem.querySelector('.material-symbols-outlined');
-          if (icon) icon.textContent = 'autorenew';
-        }
-
-        if (currentStepIndex > 0) {
-          const prevItem = document.getElementById(`pipeline-step-${steps[currentStepIndex - 1].step}`);
-          if (prevItem) {
-            prevItem.classList.remove('active');
-            prevItem.classList.add('done');
-            const icon = prevItem.querySelector('.material-symbols-outlined');
-            if (icon) icon.textContent = 'check_circle';
-          }
-        }
-
-        currentStepIndex++;
-        setTimeout(stepInterval, 500);
-      } else {
-        setTimeout(() => {
-          pipelineModal.classList.remove('active');
-          loadDossier('microplastics');
-
-          // Reset mini icons
-          for (let i = 1; i <= 7; i++) {
-            const item = document.getElementById(`pipeline-step-${i}`);
-            if (item) {
-              item.classList.remove('active', 'done');
-              const icon = item.querySelector('.material-symbols-outlined');
-              if (icon) icon.textContent = 'hourglass_empty';
-            }
-          }
-        }, 400);
-      }
+  // --- Real research run (replaces the simulated pipeline) ---
+  function ensureCancel() {
+    const box = pipelineModal.querySelector('.pipeline-run-box');
+    const mini = pipelineModal.querySelector('.pipeline-mini-stepper');
+    if (mini) mini.style.display = 'none';
+    let b = document.getElementById('btn-pipeline-cancel');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'btn-pipeline-cancel'; b.type = 'button'; b.textContent = 'Cancel';
+      b.className = 'btn-report-tool';
+      b.addEventListener('click', () => { if (activeController) activeController.abort(); });
+      box.append(b);
     }
+  }
 
-    stepInterval();
+  async function runPipeline(topicText) {
+    topicText = (topicText || '').trim();
+    if (!topicText || !pipelineModal) return;
+    if (state.busy) { showToast('Still working on the previous request', 'hourglass_empty'); return; }
+    state.busy = true;
+    RP.newChat();
+    pipelineModal.classList.add('active');
+    ensureCancel();
+    let i = 0;
+    const tick = () => {
+      const st = STATUS_STEPS[i % STATUS_STEPS.length]; i++;
+      if (pipelineLiveTitle) pipelineLiveTitle.textContent = st[0];
+      if (pipelineLiveDesc) pipelineLiveDesc.textContent = st[1] + ' This can take a few minutes.';
+    };
+    tick();
+    const timer = setInterval(tick, 5000);
+    activeController = new AbortController();
+    try {
+      const data = await RP.generate(topicText, activeController.signal);
+      const turn = turnFrom(topicText, data);
+      state.lastTopic = topicText;
+      state.dossier = null;
+      showTurnInSlot(turn, Date.now());
+      afterTurn(turn);
+      scrollToBottom();
+    } catch (e) {
+      if (e.name === 'AbortError') showToast('Request cancelled', 'cancel');
+      else showToast(e.message, 'error', 6000);
+    } finally {
+      clearInterval(timer);
+      pipelineModal.classList.remove('active');
+      state.busy = false; activeController = null;
+      renderHistory();
+    }
   }
 
   // --- File & Folder Upload Utilities ---
@@ -1028,14 +1073,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!modalResultsScroll) return;
     const q = query.trim().toLowerCase();
 
-    let filtered = SEARCH_DATABASE;
-    if (q) {
-      filtered = SEARCH_DATABASE.filter(item => 
-        item.title.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        item.snippet.toLowerCase().includes(q)
-      );
-    }
+    const filtered = RP.search(q).map(r => ({
+      id: r.chat.id, title: r.chat.title, category: 'Research',
+      snippet: r.snippet || (r.chat.turns[0] ? String(r.chat.turns[0].report || '').replace(/[#*\n]+/g, ' ').slice(0, 140) : ''),
+      date: fmtDate(r.chat.updated), type: 'inquiry'
+    }));
 
     if (filtered.length === 0) {
       modalResultsScroll.innerHTML = `
@@ -1553,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Smoothly re-render synthesis in-place without triggering pipelineModal (Image 3)
     setTimeout(() => {
-      loadDossier('microplastics');
+      if (state.lastTopic) runPipeline(state.lastTopic);
       if (retryIcon) retryIcon.classList.remove('spin-refresh');
       showToast('Research synthesis regenerated', 'refresh');
     }, 450);
@@ -1567,5 +1609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setSidebarState(true);
   }
   setRole('user');
-  setupCitations();
+  fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => {});
+  showWelcomeScreen();
+  composerInput.blur();
 });

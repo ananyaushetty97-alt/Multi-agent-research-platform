@@ -2,12 +2,14 @@
 FastAPI app: the front door of the whole system.
 Run:  python -m uvicorn api.main:app
 """
+import os
 import time
 import uuid
 import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import llm_link
@@ -150,3 +152,13 @@ def generate(req: TopicRequest):
 def scores(limit: int = 20):
     """Recent grading results."""
     return score_history(limit)
+
+
+# ---------------------------------------------------------------------------
+# Serve the front-end (the ui/ folder) at http://localhost:8000
+# MUST stay at the very bottom, after every route above, because a mount at "/"
+# catches any path that no earlier route handled.
+# ---------------------------------------------------------------------------
+UI_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ui")
+if os.path.isdir(UI_DIR):
+    app.mount("/", StaticFiles(directory=UI_DIR, html=True), name="ui")

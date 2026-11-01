@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Newsreader:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-error": "#ffffff", "on-primary-container": "#9be9e8", "on-tertiary-container": "#ffd1c2", "secondary-fixed": "#d2e5f7", "surface-tint": "#0b6969", error: "#ba1a1a", "surface-bright": "#f7f9ff", "primary-fixed": "#a3f0ef", "tertiary-container": "#a53f19", "on-surface": "#111d28", "inverse-on-surface": "#e8f2ff", primary: "#005151", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", background: "#f7f9ff", secondary: "#4f6070", "on-secondary-fixed": "#0a1d2b", "on-background": "#111d28", "on-secondary-fixed-variant": "#374958", "surface-variant": "#d7e4f3", "on-tertiary-fixed": "#390c00", "surface-container": "#e3efff", "surface-dim": "#cfdbeb", "on-surface-variant": "#3f4948", "secondary-fixed-dim": "#b6c9db", "secondary-container": "#cfe2f5", "on-primary-fixed-variant": "#004f50", "primary-fixed-dim": "#87d4d3", tertiary: "#852802", "on-primary-fixed": "#002020", "tertiary-fixed-dim": "#ffb59d", "on-error-container": "#93000a", "surface-container-highest": "#d7e4f3", "error-container": "#ffdad6", "tertiary-fixed": "#ffdbd0", "inverse-surface": "#26323d", "surface-container-lowest": "#ffffff", "primary-container": "#0f6b6b", "on-secondary-container": "#536574", "outline-variant": "#bec9c8", outline: "#6f7979", "surface-container-high": "#dde9f9", "surface-container-low": "#edf4ff", "on-tertiary-fixed-variant": "#832701", "on-primary": "#ffffff", surface: "#f7f9ff", "inverse-primary": "#87d4d3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {gutter: "1rem", "gutter-lg": "1.5rem", "margin-md": "1.5rem", "space-md": "0.75rem", "space-lg": "1.25rem", margin: "1rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "margin-lg": "2.5rem"}, fontFamily: {"headline-lg-mobile": ["Newsreader"], "title-md": ["Inter"], "label-sm": ["JetBrains Mono"], "title-sm": ["Inter"], display: ["Inter"], "body-sm": ["Inter"], "label-md": ["JetBrains Mono"], "body-md": ["Inter"], "headline-lg": ["Newsreader"], "metric-md": ["JetBrains Mono"], "metric-lg": ["JetBrains Mono"], "body-lg": ["Inter"], "headline-sm": ["Newsreader"], "headline-md": ["Newsreader"], headline: ["Inter"], body: ["Newsreader"], label: ["Inter"]}, fontSize: {"headline-lg-mobile": ["28px", {lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500"}], "title-md": ["16px", {lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600"}], "label-sm": ["10px", {lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "500"}], "title-sm": ["14px", {lineHeight: "20px", fontWeight: "600"}], display: ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "400"}], "body-sm": ["12px", {lineHeight: "18px", fontWeight: "400"}], "label-md": ["12px", {lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500"}], "body-md": ["14px", {lineHeight: "22px", fontWeight: "400"}], "headline-lg": ["36px", {lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "400"}], "metric-md": ["18px", {lineHeight: "24px", letterSpacing: "-0.02em", fontWeight: "500"}], "metric-lg": ["28px", {lineHeight: "32px", letterSpacing: "-0.03em", fontWeight: "600"}], "body-lg": ["16px", {lineHeight: "26px", fontWeight: "400"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "500"}], "headline-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.2)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between border-b border-outline-variant/20"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">biotech</span><span class="font-title-sm text-title-sm tracking-tight text-on-surface">Scientific Observability</span></div><span class="font-label-sm text-label-sm px-space-xs py-[2px] rounded bg-surface-container text-primary border border-primary/20">v3.4-prod</span></div><nav class="flex flex-col gap-space-xs p-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-title-sm"><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all group" data-path="overview-health" href="overview-health.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">vital_signs</span><span class="font-body-sm text-body-sm">Overview &amp; Health</span></div><span class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-sm text-label-sm text-primary">5/5</span></span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="metrics-latency" href="metrics-latency.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">speed</span><span class="font-body-sm text-body-sm">Metrics &amp; Latency</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">24h</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="agent-traces" href="agent-traces.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">schema</span><span class="font-body-sm text-body-sm">Agent Traces</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">1.4k</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="quality-judge" href="quality-judge.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">gavel</span><span class="font-body-sm text-body-sm">Quality &amp; Judge</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-primary">9.12</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="safety-red-team" href="safety-red-team.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">shield</span><span class="font-body-sm text-body-sm">Safety &amp; Red-Team</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">96%</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="memory-cache" href="memory-cache.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">memory</span><span class="font-body-sm text-body-sm">Memory &amp; Cache</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">380</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="audit-logs-config" href="audit-config.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">terminal</span><span class="font-body-sm text-body-sm">Audit Logs &amp; Config</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-secondary">Live</span></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><div class="px-space-sm py-space-xs rounded bg-surface-container-low border border-outline-variant/20 mb-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Cluster</span><span class="font-label-sm text-label-sm text-primary">us-east-sciphi</span></div><div class="flex items-center justify-between mt-space-xs"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Node Ping</span><span class="font-label-sm text-label-sm text-on-surface">4.2 ms</span></div></div><button class="w-full flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" type="button"><span class="font-label-sm text-label-sm uppercase tracking-wider">Collapse Rail</span><span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30 z-40 px-gutter-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="font-title-md text-title-md text-on-surface tracking-tight">Research Platform</span><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 uppercase">Admin</span></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span><span class="font-body-sm text-body-sm text-on-surface">All systems healthy</span></div></div><div class="flex items-center gap-space-md"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left- space-sm text-outline text-[18px] pl-2">search</span><input class="w-64 bg-surface-container-low text-on-surface font-body-sm text-body-sm pl-8 pr-12 py-1.5 rounded-lg border border-outline-variant/40 focus:outline-none focus:border-primary transition-colors" placeholder="Quick command search..." type="text"/><kbd class="absolute right-2 font-label-sm text-label-sm text-outline bg-surface-container px-1 py-0.5 rounded border border-outline-variant/40">⌘K</kbd></div><div class="flex items-center gap-space-xs bg-surface-container-low px-space-xs py-1 rounded-lg border border-outline-variant/40"><span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping ml-1"></span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none pr-1 cursor-pointer"><option class="bg-surface-container-high text-on-surface" value="paused">Paused</option><option class="bg-surface-container-high text-on-surface" value="5s">5s</option><option class="bg-surface-container-high text-on-surface" selected="" value="15s">15s</option><option class="bg-surface-container-high text-on-surface" value="30s">30s</option><option class="bg-surface-container-high text-on-surface" value="60s">60s</option></select></div><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">sync</span><span class="font-label-sm text-label-sm hidden md:inline">Sync</span></button><div class="relative"><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">ios_share</span><span class="font-label-sm text-label-sm hidden md:inline">Export</span><span class="material-symbols-outlined text-[14px]">arrow_drop_down</span></button></div><div class="flex items-center gap-space-sm pl-space-xs border-l border-outline-variant/30"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden lg:flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface font-semibold leading-tight">admin</span><span class="font-label-sm text-label-sm text-on-surface-variant text-[9px] leading-tight">Role: admin</span></div><button class="text-on-surface-variant hover:text-error transition-colors ml-space-xs" title="Logout" onclick="window.location.href='sign-in.html'" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div></div></header><main class="w-full pt-16 bg-surface min-h-screen px-gutter-lg py-gutter"><div class="flex flex-col w-full">
+<!-- Dynamic Sidebar Active State Injector (Sets Memory & Cache to active state) -->
+<script>
+    (function highlightActiveNav() {
+      const navLinks = document.querySelectorAll('aside nav a');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'memory-cache') {
+          link.classList.remove('text-on-surface-variant');
+          link.classList.add('bg-primary-container', 'text-on-primary-container', 'font-title-sm', 'shadow-sm');
+          const badge = link.querySelector('span:last-child');
+          if (badge) {
+            badge.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+            badge.classList.add('bg-surface-container-lowest/60', 'text-on-primary-container', 'font-bold');
+          }
+        }
+      });
+    })();
+  </script>
+<!-- Top Header & Breadcrumb Metrology Band -->
+<div class="flex flex-col gap-space-sm mb-gutter">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary">EPHEMERAL &amp; PERSISTENT CONTEXT :: MEMORY &amp; CACHE RETENTION</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] rounded bg-surface-container text-on-surface-variant">SYNC_NODE_04</span>
+</div>
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span>PERSISTENCE LAYER:</span>
+<span class="text-primary font-semibold">ONLINE (0.9997)</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Memory &amp; Cache Management</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-3xl">
+          Long-term academic monograph archives, vector semantic deduplication cache, and volatile session lifecycle governance across distributed clusters.
+        </p>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface transition-all text-title-sm font-title-sm shadow-sm" id="btn-manual-gc" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">cleaning_services</span>
+<span>Trigger Memory GC</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Top Summary Vitals Row (Bento Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter mb-gutter-lg">
+<!-- Tile 1 -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-primary/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Total Stored Reports</span>
+<span class="material-symbols-outlined text-primary text-[20px]">auto_stories</span>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-lg text-metric-lg text-on-surface">128</span>
+<span class="font-label-md text-label-md text-on-surface-variant">monographs</span>
+</div>
+<div class="flex items-center justify-between mt-space-xs text-body-sm font-body-sm">
+<span class="text-primary font-label-sm text-label-sm">34.2 MB pgvector</span>
+<span class="text-on-surface-variant text-[11px]">100% persistent</span>
+</div>
+</div>
+</div>
+<!-- Tile 2 -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-secondary/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Semantic Cache Entries</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">dataset</span>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-lg text-metric-lg text-on-surface">380</span>
+<span class="font-label-md text-label-md text-on-surface-variant">keys</span>
+</div>
+<div class="flex items-center justify-between mt-space-xs text-body-sm font-body-sm">
+<span class="text-secondary font-label-sm text-label-sm">26.8% hit rate</span>
+<span class="text-on-surface-variant text-[11px]">Avg TTL: 1.8h</span>
+</div>
+</div>
+</div>
+<!-- Tile 3 -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-primary/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Active Volatile Sessions</span>
+<span class="material-symbols-outlined text-primary text-[20px]">sensors</span>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-lg text-metric-lg text-on-surface">42</span>
+<span class="font-label-md text-label-md text-on-surface-variant">in-flight</span>
+</div>
+<div class="flex items-center justify-between mt-space-xs text-body-sm font-body-sm">
+<span class="text-primary font-label-sm text-label-sm">Max TTL 4.0h</span>
+<span class="text-on-surface-variant text-[11px]">WebSocket synced</span>
+</div>
+</div>
+</div>
+<!-- Tile 4 -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-tertiary-container/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Invalidation Queue</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">sync_alt</span>
+</div>
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-lg text-metric-lg text-on-surface">0</span>
+<span class="font-label-md text-label-md text-on-surface-variant">pending</span>
+</div>
+<div class="flex items-center justify-between mt-space-xs text-body-sm font-body-sm">
+<span class="text-primary font-label-sm text-label-sm">Zero delta</span>
+<span class="text-on-surface-variant text-[11px]">Last sync: 4s ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Segmented Academic Tabs -->
+<div class="flex items-center gap-space-sm bg-surface-container-lowest p-1 rounded-xl mb-gutter w-fit shadow-sm">
+<button class="tab-trigger flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-high text-primary font-title-sm text-title-sm transition-all shadow-sm" id="tab-btn-1" onclick="switchTab(1)" type="button">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span>Long-term reports</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">128</span>
+</button>
+<button class="tab-trigger flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-title-sm text-title-sm transition-all" id="tab-btn-2" onclick="switchTab(2)" type="button">
+<span class="material-symbols-outlined text-[16px]">memory</span>
+<span>Semantic cache</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-semibold">380</span>
+</button>
+<button class="tab-trigger flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-title-sm text-title-sm transition-all" id="tab-btn-3" onclick="switchTab(3)" type="button">
+<span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+<span>Active sessions</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-semibold">42</span>
+</button>
+</div>
+<!-- TAB 1 CONTENT: LONG-TERM REPORTS -->
+<div class="flex flex-col gap-gutter" id="tab-panel-1">
+<!-- Controls Bar -->
+<div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-md bg-surface-container-low p-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-sm flex-1 max-w-xl">
+<div class="relative w-full flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container text-on-surface font-body-sm text-body-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:bg-surface-container-highest transition-colors placeholder:text-outline" id="report-search-input" placeholder="Filter reports by title, DOI, or keyword..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-space-sm justify-between md:justify-end">
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1.5 rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Temporal Scope:</span>
+<select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer">
+<option class="bg-surface-container-high" value="all">All Time</option>
+<option class="bg-surface-container-high" value="30d">Last 30 Days</option>
+<option class="bg-surface-container-high" value="7d">Last 7 Days</option>
+<option class="bg-surface-container-high" value="24h">Past 24 Hours</option>
+</select>
+</div>
+<span class="font-label-sm text-label-sm px-space-sm py-1.5 rounded-lg bg-surface-container text-primary">
+          Showing 128 of 128
+        </span>
+</div>
+</div>
+<!-- Long-term Reports Matrix -->
+<div class="bg-surface-container-low rounded-xl shadow-md overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-space-md px-space-lg w-2/5">Report Title &amp; Academic DOI</th>
+<th class="py-space-md px-space-md">Created Date</th>
+<th class="py-space-md px-space-md w-1/3">Report Preview (Abstract Excerpt)</th>
+<th class="py-space-md px-space-md">Payload &amp; Source</th>
+<th class="py-space-md px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<!-- Row 1 (Target of Modal) -->
+<tr class="hover:bg-surface-container/60 transition-colors group">
+<td class="py-space-md px-space-lg align-top">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors">
+                  Impact of Microplastics on Marine Fauna and Pelagic Ecosystems
+                </div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">fingerprint</span>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">doi:10.1038/s41558-023-01824-w</a>
+<span class="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant">Nature Climate</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-on-surface">2026-10-31</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">14:28:12 UTC</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed line-clamp-2">
+                  "Microparticulate debris (&lt;5 mm) readily mimics natural zooplanktonic prey profiles, precipitating chronic gut obstruction and synthetic endocrine disruption across pelagic trophic structures..."
+                </p>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-primary font-semibold">4,890 tok</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary">menu_book</span>
+<span>7 verified DOIs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="View Full Monograph" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-on-error-container transition-colors" onclick="openDeleteModal('Impact of Microplastics on Marine Fauna and Pelagic Ecosystems', '10.1038/s41558-023-01824-w', '4,890 tokens', '2026-10-31 14:28 UTC')" title="Delete from Persistent Storage" type="button">
+<span class="material-symbols-outlined text-[18px] text-error">delete_forever</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container/60 transition-colors group">
+<td class="py-space-md px-space-lg align-top">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors">
+                  Comparative Efficacy of Solid-State vs Lithium-Ion Batteries
+                </div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">fingerprint</span>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">doi:10.1016/j.jpowsour.2024.2341</a>
+<span class="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant">J. Power Sources</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-on-surface">2026-10-31</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">12:10:45 UTC</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed line-clamp-2">
+                  "Systematic meta-analysis across Stanford electrolyte trials evaluating dendrite propagation kinetics under high-C charge cycles, proving solid ceramic barriers yield 42% lifecycle extension..."
+                </p>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-primary font-semibold">6,200 tok</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary">menu_book</span>
+<span>5 verified DOIs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="View Full Monograph" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-on-error-container transition-colors" onclick="openDeleteModal('Comparative Efficacy of Solid-State vs Lithium-Ion Batteries', '10.1016/j.jpowsour.2024.2341', '6,200 tokens', '2026-10-31 12:10 UTC')" title="Delete from Persistent Storage" type="button">
+<span class="material-symbols-outlined text-[18px] text-error">delete_forever</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container/60 transition-colors group">
+<td class="py-space-md px-space-lg align-top">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors">
+                  CRISPR-Cas9 Prime Editing Ethics in Agriculture and Crop Security
+                </div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">fingerprint</span>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">doi:10.1038/s41587-024-0219</a>
+<span class="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant">Nat Biotech</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-on-surface">2026-10-30</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">18:40:02 UTC</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed line-clamp-2">
+                  "Regulatory consensus framing synthetic prime insertion protocols against drought vulnerabilities, contrasting EU precautionary directives with North American genomic parity rulings..."
+                </p>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-primary font-semibold">3,950 tok</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary">menu_book</span>
+<span>4 verified DOIs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="View Full Monograph" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-on-error-container transition-colors" onclick="openDeleteModal('CRISPR-Cas9 Prime Editing Ethics in Agriculture and Crop Security', '10.1038/s41587-024-0219', '3,950 tokens', '2026-10-30 18:40 UTC')" title="Delete from Persistent Storage" type="button">
+<span class="material-symbols-outlined text-[18px] text-error">delete_forever</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container/60 transition-colors group">
+<td class="py-space-md px-space-lg align-top">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight group-hover:text-primary transition-colors">
+                  Quantum Error Mitigation Architectures in Intermediate-Scale NISQ Devices
+                </div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">fingerprint</span>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">doi:10.1103/PhysRevLett.132</a>
+<span class="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant">Phys Rev Lett</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-on-surface">2026-10-30</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">09:15:33 UTC</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<p class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed line-clamp-2">
+                  "Evaluating probabilistic zero-noise extrapolation and dual-frame gate decomposition benchmarks under thermal decoherence on 127-qubit superconducting transmon arrays..."
+                </p>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="font-metric-md text-metric-md text-primary font-semibold">5,410 tok</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-secondary">menu_book</span>
+<span>9 verified DOIs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="View Full Monograph" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-on-error-container transition-colors" onclick="openDeleteModal('Quantum Error Mitigation Architectures in Intermediate-Scale NISQ Devices', '10.1103/PhysRevLett.132', '5,410 tokens', '2026-10-30 09:15 UTC')" title="Delete from Persistent Storage" type="button">
+<span class="material-symbols-outlined text-[18px] text-error">delete_forever</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-space-lg py-space-sm bg-surface-container-lowest flex items-center justify-between">
+<div class="font-label-sm text-label-sm text-on-surface-variant">
+          Showing 1–4 of 128 persistent monographs
+        </div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded bg-surface-container text-on-surface-variant/40 cursor-not-allowed font-label-sm text-label-sm" disabled="" type="button">Prev</button>
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-bold" type="button">1</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-variant font-label-sm text-label-sm" type="button">2</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-variant font-label-sm text-label-sm" type="button">3</button>
+<button class="px-2 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-variant font-label-sm text-label-sm" type="button">Next</button>
+</div>
+</div>
+</div>
+</div>
+<!-- TAB 2 CONTENT: SEMANTIC CACHE -->
+<div class="hidden flex-col gap-gutter" id="tab-panel-2">
+<!-- Action Bar -->
+<div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-md bg-surface-container-low p-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-sm flex-1 max-w-xl">
+<div class="relative w-full flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container text-on-surface font-body-sm text-body-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:bg-surface-container-highest transition-colors placeholder:text-outline" placeholder="Search cached prompt embeddings or key hashes..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span>Global Eviction Policy:</span>
+<span class="text-primary font-mono font-bold">COSINE_THRESHOLD_0.90_LRU</span>
+</div>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-error-container hover:bg-error text-on-error-container hover:text-on-error font-title-sm text-title-sm transition-all shadow-sm" onclick="confirmPurgeAllCache()" type="button">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+<span>Clear entire cache</span>
+</button>
+</div>
+</div>
+<!-- Semantic Cache Table -->
+<div class="bg-surface-container-low rounded-xl shadow-md overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-space-md px-space-lg w-2/5">Matched Topic &amp; Prompt Query</th>
+<th class="py-space-md px-space-md">Cache Key Hash</th>
+<th class="py-space-md px-space-md">Similarity Score</th>
+<th class="py-space-md px-space-md">Created Time</th>
+<th class="py-space-md px-space-md">Time to Expiry (TTL)</th>
+<th class="py-space-md px-space-md text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="font-title-sm text-title-sm text-on-surface font-medium">impact of microplastics on marine life</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">Synthesized monograph response with 12 citations cached</div>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-primary font-mono">
+                0x8f9a234b...39ac
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">0.94 cosine</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant">
+                28m ago
+              </td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>3,240s remaining</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-variant hover:text-error text-on-surface-variant font-label-sm text-label-sm transition-colors" type="button">
+                  Invalidate
+                </button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="font-title-sm text-title-sm text-on-surface font-medium">what does bioaccumulation mean in pelagic fauna</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">Epistemological definition card and trophic scale diagram</div>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-primary font-mono">
+                0xd4b188c0...90ff
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">0.96 cosine</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant">
+                1h 14m ago
+              </td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>6,100s remaining</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-variant hover:text-error text-on-surface-variant font-label-sm text-label-sm transition-colors" type="button">
+                  Invalidate
+                </button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="font-title-sm text-title-sm text-on-surface font-medium">solid-state battery cathode degradation kinetics</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">Differential rate equations and electrolyte boundary analysis</div>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-primary font-mono">
+                0x33e790a1...22bc
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">0.92 cosine</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant">
+                2h 45m ago
+              </td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-error">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>1,450s remaining</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-variant hover:text-error text-on-surface-variant font-label-sm text-label-sm transition-colors" type="button">
+                  Invalidate
+                </button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="font-title-sm text-title-sm text-on-surface font-medium">CRISPR-Cas9 agriculture regulation EU vs US comparison</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">Statutory citation matrix with comparative timeline</div>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-primary font-mono">
+                0x71ba4f12...e810
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">0.95 cosine</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant">
+                3h 02m ago
+              </td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>2,980s remaining</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-variant hover:text-error text-on-surface-variant font-label-sm text-label-sm transition-colors" type="button">
+                  Invalidate
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-space-lg py-space-sm bg-surface-container-lowest flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Showing 4 of 380 active semantic cache keys</span>
+<button class="font-label-sm text-label-sm text-primary hover:underline" type="button">Download Invalidation Audit Log</button>
+</div>
+</div>
+</div>
+<!-- TAB 3 CONTENT: ACTIVE SESSIONS -->
+<div class="hidden flex-col gap-gutter" id="tab-panel-3">
+<!-- Compliance Info Banner -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex items-start gap-space-md">
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">policy</span>
+</div>
+<div class="flex-1">
+<div class="font-title-sm text-title-sm text-on-surface">Scientific Observability Ephemeral Retention Mandate</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          Conversation text is not shown here. For academic compliance and researcher data privacy, only volatile session metadata, turn counts, and TTL timers are tracked. In-flight context buffers are purged immediately upon socket disconnection or session expiry.
+        </p>
+</div>
+</div>
+<!-- Active Sessions Matrix -->
+<div class="bg-surface-container-low rounded-xl shadow-md overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-space-md px-space-lg">Session ID</th>
+<th class="py-space-md px-space-md">Turn Count</th>
+<th class="py-space-md px-space-md">Last Role</th>
+<th class="py-space-md px-space-md">Has Final Report</th>
+<th class="py-space-md px-space-md">TTL Remaining</th>
+<th class="py-space-md px-space-md text-right">Socket Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<span class="font-label-sm text-label-sm text-primary font-mono font-bold">sess-881c-f2</span>
+</div>
+</td>
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface">
+                4 turns
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">assistant</span>
+</td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary/20 text-primary font-semibold">Yes (Monograph generated)</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-secondary font-mono">
+                54m 00s
+              </td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Active WebSocket</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<span class="font-label-sm text-label-sm text-primary font-mono font-bold">sess-774d-e9</span>
+</div>
+</td>
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface">
+                2 turns
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase">user</span>
+</td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-secondary/10 text-secondary font-semibold">In Progress (Iterating)</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-secondary font-mono">
+                30m 20s
+              </td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Active WebSocket</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<span class="font-label-sm text-label-sm text-primary font-mono font-bold">sess-661e-a4</span>
+</div>
+</td>
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface">
+                6 turns
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">assistant</span>
+</td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary/20 text-primary font-semibold">Yes (Monograph generated)</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-secondary font-mono">
+                1h 21m 40s
+              </td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Dormant</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/60 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<span class="font-label-sm text-label-sm text-primary font-mono font-bold">sess-550b-c8</span>
+</div>
+</td>
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface">
+                1 turn
+              </td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase">user</span>
+</td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-secondary/10 text-secondary font-semibold">In Progress</span>
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-error font-mono">
+                04m 12s
+              </td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Active WebSocket</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-space-lg py-space-sm bg-surface-container-lowest flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">42 Active volatile sessions allocated across 3 cluster pods</span>
+<button class="font-label-sm text-label-sm text-secondary hover:underline" type="button">Flush Inactive Sockets</button>
+</div>
+</div>
+</div>
+<!-- DESTRUCTIVE CONFIRMATION MODAL (Controlled by JS, Visible on screen via trigger or togglable) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/80 backdrop-blur-md p-space-md transition-opacity" id="delete-modal-overlay">
+<div class="w-full max-w-xl bg-surface-container-low rounded-xl shadow-2xl overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200">
+<!-- Ambient Header Accent -->
+<div class="h-1 bg-gradient-to-r from-error via-tertiary-container to-error"></div>
+<!-- Modal Header -->
+<div class="px-space-lg pt-space-lg pb-space-sm flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-error-container/40 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error text-[22px]">warning</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Delete this report permanently?</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">CRITICAL ACTION :: IRREVOCABLE VECTOR PURGE</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors" onclick="closeDeleteModal()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="px-space-lg py-space-sm flex flex-col gap-space-md">
+<!-- Target Identification Box -->
+<div class="bg-surface-container rounded-lg p-space-md">
+<div class="font-headline-sm text-headline-sm text-on-surface font-serif" id="modal-report-title">
+            Impact of Microplastics on Marine Fauna and Pelagic Ecosystems
+          </div>
+<div class="flex flex-wrap items-center gap-x-space-sm gap-y-1 mt-space-xs font-label-sm text-label-sm text-on-surface-variant" id="modal-report-metadata">
+<span class="text-primary font-mono">DOI: 10.1038/s41558-023-01824-w</span>
+<span>•</span>
+<span>4,890 tokens</span>
+<span>•</span>
+<span>Created 2026-10-31 14:28 UTC</span>
+</div>
+</div>
+<!-- Warning Callout Box -->
+<div class="bg-error-container/20 rounded-lg p-space-md flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-[18px] shrink-0 mt-0.5">report_problem</span>
+<p class="font-body-sm text-body-sm text-on-error-container leading-relaxed">
+<strong class="font-semibold text-error">This action cannot be undone.</strong> This will permanently purge the synthesized monograph, vector embeddings in pgvector, and citation verification graph from persistent storage.
+          </p>
+</div>
+<!-- Verification Input Section -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-body-sm text-body-sm text-on-surface font-medium flex items-center justify-between" for="delete-confirmation-input">
+<span>To confirm deletion, type <code class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container text-error font-bold font-mono">CONFIRM</code> below:</span>
+<span class="font-label-sm text-label-sm text-outline" id="char-match-status">Awaiting input</span>
+</label>
+<input autocomplete="off" class="w-full bg-surface-container-lowest text-on-surface font-label-md text-label-md px-space-md py-2.5 rounded-lg focus:outline-none focus:bg-surface-container transition-all placeholder:text-outline/40 tracking-wider font-mono" id="delete-confirmation-input" oninput="handleDeleteInputChange(this.value)" placeholder='Type "CONFIRM"' type="text"/>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-space-lg py-space-md bg-surface-container-lowest flex items-center justify-between mt-space-sm">
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-title-sm transition-all" onclick="closeDeleteModal()" type="button">
+          Cancel
+        </button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-high text-outline cursor-not-allowed font-title-sm text-title-sm transition-all" disabled="" id="btn-confirm-delete" onclick="executeDeleteReport()" type="button">
+<span class="material-symbols-outlined text-[18px]">delete_forever</span>
+<span>Delete Report Permanently</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Client-Side Tab & Modal Logic -->
+<script>
+    function switchTab(index) {
+      // Toggle panels
+      const p1 = document.getElementById('tab-panel-1');
+      const p2 = document.getElementById('tab-panel-2');
+      const p3 = document.getElementById('tab-panel-3');
+
+      p1.classList.add('hidden');
+      p2.classList.add('hidden');
+      p3.classList.add('hidden');
+
+      // Toggle button classes
+      const b1 = document.getElementById('tab-btn-1');
+      const b2 = document.getElementById('tab-btn-2');
+      const b3 = document.getElementById('tab-btn-3');
+
+      const allBtns = [b1, b2, b3];
+      allBtns.forEach(b => {
+        b.className = 'tab-trigger flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-title-sm text-title-sm transition-all';
+        const badge = b.querySelector('span:last-child');
+        if (badge) {
+          badge.className = 'font-label-sm text-label-sm px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-semibold';
+        }
+      });
+
+      const activeBtn = document.getElementById('tab-btn-' + index);
+      activeBtn.className = 'tab-trigger flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-high text-primary font-title-sm text-title-sm transition-all shadow-sm';
+      const activeBadge = activeBtn.querySelector('span:last-child');
+      if (activeBadge) {
+        activeBadge.className = 'font-label-sm text-label-sm px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold';
+      }
+
+      if (index === 1) p1.classList.remove('hidden');
+      if (index === 2) p2.classList.remove('hidden');
+      if (index === 3) p3.classList.remove('hidden');
+    }
+
+    function openDeleteModal(title, doi, tokens, created) {
+      document.getElementById('modal-report-title').innerText = title;
+      document.getElementById('modal-report-metadata').innerHTML = `
+        <span class="text-primary font-mono">DOI: ${doi}</span>
+        <span>•</span>
+        <span>${tokens}</span>
+        <span>•</span>
+        <span>Created ${created}</span>
+      `;
+      const input = document.getElementById('delete-confirmation-input');
+      input.value = '';
+      handleDeleteInputChange('');
+      const modal = document.getElementById('delete-modal-overlay');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      input.focus();
+    }
+
+    function closeDeleteModal() {
+      const modal = document.getElementById('delete-modal-overlay');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleDeleteInputChange(val) {
+      const btn = document.getElementById('btn-confirm-delete');
+      const status = document.getElementById('char-match-status');
+      
+      if (val === 'CONFIRM') {
+        btn.disabled = false;
+        btn.className = 'flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-error text-on-error hover:bg-error-container hover:text-on-error-container font-title-sm text-title-sm transition-all shadow-md';
+        status.innerText = 'Matched';
+        status.className = 'font-label-sm text-label-sm text-primary font-bold';
+      } else {
+        btn.disabled = true;
+        btn.className = 'flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-high text-outline cursor-not-allowed font-title-sm text-title-sm transition-all';
+        status.innerText = val.length > 0 ? 'Verification mismatch' : 'Awaiting input';
+        status.className = val.length > 0 ? 'font-label-sm text-label-sm text-error' : 'font-label-sm text-label-sm text-outline';
+      }
+    }
+
+    function executeDeleteReport() {
+      const btn = document.getElementById('btn-confirm-delete');
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Purging pgvector...</span>';
+      setTimeout(() => {
+        closeDeleteModal();
+        alert('Monograph purged successfully from persistent pgvector index.');
+      }, 700);
+    }
+
+    function confirmPurgeAllCache() {
+      if (confirm('Clear entire semantic vector cache across all 380 keys? This will cause momentary cache misses.')) {
+        alert('Cache eviction triggered. 380 keys scheduled for immediate purge.');
+      }
+    }
+  </script>
+</div></main></div></body></html>

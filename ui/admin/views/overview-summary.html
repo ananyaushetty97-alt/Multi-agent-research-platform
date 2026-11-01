@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Newsreader:wght@400;500;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode: "class", theme: {extend: {colors: {"surface-container-highest": "#d7e4f3", "inverse-surface": "#26323d", "on-primary-fixed-variant": "#004f50", "on-tertiary-fixed-variant": "#832701", error: "#ba1a1a", "surface-container": "#e3efff", "surface-container-low": "#edf4ff", "secondary-fixed-dim": "#b6c9db", "surface-tint": "#0b6969", "surface-variant": "#d7e4f3", "primary-fixed": "#a3f0ef", "on-error-container": "#93000a", "on-tertiary-container": "#ffd1c2", surface: "#f7f9ff", secondary: "#4f6070", "on-surface-variant": "#3f4948", "on-tertiary": "#ffffff", "surface-bright": "#f7f9ff", "tertiary-fixed": "#ffdbd0", "on-primary": "#ffffff", "surface-dim": "#cfdbeb", "error-container": "#ffdad6", "on-surface": "#111d28", "on-secondary-container": "#536574", "on-error": "#ffffff", tertiary: "#852802", "surface-container-lowest": "#ffffff", "inverse-on-surface": "#e8f2ff", "on-secondary-fixed-variant": "#374958", "secondary-container": "#cfe2f5", "outline-variant": "#bec9c8", "on-primary-container": "#9be9e8", "surface-container-high": "#dde9f9", "tertiary-container": "#a53f19", "on-secondary-fixed": "#0a1d2b", "on-secondary": "#ffffff", "on-background": "#111d28", "primary-fixed-dim": "#87d4d3", background: "#f7f9ff", "secondary-fixed": "#d2e5f7", "on-primary-fixed": "#002020", "inverse-primary": "#87d4d3", "on-tertiary-fixed": "#390c00", "primary-container": "#0f6b6b", "tertiary-fixed-dim": "#ffb59d", primary: "#005151", outline: "#6f7979"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {gutter: "1rem", "gutter-lg": "1.5rem", "space-xs": "0.25rem", margin: "1rem", "margin-lg": "2.5rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.25rem", "space-md": "0.75rem", "margin-md": "1.5rem"}, fontFamily: {"headline-md": ["Newsreader"], "headline-sm": ["Newsreader"], "metric-md": ["JetBrains Mono"], "body-sm": ["Inter"], "headline-lg-mobile": ["Newsreader"], display: ["Inter"], "label-md": ["JetBrains Mono"], "metric-lg": ["JetBrains Mono"], "title-md": ["Inter"], "headline-lg": ["Newsreader"], "body-lg": ["Inter"], "title-sm": ["Inter"], "body-md": ["Inter"], "label-sm": ["JetBrains Mono"], headline: ["Inter"], body: ["Newsreader"], label: ["Inter"]}, fontSize: {"headline-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "500"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "500"}], "metric-md": ["18px", {lineHeight: "24px", letterSpacing: "-0.02em", fontWeight: "500"}], "body-sm": ["12px", {lineHeight: "18px", fontWeight: "400"}], "headline-lg-mobile": ["28px", {lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500"}], display: ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "400"}], "label-md": ["12px", {lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500"}], "metric-lg": ["28px", {lineHeight: "32px", letterSpacing: "-0.03em", fontWeight: "600"}], "title-md": ["16px", {lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600"}], "headline-lg": ["36px", {lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "400"}], "body-lg": ["16px", {lineHeight: "26px", fontWeight: "400"}], "title-sm": ["14px", {lineHeight: "20px", fontWeight: "600"}], "body-md": ["14px", {lineHeight: "22px", fontWeight: "400"}], "label-sm": ["10px", {lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "500"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-xl bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-primary text-[20px]">neurology</span></div><a href="../index.html" class="font-headline-sm text-headline-sm text-on-surface tracking-tight hover:text-primary transition-colors">Research Platform</a></div><span class="font-label-sm text-label-sm uppercase px-1.5 py-0.5 rounded-lg bg-surface-container-high text-primary tracking-wider">Admin</span></div><div class="px-gutter py-space-sm"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Observability Suite</span></div><nav class="flex flex-col gap-space-xs px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-title-sm"><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="overview-and-health" href="overview-health.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Overview &amp; Health</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-primary font-medium">5/5</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="metrics-and-latency" href="metrics-latency.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">speed</span><span>Metrics &amp; Latency</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">24h</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="agent-traces" href="agent-traces.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">account_tree</span><span>Agent Traces</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">1.4k</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="quality-and-judge" href="quality-judge.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">gavel</span><span>Quality &amp; Judge</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">9.12</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="safety-and-red-team" href="safety-red-team.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">security</span><span>Safety &amp; Red-Team</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">96%</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="memory-and-cache" href="memory-cache.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">memory</span><span>Memory &amp; Cache</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">380</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="audit-logs-and-config" href="audit-config.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">history_toggle_off</span><span>Audit Logs &amp; Config</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-secondary">Live</span></a></nav></div><div class="p-space-sm bg-surface-container-lowest"><div class="flex items-center justify-between px-space-md py-space-sm rounded-lg bg-surface-container mb-space-sm"><div class="flex items-center gap-space-sm"><div class="w-2 h-2 rounded-full bg-primary"></div><span class="font-label-sm text-label-sm text-on-surface-variant">us-east-sciphi • 4.2ms</span></div><span class="material-symbols-outlined text-outline text-[16px]">dns</span></div><button class="w-full flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="font-label-sm text-label-sm uppercase tracking-wider">Collapse Sidebar</span><span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-gutter-lg flex items-center justify-between"><div class="flex items-center gap-space-lg flex-1 max-w-xl"><div class="relative w-full max-w-sm"><span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span><input class="w-full bg-surface-container-lowest text-on-surface pl-9 pr-14 py-space-sm rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-outline" placeholder="Search telemetry, traces..." type="text"/><div class="absolute right-space-md top-1/2 -translate-y-1/2 flex items-center"><kbd class="font-label-sm text-label-sm text-outline bg-surface-container px-1 rounded">⌘K</kbd></div></div><div class="flex items-center gap-space-sm px-space-md py-space-xs rounded-full bg-surface-container-lowest"><div class="w-2 h-2 rounded-full bg-primary-fixed"></div><span class="font-label-sm text-label-sm text-on-surface">All systems healthy</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-md py-space-xs rounded-lg bg-surface-container-lowest"><div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div><span class="font-label-sm text-label-sm text-outline">Interval:</span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer"><option class="bg-surface-container">15s</option><option class="bg-surface-container">Paused</option><option class="bg-surface-container">5s</option><option class="bg-surface-container">30s</option><option class="bg-surface-container">60s</option></select></div><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">sync</span><span>Refresh now</span></button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">download</span><span>Export</span><span class="material-symbols-outlined text-[14px]">expand_more</span></button><div class="flex items-center gap-space-md pl-space-sm"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col text-left"><span class="font-title-sm text-title-sm text-on-surface leading-tight">admin</span><span class="font-label-sm text-label-sm text-outline leading-tight">Role: admin</span></div></div><button class="p-space-xs rounded-lg text-outline hover:text-error transition-colors" title="Logout" onclick="window.location.href='sign-in.html'"><span class="material-symbols-outlined text-[20px]">logout</span></button></div></div></header><main class="relative w-full pt-16 bg-surface px-gutter-lg py-margin-md"><div class="flex flex-col w-full gap-space-lg">
+<!-- Header Sub-bar & Quick Controls -->
+<section class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-wrap items-center gap-space-md">
+<div class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[16px] animate-pulse">radio_button_checked</span>
+<span class="font-label-sm text-label-sm tracking-widest font-semibold uppercase">Live Telemetry Link</span>
+</div>
+<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface">
+<span class="text-outline">NODE:</span>
+<span class="font-metric-md text-metric-md text-primary font-medium tracking-tight">SCIPHI-IAD-04</span>
+<span class="text-outline mx-1">/</span>
+<span class="text-outline">ZONE:</span>
+<span class="text-on-surface">US-EAST-1</span>
+<span class="text-outline mx-1">/</span>
+<span class="text-outline">PROVENANCE:</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-secondary text-label-sm font-label-sm">Strict Tier-0</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs font-label-sm">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-on-primary font-medium hover:bg-primary-fixed transition-colors shadow-sm" id="probeTriggerBtn">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+<span>Trigger Synthetic Probe</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">cleaning_services</span>
+<span>Flush Stale (48)</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>Dump Diagnostic (.tar.gz)</span>
+</button>
+<div class="hidden xl:flex items-center gap-1.5 pl-space-sm text-outline font-label-sm">
+<span>EPOCH:</span>
+<span class="font-metric-md text-metric-md text-on-surface-variant font-normal">1716382049.204</span>
+</div>
+</div>
+</section>
+<!-- Top Executive Metric Banner -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: System Vitality -->
+<div class="flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Cluster Vitality</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Synthesis Mesh</h2>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>100% HEALTHY</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-primary">5 / 5</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Active Substrates</span>
+</div>
+<div class="flex flex-col gap-1 pt-space-xs bg-surface-container-lowest/50 p-2 rounded">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Mean RTT Latency</span>
+<span class="font-metric-md text-metric-md text-on-surface">81.6 ms</span>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Failure Budget Remaining</span>
+<span class="text-primary font-medium">99.98%</span>
+</div>
+</div>
+</div>
+<!-- Card 2: 24h Request Volume & Load -->
+<div class="flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Throughput &amp; Demand</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">24h Monograph Volume</h2>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+14.2% DoD</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-on-surface">1,420</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Executed Runs</span>
+</div>
+<div class="flex flex-col gap-1 pt-space-xs bg-surface-container-lowest/50 p-2 rounded">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Active Pipe Threads</span>
+<span class="font-metric-md text-metric-md text-primary">18 Concurrent</span>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Compute Headroom</span>
+<span class="text-on-surface font-medium">32.4% Reserve</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Pipeline Violation Ratio -->
+<div class="flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Epistemic Alignment</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Violation Ratio</h2>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>WITHIN SLA</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-on-surface">1.76%</span>
+<span class="font-label-md text-label-md text-outline">Target &lt; 3.00%</span>
+</div>
+<div class="flex flex-col gap-1 pt-space-xs bg-surface-container-lowest/50 p-2 rounded">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Unrecovered Hallucinations</span>
+<span class="font-metric-md text-metric-md text-primary font-bold">0</span>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Judge Interventions</span>
+<span class="text-on-surface font-medium">25 / 1,420</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Semantic Cache Hit Rate -->
+<div class="flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Vector Compression</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Semantic Cache</h2>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">flash_on</span>
+<span>cos &gt; 0.94</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-metric-lg text-metric-lg text-secondary">26.76%</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Direct Hits</span>
+</div>
+<div class="flex flex-col gap-1 pt-space-xs bg-surface-container-lowest/50 p-2 rounded">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Roundtrips Saved</span>
+<span class="font-metric-md text-metric-md text-on-surface">380 Runs</span>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-outline">Tokens Pruned</span>
+<span class="text-primary font-medium">~2.41M Ext</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Core Dependencies Reachability Matrix -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-xs">
+<div>
+<span class="font-label-sm text-label-sm uppercase text-outline tracking-wider">Substrate Telemetry Matrix</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-headline-md">Core Dependencies Reachability</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+        Synchronous Probe Frequency: 2,500ms
+      </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-space-md">
+<!-- Dep 1: Redis Cache -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Redis Semantic</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>
+<span>Healthy</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">SEMANTIC &amp; STM STORE</span>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline">Latency</span>
+<span class="font-metric-md text-metric-md text-primary font-medium">1.2 ms</span>
+</div>
+<!-- Sparkline SVG -->
+<svg class="w-full h-8 overflow-visible text-primary" preserveaspectratio="none" viewbox="0 0 100 24">
+<polyline fill="none" points="0,18 15,16 30,19 45,14 60,15 75,12 90,13 100,12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex flex-col gap-1 text-label-sm font-label-sm bg-surface-container p-2 rounded">
+<div class="flex justify-between text-outline">
+<span>Endpoint:</span>
+<span class="text-on-surface font-metric-md text-label-sm">127.0.0.1:6379</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Engine:</span>
+<span class="text-on-surface">v7.2.4 Standalone</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Uptime:</span>
+<span class="text-primary font-medium">99.998%</span>
+</div>
+</div>
+</div>
+<!-- Dep 2: PostgreSQL + pgvector -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">pgvector LTM</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>
+<span>Healthy</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">EMBEDDING REPOSITORY</span>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline">Latency</span>
+<span class="font-metric-md text-metric-md text-primary font-medium">4.5 ms</span>
+</div>
+<svg class="w-full h-8 overflow-visible text-primary" preserveaspectratio="none" viewbox="0 0 100 24">
+<polyline fill="none" points="0,14 15,15 30,12 45,18 60,11 75,13 90,10 100,9" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex flex-col gap-1 text-label-sm font-label-sm bg-surface-container p-2 rounded">
+<div class="flex justify-between text-outline">
+<span>Vectors:</span>
+<span class="text-on-surface font-metric-md text-label-sm">142.0M (HNSW)</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Build:</span>
+<span class="text-on-surface">Postgres v16.2</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Uptime:</span>
+<span class="text-primary font-medium">99.995%</span>
+</div>
+</div>
+</div>
+<!-- Dep 3: Groq LPUs -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Groq Rack LPUs</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+<span>Operational</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">SYNTHESIS ENGINE</span>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline">Inference RTT</span>
+<span class="font-metric-md text-metric-md text-primary font-medium">180.4 ms</span>
+</div>
+<svg class="w-full h-8 overflow-visible text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<polyline fill="none" points="0,20 15,12 30,16 45,8 60,14 75,10 90,12 100,7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex flex-col gap-1 text-label-sm font-label-sm bg-surface-container p-2 rounded">
+<div class="flex justify-between text-outline">
+<span>Rate:</span>
+<span class="text-primary font-metric-md text-label-sm">272 tok/s</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Model:</span>
+<span class="text-on-surface truncate max-w-[100px]">Llama-3.3-70b</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Tier Quota:</span>
+<span class="text-on-surface">12.4% Used</span>
+</div>
+</div>
+</div>
+<!-- Dep 4: Ollama Local Fallback -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Ollama Host</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/15 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">pause_circle</span>
+<span>Standby</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">AIR-GAPPED FALLBACK</span>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline">Warm-Probe RTT</span>
+<span class="font-metric-md text-metric-md text-secondary font-medium">12.1 ms</span>
+</div>
+<svg class="w-full h-8 overflow-visible text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<polyline fill="none" points="0,15 20,15 40,15 60,15 80,14 100,15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex flex-col gap-1 text-label-sm font-label-sm bg-surface-container p-2 rounded">
+<div class="flex justify-between text-outline">
+<span>Weight:</span>
+<span class="text-on-surface">Mistral-7B-inst</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>VRAM Lock:</span>
+<span class="text-on-surface">5.2 GB Allocated</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>State:</span>
+<span class="text-secondary font-medium">100% Hot Sync</span>
+</div>
+</div>
+</div>
+<!-- Dep 5: Tavily Academic -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Tavily Scholarly</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">check</span>
+<span>Operational</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">EVIDENCE HARVESTER</span>
+</div>
+<div class="my-space-md">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-label-sm text-label-sm text-outline">HTTP Gateway</span>
+<span class="font-metric-md text-metric-md text-primary font-medium">210.0 ms</span>
+</div>
+<svg class="w-full h-8 overflow-visible text-primary" preserveaspectratio="none" viewbox="0 0 100 24">
+<polyline fill="none" points="0,10 15,16 30,12 45,21 60,14 75,18 90,9 100,11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></polyline>
+</svg>
+</div>
+<div class="flex flex-col gap-1 text-label-sm font-label-sm bg-surface-container p-2 rounded">
+<div class="flex justify-between text-outline">
+<span>Indices:</span>
+<span class="text-on-surface">arXiv, PubMed</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Err Rate:</span>
+<span class="text-primary font-medium">0.00% (24h)</span>
+</div>
+<div class="flex justify-between text-outline">
+<span>Quota:</span>
+<span class="text-on-surface">8.4k / 50k calls</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Multi-Agent Pipeline Health & Fallback Readiness -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase text-outline tracking-wider">Sequential Multi-Agent Orchestration</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-headline-md">Agent Pipe Orchestration &amp; Fallback Tiers</h2>
+</div>
+<div class="hidden sm:flex items-center gap-space-sm text-label-sm font-label-sm text-outline">
+<span>Deterministic Pipeline Mode</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="text-on-surface">Zero Hallucination Quorum</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Agent 01: Search Agent -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<span class="font-label-sm text-label-sm font-metric-md text-outline">STAGE 01</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">radar</span>
+<span>ONLINE</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1">Search Agent</h3>
+<span class="font-label-sm text-label-sm text-outline mb-space-md">Source Retriever &amp; Filter</span>
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container rounded mb-space-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Active Engine</span>
+<span class="text-on-surface font-medium">Tavily Scholarly v2</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Throughput</span>
+<span class="font-metric-md text-metric-md text-primary">18.4 qps</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Retrieval RTT</span>
+<span class="text-on-surface font-metric-md text-label-sm">820 ms</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Rerank Filter</span>
+<span class="text-primary font-medium">Cohere v3.5 (Active)</span>
+</div>
+</div>
+<div class="mt-auto flex items-center justify-between pt-space-xs text-label-sm font-label-sm">
+<span class="text-outline">Failover Engine:</span>
+<span class="text-secondary font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">cached</span>
+            arXiv Semantic (Hot)
+          </span>
+</div>
+</div>
+<!-- Agent 02: Summarize Agent -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<span class="font-label-sm text-label-sm font-metric-md text-outline">STAGE 02</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[12px] animate-pulse">waves</span>
+<span>STREAMING</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1">Summarize Agent</h3>
+<span class="font-label-sm text-label-sm text-outline mb-space-md">Context Compressor &amp; Distiller</span>
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container rounded mb-space-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Active Engine</span>
+<span class="text-on-surface font-medium truncate max-w-[120px]">Groq Llama-3.3</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Throughput</span>
+<span class="font-metric-md text-metric-md text-primary">42.1 tps</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Context Stride</span>
+<span class="text-on-surface font-metric-md text-label-sm">8k Token Window</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Compression</span>
+<span class="text-primary font-medium">4.8 : 1 Density</span>
+</div>
+</div>
+<div class="mt-auto flex items-center justify-between pt-space-xs text-label-sm font-label-sm">
+<span class="text-outline">Failover Engine:</span>
+<span class="text-secondary font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">memory</span>
+            Ollama Mistral (Warm)
+          </span>
+</div>
+</div>
+<!-- Agent 03: Write Agent -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<span class="font-label-sm text-label-sm font-metric-md text-outline">STAGE 03</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">edit_note</span>
+<span>DRAFTING</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1">Write Agent</h3>
+<span class="font-label-sm text-label-sm text-outline mb-space-md">Scientific Monograph Synthesizer</span>
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container rounded mb-space-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Active Engine</span>
+<span class="text-on-surface font-medium truncate max-w-[120px]">Groq Llama-3.3</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Throughput</span>
+<span class="font-metric-md text-metric-md text-primary">89.2 tps</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Citation Lock</span>
+<span class="text-primary font-medium">&gt; 92.5% Direct</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Target Style</span>
+<span class="text-on-surface">Oxford Academic</span>
+</div>
+</div>
+<div class="mt-auto flex items-center justify-between pt-space-xs text-label-sm font-label-sm">
+<span class="text-outline">Failover Engine:</span>
+<span class="text-outline font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">ac_unit</span>
+            DeepSeek-V3 (Cold)
+          </span>
+</div>
+</div>
+<!-- Agent 04: Verify Agent -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<span class="font-label-sm text-label-sm font-metric-md text-outline">STAGE 04</span>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">gavel</span>
+<span>CROSS-VAL</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1">Verify Agent</h3>
+<span class="font-label-sm text-label-sm text-outline mb-space-md">LLM-as-a-Judge Peer Reviewer</span>
+<div class="flex flex-col gap-2 p-space-sm bg-surface-container rounded mb-space-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Active Arbiter</span>
+<span class="text-on-surface font-medium truncate max-w-[120px]">Claude-3.5-Sonnet</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Consensus</span>
+<span class="font-metric-md text-metric-md text-primary">99.4% (n=3)</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Hallucination</span>
+<span class="text-primary font-medium">&lt; 0.21% Detected</span>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm">
+<span class="text-outline">Verification</span>
+<span class="text-on-surface">Self-Consistency</span>
+</div>
+</div>
+<div class="mt-auto flex items-center justify-between pt-space-xs text-label-sm font-label-sm">
+<span class="text-outline">Failover Engine:</span>
+<span class="text-outline font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">code</span>
+            Regex Rule Heuristics
+          </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Host Node Telemetry & Live Synthetic Probes Stream -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md mb-space-lg">
+<!-- Left Column: Hardware Subsystem Telemetry -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">memory</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Bare-Metal Node Resources</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline font-metric-md">4d 18h Uptime</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm my-space-xs font-label-sm text-label-sm">
+<div class="bg-surface-container p-2.5 rounded flex flex-col">
+<span class="text-outline">OS Kernel</span>
+<span class="text-on-surface font-metric-md text-label-md mt-0.5">6.8.0-45-generic</span>
+<span class="text-outline mt-1">Ubuntu 24.04 LTS</span>
+</div>
+<div class="bg-surface-container p-2.5 rounded flex flex-col">
+<span class="text-outline">Interpreter</span>
+<span class="text-on-surface font-metric-md text-label-md mt-0.5">CPython 3.11.9</span>
+<span class="text-outline mt-1">JIT enabled</span>
+</div>
+</div>
+<!-- Host RAM Metric -->
+<div class="mt-space-sm flex flex-col gap-1">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-outline">Host DDR5 Memory (ECC Registered)</span>
+<span class="font-metric-md text-metric-md text-on-surface">142.1 / 512.0 GB (27.7%)</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 27.7%"></div>
+</div>
+</div>
+<!-- Accelerator Farm Details -->
+<div class="mt-space-md flex flex-col gap-space-xs">
+<div class="flex justify-between items-center">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Accelerator Fabric (4x SXM5)</span>
+<span class="font-label-sm text-label-sm text-primary font-medium">Mean Temp: 48°C</span>
+</div>
+<div class="flex flex-col gap-1.5 p-space-sm bg-surface-container rounded">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-on-surface">NVIDIA H100 80GB SXM [0..3]</span>
+<span class="font-metric-md text-metric-md text-primary">207.3 / 320 GB VRAM</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 64.8%"></div>
+</div>
+<div class="flex justify-between items-center text-outline font-label-sm text-label-sm pt-1">
+<span>SRAM Interconnect: NVLink 900 GB/s</span>
+<span>Cluster Util: 64.8%</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md flex items-center justify-between text-outline font-label-sm text-label-sm pt-space-xs">
+<span>Thermal Throttling: INACTIVE</span>
+<span>PCIe Correctable Errors: 0</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Live Synthetic Probe Console Stream -->
+<div class="lg:col-span-7 flex flex-col rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-low rounded-t-xl">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Continuous Telemetry Ingestion</span>
+<span class="font-label-sm text-label-sm text-outline">|</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-metric-md">stdout/probes.log</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors" id="clearStreamBtn">
+            Clear Buffer
+          </button>
+<div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span>Auto-Scroll Lock</span>
+</div>
+</div>
+</div>
+<!-- Real Console Area -->
+<div class="flex-1 p-space-md font-metric-md text-label-sm text-on-surface-variant space-y-1.5 overflow-y-auto max-h-[340px] select-text" id="probeConsole">
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:10.012</span>
+<span class="text-primary font-bold">[PROBE:OK]</span>
+<span class="text-on-surface">redis:6379 PING -&gt; PONG (latency=1.18ms, keys=380, mem=14.2MB)</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:11.450</span>
+<span class="text-primary font-bold">[PROBE:OK]</span>
+<span class="text-on-surface">pgvector:5432 IVFFlat cosine KNN (dim=1536, k=10) executed in 4.42ms</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:12.890</span>
+<span class="text-secondary font-bold">[WARM_SYNC]</span>
+<span class="text-on-surface-variant">ollama:11434 /api/show Mistral-7B warm weight verification checksum valid</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:14.215</span>
+<span class="text-primary font-bold">[PROBE:OK]</span>
+<span class="text-on-surface">groq:api.groq.com /chat/completions dummy-payload 32tok generation (178ms)</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:15.932</span>
+<span class="text-primary font-bold">[PROBE:OK]</span>
+<span class="text-on-surface">tavily:api.tavily.com GET /health 200 OK (latency=208ms, quota_remaining=41,580)</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:17.004</span>
+<span class="text-primary font-bold">[JUDGE:AGREE]</span>
+<span class="text-on-surface">Stage 04 verify agent consensus score=0.992 over claim bundle #8942-A</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-outline shrink-0">12:34:18.234</span>
+<span class="text-primary font-bold">[PROBE:OK]</span>
+<span class="text-on-surface">H100 PCIe BAR-1 registers synchronized. ECC single-bit error rate: 0/hr</span>
+</div>
+</div>
+<div class="px-space-md py-2 bg-surface-container-low rounded-b-xl flex justify-between items-center text-outline font-label-sm text-label-sm">
+<span class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          Stream filter: ALL CHANNELS
+        </span>
+<span class="font-metric-md">Buffer: 7 / 2,048 lines</span>
+</div>
+</div>
+</section>
+</div>
+<script>
+  (function() {
+    const consoleEl = document.getElementById('probeConsole');
+    const triggerBtn = document.getElementById('probeTriggerBtn');
+    const clearBtn = document.getElementById('clearStreamBtn');
+
+    if (clearBtn && consoleEl) {
+      clearBtn.addEventListener('click', () => {
+        consoleEl.innerHTML = `
+          <div class="flex items-start gap-2 text-outline">
+            <span>-- Telemetry log buffer cleared by administrator --</span>
+          </div>
+        `;
+      });
+    }
+
+    if (triggerBtn && consoleEl) {
+      triggerBtn.addEventListener('click', () => {
+        const time = new Date().toISOString().substring(11, 23);
+        const probeHtml = `
+          <div class="flex items-start gap-2 animate-pulse">
+            <span class="text-outline shrink-0">${time}</span>
+            <span class="text-primary font-bold">[MANUAL:EXEC]</span>
+            <span class="text-primary-fixed">Synthetic pipeline handshake emitted to all 5 dependencies... OK (32ms)</span>
+          </div>
+        `;
+        consoleEl.insertAdjacentHTML('beforeend', probeHtml);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      });
+    }
+  })();
+</script></main></div></body></html>

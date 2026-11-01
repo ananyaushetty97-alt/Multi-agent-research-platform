@@ -13,7 +13,7 @@ from memory.config import settings
 class SessionStore:
     def __init__(self, redis_client: redis.Redis | None = None, ttl_seconds: int | None = None):
         self._client = redis_client or redis.Redis.from_url(
-            settings.redis_url, decode_responses=True
+            settings.redis_url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2
         )
         self._ttl = ttl_seconds if ttl_seconds is not None else settings.stm_ttl_seconds
 

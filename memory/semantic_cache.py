@@ -28,7 +28,7 @@ class SemanticCache:
         ttl_seconds: int | None = None,
     ):
         self._client = redis_client or redis.Redis.from_url(
-            settings.redis_url, decode_responses=True
+            settings.redis_url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2
         )
         self._threshold = threshold if threshold is not None else settings.cache_similarity_threshold
         self._ttl = ttl_seconds if ttl_seconds is not None else settings.cache_ttl_seconds

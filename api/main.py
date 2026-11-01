@@ -17,10 +17,17 @@ from guardrails.checks import check_input, check_output, MIN_REPORT_LEN
 from evaluation.judge import grade_report, score_history
 from api import integration as parts
 
+from admin_backend.router import admin_router
+from admin_backend.services.trace_service import trace_service
+from admin_backend.services.metrics_service import metrics_service
+from admin_backend.services.safety_service import safety_service
+from admin_backend.models.traces import RequestOutcome
+from admin_backend.models.safety import GuardCheckType
+
 log = logging.getLogger("api")
 app = FastAPI(
     title="Multi-Agent Research Platform",
-    description="Guardrails + semantic cache + LangGraph agents + LLM-as-judge",
+    description="Guardrails + semantic cache + LangGraph agents + LLM-as-judge + Admin Mode",
     version="0.3.0",
 )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -76,6 +83,8 @@ def health():
 def generate(req: TopicRequest):
     start = time.time()
     session_id = req.session_id or str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
+    trace = trace_service.start_trace(request_id=request_id, session_id=session_id, topic=req.topic)
 
     try:
         history = parts.get_history(session_id)
@@ -87,6 +96,21 @@ def generate(req: TopicRequest):
     # 1. Input guardrail (follow-ups skip the off-topic check)
     ok, reason = check_input(req.topic, is_followup=is_followup)
     if not ok:
+        safety_service.record_blocked_event(
+            check_type=GuardCheckType.INPUT_RULE,
+            reason=reason,
+            raw_text=req.topic,
+            request_id=request_id,
+            session_id=session_id,
+        )
+        trace.complete(outcome=RequestOutcome.BLOCKED, error_category="guardrail_input_blocked")
+        metrics_service.record_request(
+            request_id=request_id,
+            endpoint="/generate",
+            method="POST",
+            status_code=400,
+            duration_ms=round((time.time() - start) * 1000, 2),
+        )
         raise HTTPException(status_code=400, detail=reason)
 
     # 2. Semantic cache: first message of a conversation only
@@ -104,6 +128,20 @@ def generate(req: TopicRequest):
             else:
                 c_report, c_score, c_results = parts.report_to_text(cached), None, None
             _remember(session_id, req.topic, c_report, c_results)
+            trace.complete(
+                outcome=RequestOutcome.SUCCESS,
+                cache_status="hit",
+                sources_count=len(c_results or []),
+                overall_score=c_score.get("overall") if isinstance(c_score, dict) else None,
+            )
+            metrics_service.record_request(
+                request_id=request_id,
+                endpoint="/generate",
+                method="POST",
+                status_code=200,
+                duration_ms=round((time.time() - start) * 1000, 2),
+                cache_hit=True,
+            )
             return ReportResponse(session_id=session_id, topic=req.topic, intent="new_research",
                                   report=c_report, sources=_sources_from(c_results), cached=True,
                                   score=c_score, seconds=round(time.time() - start, 2))
@@ -112,7 +150,16 @@ def generate(req: TopicRequest):
     try:
         result = parts.run_pipeline(req.topic, history, session_id)
     except Exception as e:
-        if "LLMUnavailable" in type(e).__name__ or "No gateway found" in str(e):
+        status_code = 503 if ("LLMUnavailable" in type(e).__name__ or "No gateway found" in str(e)) else 500
+        trace.complete(outcome=RequestOutcome.ERROR, error_category="pipeline_error")
+        metrics_service.record_request(
+            request_id=request_id,
+            endpoint="/generate",
+            method="POST",
+            status_code=status_code,
+            duration_ms=round((time.time() - start) * 1000, 2),
+        )
+        if status_code == 503:
             raise HTTPException(status_code=503, detail=f"LLM unavailable: {e}")
         log.exception("pipeline failed")
         raise HTTPException(status_code=500, detail=f"Pipeline error: {e}")
@@ -126,6 +173,21 @@ def generate(req: TopicRequest):
     # 4. Output guardrail (short answers are fine for questions)
     ok, reason = check_output(report, min_len=10 if intent == "question" else MIN_REPORT_LEN)
     if not ok:
+        safety_service.record_blocked_event(
+            check_type=GuardCheckType.OUTPUT_RULE,
+            reason=reason,
+            raw_text=report[:160],
+            request_id=request_id,
+            session_id=session_id,
+        )
+        trace.complete(outcome=RequestOutcome.BLOCKED, error_category="guardrail_output_blocked")
+        metrics_service.record_request(
+            request_id=request_id,
+            endpoint="/generate",
+            method="POST",
+            status_code=422,
+            duration_ms=round((time.time() - start) * 1000, 2),
+        )
         raise HTTPException(status_code=422, detail=reason)
 
     # 5. Grading against the ORIGINAL topic; skipped for plain Q&A
@@ -143,6 +205,27 @@ def generate(req: TopicRequest):
         except Exception as e:
             log.warning(f"save_to_ltm failed: {e}")
 
+    # Trace completion & metric logging
+    trace.complete(
+        outcome=RequestOutcome.SUCCESS,
+        sources_count=len(search_results or []),
+        overall_score=score.get("overall") if isinstance(score, dict) else None,
+        cache_status="miss",
+        provider="groq",
+        model="qwen/qwen3.8-27b",
+    )
+    metrics_service.record_request(
+        request_id=request_id,
+        endpoint="/generate",
+        method="POST",
+        status_code=200,
+        duration_ms=round((time.time() - start) * 1000, 2),
+        cache_hit=False,
+        search_called=(intent != "question"),
+        provider_used="groq",
+        model_used="qwen/qwen3.8-27b",
+    )
+
     return ReportResponse(session_id=session_id, topic=req.topic, intent=intent, report=report,
                           sources=_sources_from(search_results), cached=False, score=score,
                           seconds=round(time.time() - start, 2))
@@ -153,6 +236,12 @@ def scores(limit: int = 20):
     """Recent grading results."""
     return score_history(limit)
 
+
+# ---------------------------------------------------------------------------
+# Mount the Admin Backend router (accessible at both /api/admin and /admin)
+# ---------------------------------------------------------------------------
+app.include_router(admin_router, prefix="/api")
+app.include_router(admin_router)
 
 # ---------------------------------------------------------------------------
 # Serve the front-end (the ui/ folder) at http://localhost:8000

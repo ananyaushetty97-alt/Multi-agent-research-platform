@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Newsreader:wght@400;500;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode: "class", theme: {extend: {colors: {"surface-container-highest": "#d7e4f3", "inverse-surface": "#26323d", "on-primary-fixed-variant": "#004f50", "on-tertiary-fixed-variant": "#832701", error: "#ba1a1a", "surface-container": "#e3efff", "surface-container-low": "#edf4ff", "secondary-fixed-dim": "#b6c9db", "surface-tint": "#0b6969", "surface-variant": "#d7e4f3", "primary-fixed": "#a3f0ef", "on-error-container": "#93000a", "on-tertiary-container": "#ffd1c2", surface: "#f7f9ff", secondary: "#4f6070", "on-surface-variant": "#3f4948", "on-tertiary": "#ffffff", "surface-bright": "#f7f9ff", "tertiary-fixed": "#ffdbd0", "on-primary": "#ffffff", "surface-dim": "#cfdbeb", "error-container": "#ffdad6", "on-surface": "#111d28", "on-secondary-container": "#536574", "on-error": "#ffffff", tertiary: "#852802", "surface-container-lowest": "#ffffff", "inverse-on-surface": "#e8f2ff", "on-secondary-fixed-variant": "#374958", "secondary-container": "#cfe2f5", "outline-variant": "#bec9c8", "on-primary-container": "#9be9e8", "surface-container-high": "#dde9f9", "tertiary-container": "#a53f19", "on-secondary-fixed": "#0a1d2b", "on-secondary": "#ffffff", "on-background": "#111d28", "primary-fixed-dim": "#87d4d3", background: "#f7f9ff", "secondary-fixed": "#d2e5f7", "on-primary-fixed": "#002020", "inverse-primary": "#87d4d3", "on-tertiary-fixed": "#390c00", "primary-container": "#0f6b6b", "tertiary-fixed-dim": "#ffb59d", primary: "#005151", outline: "#6f7979"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {gutter: "1rem", "gutter-lg": "1.5rem", "space-xs": "0.25rem", margin: "1rem", "margin-lg": "2.5rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.25rem", "space-md": "0.75rem", "margin-md": "1.5rem"}, fontFamily: {"headline-md": ["Newsreader"], "headline-sm": ["Newsreader"], "metric-md": ["JetBrains Mono"], "body-sm": ["Inter"], "headline-lg-mobile": ["Newsreader"], display: ["Inter"], "label-md": ["JetBrains Mono"], "metric-lg": ["JetBrains Mono"], "title-md": ["Inter"], "headline-lg": ["Newsreader"], "body-lg": ["Inter"], "title-sm": ["Inter"], "body-md": ["Inter"], "label-sm": ["JetBrains Mono"], headline: ["Inter"], body: ["Newsreader"], label: ["Inter"]}, fontSize: {"headline-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "500"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "500"}], "metric-md": ["18px", {lineHeight: "24px", letterSpacing: "-0.02em", fontWeight: "500"}], "body-sm": ["12px", {lineHeight: "18px", fontWeight: "400"}], "headline-lg-mobile": ["28px", {lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500"}], display: ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "400"}], "label-md": ["12px", {lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500"}], "metric-lg": ["28px", {lineHeight: "32px", letterSpacing: "-0.03em", fontWeight: "600"}], "title-md": ["16px", {lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600"}], "headline-lg": ["36px", {lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "400"}], "body-lg": ["16px", {lineHeight: "26px", fontWeight: "400"}], "title-sm": ["14px", {lineHeight: "20px", fontWeight: "600"}], "body-md": ["14px", {lineHeight: "22px", fontWeight: "400"}], "label-sm": ["10px", {lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "500"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-xl bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-primary text-[20px]">neurology</span></div><a href="../index.html" class="font-headline-sm text-headline-sm text-on-surface tracking-tight hover:text-primary transition-colors">Research Platform</a></div><span class="font-label-sm text-label-sm uppercase px-1.5 py-0.5 rounded-lg bg-surface-container-high text-primary tracking-wider">Admin</span></div><div class="px-gutter py-space-sm"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Observability Suite</span></div><nav class="flex flex-col gap-space-xs px-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-title-sm"><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm rounded-lg transition-colors bg-primary-container text-on-primary-container font-title-sm" data-path="overview-and-health" href="overview-health.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Overview &amp; Health</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-primary font-medium">5/5</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="metrics-and-latency" href="metrics-latency.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">speed</span><span>Metrics &amp; Latency</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">24h</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="agent-traces" href="agent-traces.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">account_tree</span><span>Agent Traces</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">1.4k</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="quality-and-judge" href="quality-judge.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">gavel</span><span>Quality &amp; Judge</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">9.12</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="safety-and-red-team" href="safety-red-team.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">security</span><span>Safety &amp; Red-Team</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">96%</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="memory-and-cache" href="memory-cache.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">memory</span><span>Memory &amp; Cache</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">380</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-title-sm text-title-sm" data-path="audit-logs-and-config" href="audit-config.html"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">history_toggle_off</span><span>Audit Logs &amp; Config</span></div><span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-secondary">Live</span></a></nav></div><div class="p-space-sm bg-surface-container-lowest"><div class="flex items-center justify-between px-space-md py-space-sm rounded-lg bg-surface-container mb-space-sm"><div class="flex items-center gap-space-sm"><div class="w-2 h-2 rounded-full bg-primary"></div><span class="font-label-sm text-label-sm text-on-surface-variant">us-east-sciphi • 4.2ms</span></div><span class="material-symbols-outlined text-outline text-[16px]">dns</span></div><button class="w-full flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="font-label-sm text-label-sm uppercase tracking-wider">Collapse Sidebar</span><span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-gutter-lg flex items-center justify-between"><div class="flex items-center gap-space-lg flex-1 max-w-xl"><div class="relative w-full max-w-sm"><span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span><input class="w-full bg-surface-container-lowest text-on-surface pl-9 pr-14 py-space-sm rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-outline" placeholder="Search telemetry, traces..." type="text"/><div class="absolute right-space-md top-1/2 -translate-y-1/2 flex items-center"><kbd class="font-label-sm text-label-sm text-outline bg-surface-container px-1 rounded">⌘K</kbd></div></div><div class="flex items-center gap-space-sm px-space-md py-space-xs rounded-full bg-surface-container-lowest"><div class="w-2 h-2 rounded-full bg-primary-fixed"></div><span class="font-label-sm text-label-sm text-on-surface">All systems healthy</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-md py-space-xs rounded-lg bg-surface-container-lowest"><div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div><span class="font-label-sm text-label-sm text-outline">Interval:</span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer"><option class="bg-surface-container">15s</option><option class="bg-surface-container">Paused</option><option class="bg-surface-container">5s</option><option class="bg-surface-container">30s</option><option class="bg-surface-container">60s</option></select></div><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">sync</span><span>Refresh now</span></button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">download</span><span>Export</span><span class="material-symbols-outlined text-[14px]">expand_more</span></button><div class="flex items-center gap-space-md pl-space-sm"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col text-left"><span class="font-title-sm text-title-sm text-on-surface leading-tight">admin</span><span class="font-label-sm text-label-sm text-outline leading-tight">Role: admin</span></div></div><button class="p-space-xs rounded-lg text-outline hover:text-error transition-colors" title="Logout" onclick="window.location.href='sign-in.html'"><span class="material-symbols-outlined text-[20px]">logout</span></button></div></div></header><main class="relative w-full pt-16 bg-surface px-gutter-lg py-margin-md"><div class="flex flex-col w-full gap-space-xl">
+<!-- Top Banner Section: Executive Health Telemetry & Probe Controls -->
+<section class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-xl">
+<div class="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-surface-container-high/40 pointer-events-none"></div>
+<div class="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<div class="relative p-gutter-lg flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary px-2 py-0.5 rounded bg-surface-container-highest">System Verification Matrix</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+            Telemetry Stream Active
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Overview &amp; System Health</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+          Real-time dependency reachability, runtime infrastructure vitals, and diagnostic fault recovery.
+        </p>
+</div>
+<!-- Live State Cluster & Interactive Bar -->
+<div class="flex flex-wrap items-center gap-space-md">
+<div class="flex items-center gap-space-md bg-surface-container-lowest/80 px-space-md py-space-sm rounded-lg shadow-sm">
+<div class="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_rgba(79,219,200,0.8)]"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Overall Topology Status</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-primary">All 5 Core Systems Tracked</span>
+<span class="font-label-sm text-label-sm text-secondary px-1.5 rounded bg-surface-container-high">1 Degraded</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest/80 px-space-sm py-space-xs rounded-lg">
+<span class="material-symbols-outlined text-outline text-[18px] ml-1">history</span>
+<span class="font-label-sm text-label-sm text-outline pl-1">Last Checked:</span>
+<span class="font-metric-md text-metric-md text-on-surface pl-1" id="lastCheckTime">14s ago</span>
+<span class="font-label-sm text-label-sm text-outline"> (14:38:02 UTC)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container font-title-sm text-title-sm hover:bg-primary transition-colors shadow-sm" id="triggerProbeBtn">
+<span class="material-symbols-outlined text-[18px]">satellite_alt</span>
+<span>Trigger Synthetic Probe</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-title-sm text-title-sm shadow-sm" title="Download Diagnostic Snapshot">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+<span>Dump (.tar.gz)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Context Ribbon -->
+<div class="px-gutter-lg py-space-xs bg-surface-container-lowest/60 flex flex-wrap items-center justify-between gap-space-md text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-space-lg">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Cluster Latency: ~38.6ms (P95)</span>
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Vector Storage Read: IVFFlat Valid</span>
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Local Worker Fallback: Offline</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span>Synthetic Probe Cadence:</span>
+<select class="bg-surface-container px-2 py-0.5 rounded text-primary font-label-sm text-label-sm focus:outline-none cursor-pointer">
+<option>Every 15s (Strict)</option>
+<option>Every 5s (Diagnostics)</option>
+<option>Every 60s (Nominal)</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Section 2: Five Dependency Telemetry Cards -->
+<section class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">hub</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Subsystem Verifications &amp; Service Probes</h2>
+</div>
+<span class="font-label-sm text-label-sm text-outline">HTTP / gRPC / TCP Socket Reachability</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-space-md">
+<!-- 1. Redis -->
+<div class="relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md group">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Cache Tier</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+              Healthy
+            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Redis</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Standalone mode • Semantic cache enabled</p>
+</div>
+</div>
+<div class="mt-space-lg pt-space-sm bg-surface-container-lowest/50 -mx-space-md -mb-space-md p-space-md rounded-b-xl flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-label-sm text-label-sm text-outline">Probe RTT</span>
+<span class="font-metric-md text-metric-md text-primary font-semibold">1.2 ms</span>
+</div>
+<!-- Sparkline SVG -->
+<div class="h-6 w-full flex items-end">
+<svg class="w-full h-5 text-primary opacity-80" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,15 L20,12 L40,16 L60,11 L80,14 L100,10" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>socket://redis:6379</span>
+<span>checked 4s ago</span>
+</div>
+</div>
+</div>
+<!-- 2. PostgreSQL + pgvector -->
+<div class="relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md group">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Primary Storage</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+              Healthy
+            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">PostgreSQL + pgvector</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">pgvector enabled • IVFFlat 142M indexed</p>
+</div>
+</div>
+<div class="mt-space-lg pt-space-sm bg-surface-container-lowest/50 -mx-space-md -mb-space-md p-space-md rounded-b-xl flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-label-sm text-label-sm text-outline">Query Latency</span>
+<span class="font-metric-md text-metric-md text-primary font-semibold">4.5 ms</span>
+</div>
+<!-- Sparkline SVG -->
+<div class="h-6 w-full flex items-end">
+<svg class="w-full h-5 text-primary opacity-80" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,13 L20,15 L40,11 L60,13 L80,9 L100,12" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>pool: 32/64 conn</span>
+<span>checked 6s ago</span>
+</div>
+</div>
+</div>
+<!-- 3. Groq LLM API -->
+<div class="relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md group">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Inference Cloud</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+              Operational
+            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Groq LLM API</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">llama-3.3-70b-versatile (272 tok/s)</p>
+</div>
+</div>
+<div class="mt-space-lg pt-space-sm bg-surface-container-lowest/50 -mx-space-md -mb-space-md p-space-md rounded-b-xl flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-label-sm text-label-sm text-outline">TTFT Response</span>
+<span class="font-metric-md text-metric-md text-primary font-semibold">180.4 ms</span>
+</div>
+<!-- Sparkline SVG -->
+<div class="h-6 w-full flex items-end">
+<svg class="w-full h-5 text-secondary opacity-80" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,11 L20,10 L40,16 L60,8 L80,12 L100,9" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>https://api.groq.com</span>
+<span>checked 8s ago</span>
+</div>
+</div>
+</div>
+<!-- 4. Ollama Local Fallback (CRITICAL/FAILING STATE) -->
+<div class="relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low shadow-md group overflow-hidden">
+<div class="absolute inset-0 bg-tertiary-container/10 pointer-events-none"></div>
+<div class="relative flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-tertiary font-medium">Local Fallback</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-error-container text-error font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+              Unreachable
+            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Ollama Daemon</h3>
+<p class="font-body-sm text-body-sm text-tertiary mt-0.5 leading-snug">
+              Connection refused: 127.0.0.1:11434 • Daemon unresponsive
+            </p>
+</div>
+</div>
+<div class="relative mt-space-lg pt-space-sm bg-surface-container-lowest/80 -mx-space-md -mb-space-md p-space-md rounded-b-xl flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-label-sm text-label-sm text-error">Socket Status</span>
+<span class="font-metric-md text-metric-md text-error font-semibold tracking-wide">ERR (Timeout)</span>
+</div>
+<div class="h-6 w-full flex items-center">
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-full h-full bg-error animate-pulse"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-error font-label-sm text-label-sm">
+<span>checked 2s ago (Failed)</span>
+<button class="px-2 py-0.5 rounded bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm hover:brightness-125 transition-all">
+              Retry
+            </button>
+</div>
+</div>
+</div>
+<!-- 5. Tavily Search -->
+<div class="relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md group">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Web Grounding</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">travel_explore</span>
+              Operational
+            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Tavily Search</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">service: academic_search • Quota 8.4k / 50k</p>
+</div>
+</div>
+<div class="mt-space-lg pt-space-sm bg-surface-container-lowest/50 -mx-space-md -mb-space-md p-space-md rounded-b-xl flex flex-col gap-space-xs">
+<div class="flex items-baseline justify-between">
+<span class="font-label-sm text-label-sm text-outline">Search API RTT</span>
+<span class="font-metric-md text-metric-md text-primary font-semibold">210.0 ms</span>
+</div>
+<!-- Sparkline SVG -->
+<div class="h-6 w-full flex items-end">
+<svg class="w-full h-5 text-primary opacity-80" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,15 L20,13 L40,14 L60,11 L80,12 L100,10" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>https://api.tavily.com</span>
+<span>checked 11s ago</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3 & 4 Grid: Runtime Environment + Backend Diagnostics / Fault Recovery -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Runtime Environment Telemetry Panel (7 cols) -->
+<section class="lg:col-span-7 flex flex-col gap-space-md rounded-xl bg-surface-container-low p-gutter-lg shadow-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="p-2 rounded bg-surface-container text-primary">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Host Process &amp; Environment Runtime</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Deterministic computational envelope parameters</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm uppercase px-2 py-0.5 rounded bg-surface-container text-primary">Node: sciphi-prod-compute-02</span>
+</div>
+<!-- Telemetry Data Matrix -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md mt-space-sm">
+<!-- PID & Worker State -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>PROCESS IDENTIFIER</span>
+<span class="material-symbols-outlined text-[16px] text-primary">tag</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-metric-lg text-metric-lg text-on-surface">1234</span>
+<span class="font-label-sm text-label-sm text-primary">Active Worker (Thread 0x7fa2)</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Parent PID: 1 (systemd) • Priority: -5 (Nice) • UID: 1000 (sciphi)
+          </div>
+</div>
+<!-- Python Runtime -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>PYTHON RUNTIME ENV</span>
+<span class="material-symbols-outlined text-[16px] text-primary">code</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-metric-md text-metric-md text-on-surface font-semibold">Python 3.11.9</span>
+<span class="font-label-sm text-label-sm text-secondary">JIT Enabled</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Arch: x86_64-linux-gnu • LibUV Loop • PyTorch 2.4.0+cu124
+          </div>
+</div>
+<!-- Host System Uptime -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>SYSTEM CONTINUITY</span>
+<span class="material-symbols-outlined text-[16px] text-primary">timelapse</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-metric-md text-metric-md text-on-surface font-semibold">4d 18h 32m 10s</span>
+<span class="font-label-sm text-label-sm text-primary">99.98% SLA</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Zero panic events recorded across 1,420 epoch cycles
+          </div>
+</div>
+<!-- OS & Kernel -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>PLATFORM SPECIFICATION</span>
+<span class="material-symbols-outlined text-[16px] text-primary">memory</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-metric-md text-metric-md text-on-surface font-semibold">Ubuntu 22.04 LTS</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Kernel: 6.8.0-45-generic • ACPI Multiprocessor x64
+          </div>
+</div>
+</div>
+<!-- Advanced Metrology: Memory & GPU Accelerator Affinities -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-md">
+<!-- Memory Bar -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface">Host Memory Allocation: DDR5 ECC</span>
+<span class="font-metric-md text-metric-md text-primary">142.1 / 512.0 GB (27.7%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 27.7%"></div>
+</div>
+<div class="flex justify-between text-outline font-label-sm text-label-sm">
+<span>Buffer cache: 34.2 GB</span>
+<span>Free unallocated: 335.7 GB</span>
+</div>
+</div>
+<!-- Accelerator Affinity -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface">Compute Affinity &amp; Tensor Fabric</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">4x NVIDIA H100 80GB SXM5</span>
+</div>
+<div class="grid grid-cols-4 gap-space-sm mt-1">
+<div class="p-space-xs rounded bg-surface-container flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-outline">GPU 0</span>
+<span class="font-metric-md text-metric-md text-primary">48°C</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">NVLink 900GB/s</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-outline">GPU 1</span>
+<span class="font-metric-md text-metric-md text-primary">51°C</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">NVLink 900GB/s</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-outline">GPU 2</span>
+<span class="font-metric-md text-metric-md text-primary">49°C</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">NVLink 900GB/s</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-outline">GPU 3</span>
+<span class="font-metric-md text-metric-md text-secondary">64°C</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">NVLink 900GB/s</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Fault Recovery & Offline Diagnostics Module (5 cols) -->
+<section class="lg:col-span-5 flex flex-col gap-space-md rounded-xl bg-surface-container-low p-gutter-lg shadow-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-error/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="p-2 rounded bg-surface-container text-error">
+<span class="material-symbols-outlined text-[20px]">healing</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Fault Recovery Simulation</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Handling downstream gateway desynchronization</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-error-container text-on-error-container font-semibold">Resilience Layer</span>
+</div>
+<!-- Live Mock Card: Backend Dropped / Offline state representation -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-space-md">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-[24px] mt-0.5">report_problem</span>
+<div class="flex flex-col">
+<h3 class="font-title-sm text-title-sm text-error">Backend Unreachable (HTTP 503 Gateway Unavailable)</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Connection refused at endpoint <code class="font-label-sm text-label-sm px-1 py-0.5 rounded bg-surface-container-high text-primary">http://localhost:8000/api/admin/health</code>. The telemetry orchestrator detected no active TCP handshakes for &gt;4,000ms.
+            </p>
+</div>
+</div>
+<!-- Terminal Diagnostic Socket Trace -->
+<div class="p-space-sm rounded bg-surface-container-lowest text-outline font-label-sm text-label-sm overflow-x-auto leading-relaxed shadow-inner">
+<div class="text-on-surface-variant flex items-center justify-between pb-1">
+<span>[DIAGNOSTIC SOCKET TRACE]</span>
+<span class="text-tertiary">FAILED</span>
+</div>
+<p class="text-outline">&gt; [14:38:00.102] TCP SYN sent to 127.0.0.1:8000 (interface eth0)</p>
+<p class="text-outline">&gt; [14:38:01.104] RETRY 1/3: No ACK received</p>
+<p class="text-error">&gt; [14:38:03.110] OS_ERRNO 111: Connection Refused</p>
+<p class="text-outline">&gt; [14:38:04.112] Circuit Breaker tripped: HealthState.DEGRADED_FAILOVER</p>
+</div>
+<!-- Remediation Actions -->
+<div class="flex flex-col sm:flex-row gap-space-sm mt-space-xs">
+<button class="flex-1 flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg bg-error text-on-error font-title-sm text-title-sm hover:brightness-110 transition-all shadow-sm" id="retryBackendBtn">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Retry Connection</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface font-title-sm text-title-sm hover:bg-surface-bright transition-colors shadow-sm" id="mockModeBtn">
+<span class="material-symbols-outlined text-[16px]">toggle_on</span>
+<span>Switch to Mock / Offline</span>
+</button>
+</div>
+</div>
+<!-- Peer Health Gossip Map -->
+<div class="flex items-center justify-between px-space-md py-space-sm rounded-lg bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-outline text-[18px]">dns</span>
+<span class="font-label-sm text-label-sm text-on-surface">Secondary Replica Fallback:</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-primary">sciphi-us-east-replica</span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+</div>
+</section>
+</div>
+</div>
+<script>
+  // Micro-interactions and synthetic probe feedback
+  document.addEventListener('DOMContentLoaded', () => {
+    const probeBtn = document.getElementById('triggerProbeBtn');
+    const retryBtn = document.getElementById('retryBackendBtn');
+    const mockBtn = document.getElementById('mockModeBtn');
+    const lastCheckLabel = document.getElementById('lastCheckTime');
+
+    let secondsAgo = 14;
+
+    // Real-time counter ticker
+    setInterval(() => {
+      secondsAgo += 1;
+      if (lastCheckLabel) {
+        lastCheckLabel.textContent = `${secondsAgo}s ago`;
+      }
+    }, 1000);
+
+    if (probeBtn) {
+      probeBtn.addEventListener('click', () => {
+        const originalText = probeBtn.innerHTML;
+        probeBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[18px] animate-spin">rotate_right</span>
+          <span>Probing Topology...</span>
+        `;
+        probeBtn.classList.add('opacity-75');
+
+        setTimeout(() => {
+          secondsAgo = 0;
+          if (lastCheckLabel) lastCheckLabel.textContent = '0s ago';
+          probeBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[18px]">done</span>
+            <span>Probed (5 nodes)</span>
+          `;
+          probeBtn.classList.remove('opacity-75');
+
+          setTimeout(() => {
+            probeBtn.innerHTML = originalText;
+          }, 2000);
+        }, 850);
+      });
+    }
+
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        const orig = retryBtn.innerHTML;
+        retryBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+          <span>Handshaking Socket...</span>
+        `;
+        setTimeout(() => {
+          retryBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">priority_high</span>
+            <span>Still Refused (503)</span>
+          `;
+          setTimeout(() => {
+            retryBtn.innerHTML = orig;
+          }, 2500);
+        }, 1200);
+      });
+    }
+
+    if (mockBtn) {
+      mockBtn.addEventListener('click', () => {
+        if (mockBtn.classList.contains('bg-primary-container')) {
+          mockBtn.classList.remove('bg-primary-container', 'text-on-primary-container');
+          mockBtn.classList.add('bg-surface-container-high', 'text-on-surface');
+          mockBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">toggle_on</span>
+            <span>Switch to Mock / Offline</span>
+          `;
+        } else {
+          mockBtn.classList.add('bg-primary-container', 'text-on-primary-container');
+          mockBtn.classList.remove('bg-surface-container-high', 'text-on-surface');
+          mockBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">check</span>
+            <span>Mock Mode Active</span>
+          `;
+        }
+      });
+    }
+  });
+</script></main></div></body></html>

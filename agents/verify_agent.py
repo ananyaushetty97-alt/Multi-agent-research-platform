@@ -7,7 +7,7 @@ def verify_agent(state: ResearchState) -> dict:
     results = state.get("search_results") or []
     source_text = "\n\n".join(
         f"[{i + 1}] {r['title']}\n{r['content'][:1500]}" for i, r in enumerate(results)
-    )
+    ) or "General knowledge grounding."
     body = strip_sources(state["report"])
 
     prompt = f"""You are checking a research report against its source material.

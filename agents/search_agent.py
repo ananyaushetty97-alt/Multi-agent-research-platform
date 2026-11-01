@@ -8,14 +8,19 @@ tavily = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY"))
 
 
 def search_agent(state: ResearchState) -> dict:
-    results = tavily.search(query=state["topic"], max_results=5)
-    structured = [
-        {
-            "title": r.get("title") or r.get("url", "Untitled"),
-            "url": r.get("url", ""),
-            "content": r.get("content", ""),
-        }
-        for r in results.get("results", [])
-        if r.get("content")
-    ]
-    return {"search_results": structured}
+    try:
+        results = tavily.search(query=state["topic"], max_results=5)
+        structured = [
+            {
+                "title": r.get("title") or r.get("url", "Untitled"),
+                "url": r.get("url", ""),
+                "content": r.get("content", ""),
+            }
+            for r in results.get("results", [])
+            if r.get("content")
+        ]
+        return {"search_results": structured}
+    except Exception as e:
+        import logging
+        logging.getLogger("search_agent").warning(f"Tavily search failed ({e}), proceeding with empty results")
+        return {"search_results": []}

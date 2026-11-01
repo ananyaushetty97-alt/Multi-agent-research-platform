@@ -29,12 +29,12 @@
       
       <!-- Brand & Collapser -->
       <div class="sidebar-header">
-        <div class="brand-wrapper">
+        <a href="index.html" class="brand-wrapper" title="Research Hub - Scholar Workspace" style="text-decoration: none; color: inherit;">
           <div class="brand-icon">
             <span class="material-symbols-outlined text-[18px]">menu_book</span>
           </div>
           <span class="brand-title">Research Hub</span>
-        </div>
+        </a>
         <button class="icon-btn" id="sidebar-close-btn" title="Close sidebar" type="button">
           <span class="material-symbols-outlined text-[18px]">dock_to_left</span>
         </button>
@@ -59,82 +59,9 @@
         </button>
       </div>
 
-      <!-- Historical Syntheses -->
-      <nav class="sidebar-nav">
-        <!-- Today -->
-        <div>
-          <div class="history-group-title">Today</div>
-          <ul class="history-list">
-            <li class="history-item active" data-inquiry-id="microplastics">
-              <div class="history-item-left">
-                <span class="history-indicator" title="Verified provenance"></span>
-                <span class="history-title">Impact of microplastics on marine life</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-            <li class="history-item" data-inquiry-id="quantum-error">
-              <div class="history-item-left">
-                <span class="history-indicator" title="Verified provenance"></span>
-                <span class="history-title">Quantum Error Mitigation Review</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Yesterday -->
-        <div>
-          <div class="history-group-title">Yesterday</div>
-          <ul class="history-list">
-            <li class="history-item" data-inquiry-id="crispr-analysis">
-              <div class="history-item-left">
-                <span class="history-indicator" style="background: var(--tertiary-container);" title="Pending verification"></span>
-                <span class="history-title">CRISPR Prime Editing Mechanisms</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-            <li class="history-item" data-inquiry-id="stellar-dynamics">
-              <div class="history-item-left">
-                <span class="history-indicator" title="Verified provenance"></span>
-                <span class="history-title">Stellar Dynamics &amp; Dark Matter Halos</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-            <li class="history-item" data-inquiry-id="llm-consensus">
-              <div class="history-item-left">
-                <span class="history-indicator" title="Verified provenance"></span>
-                <span class="history-title">Epistemic Bounds in Multi-Agent Consensus</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Previous 7 Days -->
-        <div>
-          <div class="history-group-title">Previous 7 days</div>
-          <ul class="history-list">
-            <li class="history-item" data-inquiry-id="solid-electrolyte">
-              <div class="history-item-left">
-                <span class="history-indicator" title="Verified provenance"></span>
-                <span class="history-title">Solid-State Electrolyte Interfaces</span>
-              </div>
-              <button class="history-item-menu-btn" type="button" title="More options" aria-label="More options">
-                <span class="material-symbols-outlined text-[17px]">more_vert</span>
-              </button>
-            </li>
-          </ul>
-        </div>
+      <!-- Historical Syntheses (Rendered dynamically from live user research) -->
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Injected dynamically by renderHistory() in app.js -->
       </nav>
 
       <!-- Sidebar Status -->

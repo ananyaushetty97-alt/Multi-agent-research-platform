@@ -22,8 +22,7 @@ ui/admin ui/
 │   ├── overview-summary.html  # Executive Health Telemetry & Probe Summary
 │   └── sign-in.html           # Admin Session Lock & Re-Authentication Screen
 ├── js/
-│   ├── admin-data.js          # Reactive mock data matching all admin_backend Pydantic models
-│   └── admin-app.js           # Client-side state manager, routing, modals, and charts
+│   └── admin-app.js           # Client-side state manager, routing, live API client, modals, and charts
 ├── css/
 │   └── admin-style.css        # Academic Editorial Metrology styling tokens and animations
 └── README.md                  # Admin dashboard documentation

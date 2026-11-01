@@ -4,13 +4,64 @@
 (function () {
   "use strict";
 
-  // Reactive State Clone (Initialized from actual project dataset in admin-data.js)
-  const state = JSON.parse(JSON.stringify(ADMIN_MOCK_DATA));
+  // Reactive Live State (Directly connected to FastAPI backend)
+  const state = {
+    health: {
+      overall_status: "loading",
+      timestamp: new Date().toISOString(),
+      summary: "Connecting to platform substrate...",
+      process: { pid: "-", python_version: "-", uptime_seconds: 0, platform: "-" },
+      dependencies: {
+        redis: { name: "redis", status: "checking", latency_ms: null, error: null, details: {} },
+        postgres: { name: "postgres", status: "checking", latency_ms: null, error: null, details: {} },
+        groq: { name: "groq", status: "checking", latency_ms: null, error: null, details: {} },
+        ollama: { name: "ollama", status: "checking", latency_ms: null, error: null, details: {} },
+        tavily: { name: "tavily", status: "checking", latency_ms: null, error: null, details: {} }
+      }
+    },
+    metrics: {
+      ranges: {}
+    },
+    traces: [],
+    quality: {
+      summary: {
+        total_records: 0,
+        successful_grades: 0,
+        failed_grades: 0,
+        average_overall: 0,
+        average_relevance: 0,
+        average_accuracy: 0,
+        average_clarity: 0,
+        suspected_truncated_count: 0
+      },
+      scores: [],
+      human_reviews: []
+    },
+    safety: {
+      events: [],
+      redteam: {
+        defense_rate_pct: 100.0,
+        attacks_defended: 0,
+        total_attacks: 0,
+        indirect_count: 0,
+        direct_count: 0
+      }
+    },
+    memory: {
+      ltm_reports: [],
+      cache_entries: [],
+      sessions: []
+    },
+    audit: {
+      logs: [],
+      config_draft: {}
+    }
+  };
   let currentTab = "overview-health";
   let pollIntervalTimer = null;
   let secondsSinceLastCheck = 0;
   let activeRefreshCadence = 15; // seconds
-  let activeTraceId = "req-01";
+  let activeTraceId = null;
   let pendingDestructiveAction = null; // { type: 'cache_clear' | 'cache_entry' | 'ltm_report', targetId: string, title: string }
   let isBackendConnected = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
@@ -102,11 +153,11 @@
 
     if (headerPill) {
       if (connected) {
-        headerPill.textContent = "Live API Connected (v0.3.0)";
+        headerPill.textContent = "Live Backend Connected";
         if (headerDot) headerDot.className = "w-2 h-2 rounded-full bg-primary animate-pulse";
       } else {
-        headerPill.textContent = "Actual Platform Data (Local Mode)";
-        if (headerDot) headerDot.className = "w-2 h-2 rounded-full bg-secondary";
+        headerPill.textContent = "Backend Offline / Disconnected";
+        if (headerDot) headerDot.className = "w-2 h-2 rounded-full bg-error";
       }
     }
   }
@@ -164,14 +215,14 @@
       const res = await apiRequest("/traces?limit=100");
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           state.traces = data;
           renderTracesView();
           renderTraceWaterfall(activeTraceId);
         }
       }
     } catch (e) {
-      // Preserve authentic dataset in state
+      // Backend offline
     }
   }
 
@@ -515,19 +566,23 @@
   // 1. Health View
   function renderHealthView() {
     const deps = state.health.dependencies || {};
-    const proc = state.health.process || { uptime_seconds: 0, pid: 14820, python_version: "3.11.9", platform: "Windows-10" };
-
-    const hours = Math.floor(proc.uptime_seconds / 3600);
-    const minutes = Math.floor((proc.uptime_seconds % 3600) / 60);
+    const proc = state.health.process || null;
 
     const uptimeEl = document.getElementById("healthUptimeDisplay");
-    if (uptimeEl) uptimeEl.textContent = `${hours}h ${minutes}m`;
-
     const pidEl = document.getElementById("healthPidDisplay");
-    if (pidEl) pidEl.textContent = `${proc.pid}`;
-
     const pyVerEl = document.getElementById("healthPythonDisplay");
-    if (pyVerEl) pyVerEl.textContent = `Python ${proc.python_version} (${proc.platform})`;
+
+    if (proc && proc.pid) {
+      const hours = Math.floor((proc.uptime_seconds || 0) / 3600);
+      const minutes = Math.floor(((proc.uptime_seconds || 0) % 3600) / 60);
+      if (uptimeEl) uptimeEl.textContent = `${hours}h ${minutes}m`;
+      if (pidEl) pidEl.textContent = `${proc.pid}`;
+      if (pyVerEl) pyVerEl.textContent = `Python ${proc.python_version || ""} (${proc.platform || ""})`.trim();
+    } else {
+      if (uptimeEl) uptimeEl.textContent = "—";
+      if (pidEl) pidEl.textContent = "—";
+      if (pyVerEl) pyVerEl.textContent = "—";
+    }
 
     for (const [key, dep] of Object.entries(deps)) {
       const rttEl = document.getElementById(`rtt-${key}`);
@@ -536,7 +591,7 @@
       if (rttEl) {
         rttEl.textContent = dep.latency_ms !== null && dep.latency_ms !== undefined ? `${dep.latency_ms} ms` : "—";
       }
-      if (statusPill) {
+      if (statusPill && dep.status) {
         const isHealthy = dep.status === "healthy";
         const icon = isHealthy ? "check_circle" : "warning";
         const colorClass = isHealthy ? "bg-primary/10 text-primary" : "bg-error/10 text-error";
@@ -585,28 +640,41 @@
       ? state.metrics.ranges[range]
       : (state.metrics.ranges ? state.metrics.ranges["24h"] : null);
 
-    if (!m) return;
-    const lat = m.latency || { p50_ms: 2400, p90_ms: 3820, p95_ms: 4120, p99_ms: 4220, avg_ms: 2840, min_ms: 140, max_ms: 4220 };
-
     const p50El = document.getElementById("metricP50");
     const p90El = document.getElementById("metricP90");
     const p95El = document.getElementById("metricP95");
     const p99El = document.getElementById("metricP99");
     const avgEl = document.getElementById("metricAvg");
     const minMaxEl = document.getElementById("metricMinMax");
-
-    if (p50El) p50El.textContent = `${((lat.p50_ms || 0) / 1000).toFixed(2)}s`;
-    if (p90El) p90El.textContent = `${((lat.p90_ms || 0) / 1000).toFixed(2)}s`;
-    if (p95El) p95El.textContent = `${((lat.p95_ms || 0) / 1000).toFixed(2)}s`;
-    if (p99El) p99El.textContent = `${((lat.p99_ms || 0) / 1000).toFixed(2)}s`;
-    if (avgEl) avgEl.textContent = `${(lat.avg_ms || 0).toFixed(1)} ms`;
-    if (minMaxEl) minMaxEl.textContent = `${(lat.min_ms || 0).toFixed(0)}ms / ${(lat.max_ms || 0).toFixed(0)}ms`;
-
     const totalReqEl = document.getElementById("metricTotalRequests");
     const errorRateEl = document.getElementById("metricErrorRate");
     const cacheHitEl = document.getElementById("metricCacheHitRate");
     const fallbacksEl = document.getElementById("metricFallbacks");
     const searchCallsEl = document.getElementById("metricSearchCalls");
+
+    if (!m) {
+      if (p50El) p50El.textContent = "—";
+      if (p90El) p90El.textContent = "—";
+      if (p95El) p95El.textContent = "—";
+      if (p99El) p99El.textContent = "—";
+      if (avgEl) avgEl.textContent = "—";
+      if (minMaxEl) minMaxEl.textContent = "—";
+      if (totalReqEl) totalReqEl.textContent = "0";
+      if (errorRateEl) errorRateEl.textContent = "0.00%";
+      if (cacheHitEl) cacheHitEl.textContent = "0.0%";
+      if (fallbacksEl) fallbacksEl.textContent = "0";
+      if (searchCallsEl) searchCallsEl.textContent = "0";
+      return;
+    }
+
+    const lat = m.latency || { p50_ms: 0, p90_ms: 0, p95_ms: 0, p99_ms: 0, avg_ms: 0, min_ms: 0, max_ms: 0 };
+
+    if (p50El) p50El.textContent = lat.p50_ms ? `${((lat.p50_ms || 0) / 1000).toFixed(2)}s` : "—";
+    if (p90El) p90El.textContent = lat.p90_ms ? `${((lat.p90_ms || 0) / 1000).toFixed(2)}s` : "—";
+    if (p95El) p95El.textContent = lat.p95_ms ? `${((lat.p95_ms || 0) / 1000).toFixed(2)}s` : "—";
+    if (p99El) p99El.textContent = lat.p99_ms ? `${((lat.p99_ms || 0) / 1000).toFixed(2)}s` : "—";
+    if (avgEl) avgEl.textContent = lat.avg_ms ? `${(lat.avg_ms || 0).toFixed(1)} ms` : "—";
+    if (minMaxEl) minMaxEl.textContent = lat.max_ms ? `${(lat.min_ms || 0).toFixed(0)}ms / ${(lat.max_ms || 0).toFixed(0)}ms` : "—";
 
     if (totalReqEl) totalReqEl.textContent = (m.total_requests || 0).toLocaleString();
     if (errorRateEl) errorRateEl.textContent = `${(m.error_rate_pct || 0).toFixed(2)}%`;
@@ -621,6 +689,21 @@
     if (!tableBody) return;
 
     tableBody.innerHTML = "";
+
+    if (!state.traces || state.traces.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="8" class="px-space-md py-10 text-center text-on-surface-variant font-mono text-sm">
+            <div class="flex flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-3xl text-outline">timeline</span>
+              <span class="font-medium text-on-surface">No agent traces recorded yet.</span>
+              <span class="text-outline text-xs">Run a research inquiry in User Mode to record and inspect live multi-agent traces.</span>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
 
     state.traces.forEach((trace) => {
       const tr = document.createElement("tr");
@@ -695,14 +778,32 @@
   }
 
   function renderTraceWaterfall(requestId) {
-    const trace = state.traces.find((t) => t.request_id === requestId) || state.traces[0];
-    if (!trace) return;
+    const trace = (state.traces && state.traces.length > 0)
+      ? (state.traces.find((t) => t.request_id === requestId) || state.traces[0])
+      : null;
 
     const titleEl = document.getElementById("waterfallTopicTitle");
     const idEl = document.getElementById("waterfallRequestId");
     const timeEl = document.getElementById("waterfallDuration");
     const modelEl = document.getElementById("waterfallModel");
     const container = document.getElementById("waterfallStepsContainer");
+
+    if (!trace) {
+      if (titleEl) titleEl.textContent = "No Trace Selected";
+      if (idEl) idEl.textContent = "—";
+      if (timeEl) timeEl.textContent = "0.00s";
+      if (modelEl) modelEl.textContent = "—";
+      if (container) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-on-surface-variant">
+            <span class="material-symbols-outlined text-4xl text-outline mb-2">schema</span>
+            <p class="font-body-md font-medium text-on-surface">No trace execution steps to display</p>
+            <p class="font-body-sm text-outline mt-1">Submit a research query in User Mode to inspect live multi-agent execution steps here.</p>
+          </div>
+        `;
+      }
+      return;
+    }
 
     if (titleEl) titleEl.textContent = trace.topic_preview;
     if (idEl) idEl.textContent = `${trace.request_id} • ${trace.session_id}`;
@@ -765,14 +866,14 @@
   // 4. Quality & Judge View
   function renderQualityView() {
     const q = state.quality.summary || {
-      total_records: 11,
-      successful_grades: 11,
+      total_records: 0,
+      successful_grades: 0,
       failed_grades: 0,
-      average_overall: 9.24,
-      average_relevance: 9.91,
-      average_accuracy: 8.91,
-      average_clarity: 8.91,
-      suspected_truncated_count: 4
+      average_overall: null,
+      average_relevance: null,
+      average_accuracy: null,
+      average_clarity: null,
+      suspected_truncated_count: 0
     };
 
     const totalEl = document.getElementById("qualityTotalGraded");
@@ -784,10 +885,10 @@
     const failedCountEl = document.getElementById("qualityFailedCount");
 
     if (totalEl) totalEl.textContent = (q.total_records || 0).toLocaleString();
-    if (avgOverallEl) avgOverallEl.textContent = q.average_overall !== null && q.average_overall !== undefined ? `${Number(q.average_overall).toFixed(1)} / 10` : "—";
-    if (avgRelEl) avgRelEl.textContent = q.average_relevance !== null && q.average_relevance !== undefined ? `${Number(q.average_relevance).toFixed(1)}` : "—";
-    if (avgAccEl) avgAccEl.textContent = q.average_accuracy !== null && q.average_accuracy !== undefined ? `${Number(q.average_accuracy).toFixed(1)}` : "—";
-    if (avgClaEl) avgClaEl.textContent = q.average_clarity !== null && q.average_clarity !== undefined ? `${Number(q.average_clarity).toFixed(1)}` : "—";
+    if (avgOverallEl) avgOverallEl.textContent = (q.average_overall !== null && q.average_overall !== undefined && q.average_overall > 0) ? `${Number(q.average_overall).toFixed(1)} / 10` : "—";
+    if (avgRelEl) avgRelEl.textContent = (q.average_relevance !== null && q.average_relevance !== undefined && q.average_relevance > 0) ? `${Number(q.average_relevance).toFixed(1)}` : "—";
+    if (avgAccEl) avgAccEl.textContent = (q.average_accuracy !== null && q.average_accuracy !== undefined && q.average_accuracy > 0) ? `${Number(q.average_accuracy).toFixed(1)}` : "—";
+    if (avgClaEl) avgClaEl.textContent = (q.average_clarity !== null && q.average_clarity !== undefined && q.average_clarity > 0) ? `${Number(q.average_clarity).toFixed(1)}` : "—";
     if (truncCountEl) truncCountEl.textContent = `${q.suspected_truncated_count || 0}`;
     if (failedCountEl) failedCountEl.textContent = `${q.failed_grades || 0}`;
 
@@ -796,33 +897,43 @@
     tableBody.innerHTML = "";
 
     const scoresList = state.quality.scores || [];
-    scoresList.forEach((item) => {
-      const tr = document.createElement("tr");
-      tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
-
-      let statusBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold">Valid</span>';
-      if (item.is_failed_grading) {
-        statusBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold">Grading Failed</span>';
-      } else if (item.suspected_truncated) {
-        statusBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold" title="' + (item.truncation_reason || "") + '">Truncation Suspected</span>';
-      }
-
-      const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "—";
-
-      tr.innerHTML = `
-        <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${item.topic}">${item.topic}</td>
-        <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
-        <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
-        <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
-        <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
-        <td class="px-space-md py-3">${statusBadge}</td>
-        <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.comment || item.error_message || ''}">
-          ${item.comment || item.error_message || "—"}
-        </td>
+    if (scoresList.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
+            No quality evaluation scores recorded yet. Results evaluated by LLM-as-a-judge will appear here.
+          </td>
+        </tr>
       `;
+    } else {
+      scoresList.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
 
-      tableBody.appendChild(tr);
-    });
+        let statusBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold">Valid</span>';
+        if (item.is_failed_grading) {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold">Grading Failed</span>';
+        } else if (item.suspected_truncated) {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold" title="' + (item.truncation_reason || "") + '">Truncation Suspected</span>';
+        }
+
+        const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "—";
+
+        tr.innerHTML = `
+          <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${item.topic}">${item.topic}</td>
+          <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
+          <td class="px-space-md py-3">${statusBadge}</td>
+          <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.comment || item.error_message || ''}">
+            ${item.comment || item.error_message || "—"}
+          </td>
+        `;
+
+        tableBody.appendChild(tr);
+      });
+    }
 
     const openReviewBtn = document.getElementById("open-human-modal-btn");
     if (openReviewBtn) {
@@ -925,10 +1036,10 @@
   function renderSafetyView() {
     const rt = state.safety.redteam || {
       defense_rate_pct: 100.0,
-      attacks_defended: 11,
-      total_attacks: 11,
-      indirect_count: 6,
-      direct_count: 5
+      attacks_defended: 0,
+      total_attacks: 0,
+      indirect_count: 0,
+      direct_count: 0
     };
 
     const defRateEl = document.getElementById("safetyDefenseRate");
@@ -936,39 +1047,49 @@
     const indirectEl = document.getElementById("safetyIndirectAttacks");
     const directEl = document.getElementById("safetyDirectAttacks");
 
-    if (defRateEl) defRateEl.textContent = `${(rt.defense_rate_pct || 100).toFixed(1)}%`;
-    if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended} / ${rt.total_attacks}`;
-    if (indirectEl) indirectEl.textContent = `${rt.indirect_count}`;
-    if (directEl) directEl.textContent = `${rt.direct_count}`;
+    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "—";
+    if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
+    if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
+    if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
 
     const tableBody = document.getElementById("safetyEventsTableBody");
     if (!tableBody) return;
     tableBody.innerHTML = "";
 
     const eventsList = state.safety.events || [];
-    eventsList.forEach((ev) => {
-      const tr = document.createElement("tr");
-      tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
-
-      let typeBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm uppercase">' + ev.check_type + '</span>';
-      if (ev.check_type === "search_xpia") {
-        typeBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold uppercase">Search XPIA Injection</span>';
-      } else if (ev.check_type === "input_rule") {
-        typeBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">Input Guardrail</span>';
-      }
-
-      tr.innerHTML = `
-        <td class="px-space-md py-3 font-mono text-label-sm text-outline">${ev.event_id}</td>
-        <td class="px-space-md py-3">${typeBadge}</td>
-        <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${ev.reason}">${ev.reason}</td>
-        <td class="px-space-md py-3 font-mono text-body-sm text-on-surface-variant max-w-sm truncate" title="${ev.excerpt}">${ev.excerpt}</td>
-        <td class="px-space-md py-3">
-          <span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">${ev.outcome}</span>
-        </td>
+    if (eventsList.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
+            No safety violation events recorded. Guardrails and XPIA detectors are monitoring incoming traffic.
+          </td>
+        </tr>
       `;
+    } else {
+      eventsList.forEach((ev) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
 
-      tableBody.appendChild(tr);
-    });
+        let typeBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm uppercase">' + ev.check_type + '</span>';
+        if (ev.check_type === "search_xpia") {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold uppercase">Search XPIA Injection</span>';
+        } else if (ev.check_type === "input_rule") {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">Input Guardrail</span>';
+        }
+
+        tr.innerHTML = `
+          <td class="px-space-md py-3 font-mono text-label-sm text-outline">${ev.event_id}</td>
+          <td class="px-space-md py-3">${typeBadge}</td>
+          <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${ev.reason}">${ev.reason}</td>
+          <td class="px-space-md py-3 font-mono text-body-sm text-on-surface-variant max-w-sm truncate" title="${ev.excerpt}">${ev.excerpt}</td>
+          <td class="px-space-md py-3">
+            <span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">${ev.outcome}</span>
+          </td>
+        `;
+
+        tableBody.appendChild(tr);
+      });
+    }
   }
 
   // 6. Memory & Semantic Cache View
@@ -976,87 +1097,120 @@
     const ltmTable = document.getElementById("ltmReportsTableBody");
     if (ltmTable) {
       ltmTable.innerHTML = "";
-      (state.memory.ltm_reports || []).forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
-
-        tr.innerHTML = `
-          <td class="px-space-md py-3 font-mono text-primary text-label-sm font-semibold">${item.id}</td>
-          <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-body-sm font-mono">${item.sources_count || 0} sources</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
-          <td class="px-space-md py-3 text-right">
-            <button class="p-1 rounded text-outline hover:text-error transition-colors" title="Delete LTM Report (Double Confirmation Required)" data-delete-ltm="${item.id}">
-              <span class="material-symbols-outlined text-[18px]">delete</span>
-            </button>
-          </td>
+      const ltmReports = state.memory.ltm_reports || [];
+      if (ltmReports.length === 0) {
+        ltmTable.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+              No long-term research memory reports stored. Research inquiries in User Mode will persist synthesis dossiers here.
+            </td>
+          </tr>
         `;
+      } else {
+        ltmReports.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
 
-        const deleteBtn = tr.querySelector("[data-delete-ltm]");
-        if (deleteBtn) {
-          deleteBtn.onclick = () => {
-            requestDestructiveConfirmation("ltm_report", item.id, item.topic);
-          };
-        }
+          tr.innerHTML = `
+            <td class="px-space-md py-3 font-mono text-primary text-label-sm font-semibold">${item.id}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm font-mono">${item.sources_count || 0} sources</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
+            <td class="px-space-md py-3 text-right">
+              <button class="p-1 rounded text-outline hover:text-error transition-colors" title="Delete LTM Report (Double Confirmation Required)" data-delete-ltm="${item.id}">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </td>
+          `;
 
-        ltmTable.appendChild(tr);
-      });
+          const deleteBtn = tr.querySelector("[data-delete-ltm]");
+          if (deleteBtn) {
+            deleteBtn.onclick = () => {
+              requestDestructiveConfirmation("ltm_report", item.id, item.topic);
+            };
+          }
+
+          ltmTable.appendChild(tr);
+        });
+      }
     }
 
     const cacheTable = document.getElementById("semanticCacheTableBody");
     if (cacheTable) {
       cacheTable.innerHTML = "";
-      (state.memory.cache_entries || []).forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
-
-        const ttlMin = Math.round((item.ttl_remaining_seconds || 0) / 60);
-
-        tr.innerHTML = `
-          <td class="px-space-md py-3 font-mono text-label-sm text-outline">${item.entry_id}</td>
-          <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
-          <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m remaining</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
-          <td class="px-space-md py-3 text-right">
-            <button class="p-1 rounded text-outline hover:text-error transition-colors" title="Invalidate Cache Entry" data-invalidate-cache="${item.entry_id}">
-              <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
-            </button>
-          </td>
+      const cacheEntries = state.memory.cache_entries || [];
+      if (cacheEntries.length === 0) {
+        cacheTable.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+              Semantic query cache is currently empty. Generated research inquiries will populate cache entries.
+            </td>
+          </tr>
         `;
+      } else {
+        cacheEntries.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
 
-        const invalidateBtn = tr.querySelector("[data-invalidate-cache]");
-        if (invalidateBtn) {
-          invalidateBtn.onclick = () => {
-            requestDestructiveConfirmation("cache_entry", item.entry_id, item.topic);
-          };
-        }
+          const ttlMin = Math.round((item.ttl_remaining_seconds || 0) / 60);
 
-        cacheTable.appendChild(tr);
-      });
+          tr.innerHTML = `
+            <td class="px-space-md py-3 font-mono text-label-sm text-outline">${item.entry_id}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
+            <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m remaining</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
+            <td class="px-space-md py-3 text-right">
+              <button class="p-1 rounded text-outline hover:text-error transition-colors" title="Invalidate Cache Entry" data-invalidate-cache="${item.entry_id}">
+                <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+              </button>
+            </td>
+          `;
+
+          const invalidateBtn = tr.querySelector("[data-invalidate-cache]");
+          if (invalidateBtn) {
+            invalidateBtn.onclick = () => {
+              requestDestructiveConfirmation("cache_entry", item.entry_id, item.topic);
+            };
+          }
+
+          cacheTable.appendChild(tr);
+        });
+      }
     }
 
     const sessionsTable = document.getElementById("activeSessionsTableBody");
     if (sessionsTable) {
       sessionsTable.innerHTML = "";
-      (state.memory.sessions || []).forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
-
-        const ttlMin = Math.round((item.ttl_seconds_remaining || 0) / 60);
-
-        tr.innerHTML = `
-          <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${item.session_id}</td>
-          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.turn_count} turns</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-label-sm capitalize">${item.last_turn_role || "assistant"}</td>
-          <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-body-sm italic">
-            <span class="material-symbols-outlined text-[14px] align-middle text-outline mr-1">lock</span>
-            Confidential researcher conversation text masked
-          </td>
+      const sessions = state.memory.sessions || [];
+      if (sessions.length === 0) {
+        sessionsTable.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+              No active user sessions currently held in working memory.
+            </td>
+          </tr>
         `;
+      } else {
+        sessions.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
 
-        sessionsTable.appendChild(tr);
-      });
+          const ttlMin = Math.round((item.ttl_seconds_remaining || 0) / 60);
+
+          tr.innerHTML = `
+            <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${item.session_id}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.turn_count} turns</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-label-sm capitalize">${item.last_turn_role || "assistant"}</td>
+            <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm italic">
+              <span class="material-symbols-outlined text-[14px] align-middle text-outline mr-1">lock</span>
+              Confidential researcher conversation text masked
+            </td>
+          `;
+
+          sessionsTable.appendChild(tr);
+        });
+      }
     }
 
     const flushBtn = document.getElementById("clearAllCacheBtn");
@@ -1074,30 +1228,40 @@
     tableBody.innerHTML = "";
 
     const logsList = state.audit.logs || [];
-    logsList.forEach((log) => {
-      const tr = document.createElement("tr");
-      tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
-
-      let actionBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-semibold">' + log.action + '</span>';
-      if (log.action.includes("clear") || log.action.includes("delete")) {
-        actionBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-semibold">' + log.action + '</span>';
-      } else if (log.action.includes("human_review")) {
-        actionBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">' + log.action + '</span>';
-      }
-
-      const timeDisplay = log.timestamp ? log.timestamp.slice(11, 19) : "—";
-
-      tr.innerHTML = `
-        <td class="px-space-md py-3 text-outline">${timeDisplay}</td>
-        <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
-        <td class="px-space-md py-3">${actionBadge}</td>
-        <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
-        <td class="px-space-md py-3 text-primary uppercase font-bold">${log.status}</td>
-        <td class="px-space-md py-3 text-outline">${log.client_ip || "127.0.0.1"}</td>
+    if (logsList.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+            No administrative audit entries recorded. System events and modifications will appear here.
+          </td>
+        </tr>
       `;
+    } else {
+      logsList.forEach((log) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
 
-      tableBody.appendChild(tr);
-    });
+        let actionBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-semibold">' + log.action + '</span>';
+        if (log.action.includes("clear") || log.action.includes("delete")) {
+          actionBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-semibold">' + log.action + '</span>';
+        } else if (log.action.includes("human_review")) {
+          actionBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">' + log.action + '</span>';
+        }
+
+        const timeDisplay = log.timestamp ? log.timestamp.slice(11, 19) : "—";
+
+        tr.innerHTML = `
+          <td class="px-space-md py-3 text-outline">${timeDisplay}</td>
+          <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
+          <td class="px-space-md py-3">${actionBadge}</td>
+          <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
+          <td class="px-space-md py-3 text-primary uppercase font-bold">${log.status}</td>
+          <td class="px-space-md py-3 text-outline">${log.client_ip || "127.0.0.1"}</td>
+        `;
+
+        tableBody.appendChild(tr);
+      });
+    }
 
     const configContainer = document.getElementById("configBlueprintJson");
     if (configContainer) {

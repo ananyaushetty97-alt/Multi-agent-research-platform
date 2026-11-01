@@ -3,166 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multi-Agent Research Platform</title>
-  <meta name="description" content="Portal for the Multi-Agent Research Platform: Scholar Workspace and Admin Observability Suite." />
-
-  <!-- Google Fonts: Inter & Newsreader -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta http-equiv="refresh" content="0; url=user/index.html" />
+  <title>Redirecting to Research Hub...</title>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#005151',
-            'primary-container': '#0f6b6b',
-            'on-primary': '#ffffff',
-            surface: '#f7f9ff',
-            'surface-container-low': '#edf4ff',
-            'surface-container': '#e3efff',
-            'surface-container-high': '#dde9f9',
-            'on-surface': '#111d28',
-            'on-surface-variant': '#4f6070',
-            outline: '#6f7979'
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            serif: ['Newsreader', 'serif']
-          }
-        }
-      }
-    };
+    // Default opening mode: User Mode
+    window.location.replace("user/index.html");
   </script>
 </head>
-<body class="bg-surface font-sans text-on-surface min-h-screen flex flex-col justify-between antialiased selection:bg-primary selection:text-white">
-
-  <!-- Header -->
-  <header class="w-full border-b border-outline/15 bg-white/70 backdrop-blur-md px-6 lg:px-12 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-        <span class="material-symbols-outlined text-[22px]">biotech</span>
-      </div>
-      <div>
-        <span class="font-serif text-lg font-medium tracking-tight text-on-surface">Multi-Agent Research Platform</span>
-        <span class="hidden sm:inline-block text-xs uppercase tracking-wider font-mono text-primary font-semibold ml-2 px-1.5 py-0.5 rounded bg-primary/10">v3.4-prod</span>
-      </div>
-    </div>
-    <div class="flex items-center gap-4 text-xs font-mono text-on-surface-variant">
-      <span>LangGraph Orchestration</span>
-      <span class="hidden md:inline">•</span>
-      <span class="hidden md:inline">pgvector LTM</span>
-      <span class="hidden md:inline">•</span>
-      <span class="hidden md:inline">Redis STM &amp; Cache</span>
-    </div>
-  </header>
-
-  <!-- Hero Portal Selection -->
-  <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-12 lg:py-20 flex flex-col items-center justify-center text-center">
-    
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline/20 text-xs font-medium text-primary mb-6">
-      <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-      <span>Select Workspace Environment</span>
-    </div>
-
-    <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl text-on-surface tracking-tight max-w-3xl leading-[1.15]">
-      Autonomous Academic Research &amp; Intelligence Metrology
-    </h1>
-    <p class="mt-4 text-base sm:text-lg text-on-surface-variant max-w-2xl font-normal leading-relaxed">
-      Choose your operational mode to interact with the multi-agent pipeline or observe platform telemetry.
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f7f9ff; color: #111d28;">
+  <div style="text-align: center; padding: 2rem;">
+    <p style="font-size: 1.125rem; font-weight: 500; margin-bottom: 0.5rem;">Loading Scholar Workspace (User Mode)...</p>
+    <p style="font-size: 0.875rem; color: #4f6070;">
+      If you are not redirected automatically, <a href="user/index.html" style="color: #005151; font-weight: 600; text-decoration: underline;">click here to enter User Mode</a>.
     </p>
-
-    <!-- Two Dual Choice Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-12 text-left">
-      
-      <!-- Card 1: User / Scholar Workspace -->
-      <a href="user/index.html" class="group relative flex flex-col justify-between p-8 rounded-2xl bg-white border border-outline/20 hover:border-primary/50 shadow-sm hover:shadow-xl transition-all duration-300">
-        <div class="flex flex-col gap-4">
-          <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-            <span class="material-symbols-outlined text-[28px]">menu_book</span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-xs uppercase tracking-wider text-primary font-semibold">Scholar Workspace</span>
-              <span class="text-xs text-outline">• User Mode</span>
-            </div>
-            <h2 class="font-serif text-2xl font-medium text-on-surface mt-1 group-hover:text-primary transition-colors">
-              Research Hub
-            </h2>
-            <p class="text-sm text-on-surface-variant mt-2 leading-relaxed">
-              Launch research inquiries across arXiv, PubMed, NOAA, and IEEE. Synthesize monographs with live citations, visual abstracts, and verified provenance.
-            </p>
-          </div>
-          <ul class="text-xs text-on-surface-variant flex flex-col gap-2 pt-2 border-t border-outline/10">
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>4-Agent LangGraph Pipeline (Search, Summarize, Write, Verify)</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>Interactive line citations with Provenance Inspector</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>Epistemic divergence alerts &amp; peer-reviewed sources</span>
-            </li>
-          </ul>
-        </div>
-        <div class="mt-8 flex items-center gap-2 text-sm font-semibold text-primary group-hover:translate-x-1 transition-transform">
-          <span>Launch Scholar Workspace</span>
-          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-        </div>
-      </a>
-
-      <!-- Card 2: Admin / Observability Suite -->
-      <a href="admin/index.html" class="group relative flex flex-col justify-between p-8 rounded-2xl bg-white border border-outline/20 hover:border-primary/50 shadow-sm hover:shadow-xl transition-all duration-300">
-        <div class="flex flex-col gap-4">
-          <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-            <span class="material-symbols-outlined text-[28px]">monitoring</span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-xs uppercase tracking-wider text-primary font-semibold">Observability Suite</span>
-              <span class="text-xs text-outline">• Admin Mode</span>
-            </div>
-            <h2 class="font-serif text-2xl font-medium text-on-surface mt-1 group-hover:text-primary transition-colors">
-              Admin Dashboard
-            </h2>
-            <p class="text-sm text-on-surface-variant mt-2 leading-relaxed">
-              Substrate reachability diagnostics, end-to-end latency percentiles, agent execution waterfalls, LLM judge evaluation feeds, and memory controls.
-            </p>
-          </div>
-          <ul class="text-xs text-on-surface-variant flex flex-col gap-2 pt-2 border-t border-outline/10">
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>Live probes for Redis, Postgres, Groq, Ollama &amp; Tavily</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>Trace waterfall visualizer &amp; LLM-as-a-judge scorecards</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
-              <span>Double-confirmation purge safeguards &amp; PyRIT red-teaming</span>
-            </li>
-          </ul>
-        </div>
-        <div class="mt-8 flex items-center gap-2 text-sm font-semibold text-primary group-hover:translate-x-1 transition-transform">
-          <span>Open Admin Dashboard</span>
-          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-        </div>
-      </a>
-
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="w-full border-t border-outline/15 bg-white/40 px-6 py-4 text-center text-xs text-outline font-mono">
-    Multi-Agent Research Platform • Decoupled UI Layer • Academic Editorial Intelligence
-  </footer>
-
+  </div>
 </body>
 </html>

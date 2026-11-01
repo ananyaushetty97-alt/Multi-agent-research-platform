@@ -1,0 +1,66 @@
+/* admin-style.css: Core design tokens, animations, and typography for Admin Observability Suite */
+
+:root {
+  --primary: #005151;
+  --primary-container: #0f6b6b;
+  --on-primary: #ffffff;
+  --surface: #f7f9ff;
+  --surface-low: #edf4ff;
+  --surface-card: #ffffff;
+  --text-main: #111d28;
+  --text-muted: #4f6070;
+  --accent-amber: #d97706;
+  --accent-rose: #dc2626;
+  --border-subtle: #bec9c8;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Glassmorphism & Elevation */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(190, 201, 200, 0.4);
+}
+
+/* Live Telemetry Beacon */
+@keyframes beacon-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.beacon-live {
+  animation: beacon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Metrology Monospace Formatting */
+.metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum' on, 'zero' on;
+  letter-spacing: -0.02em;
+}
+
+/* Slide-out Drawer Transitions */
+.drawer-enter {
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-enter-active {
+  transform: translateX(0);
+}

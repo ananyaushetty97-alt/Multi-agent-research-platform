@@ -3,1026 +3,1071 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Observability Suite — Multi-Agent Research Platform</title>
+  <title>Admin Observability Suite — Research Hub</title>
+  <meta name="description" content="Granular diagnostics, telemetry, LangGraph 4-agent traces, quality scoring, safety red-teaming, and memory controls."/>
 
-  <!-- Google Fonts: Inter, Newsreader, JetBrains Mono -->
+  <!-- Google Typography: Inter (UI), Newsreader (Editorial Serif), JetBrains Mono (Metrology) -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 
-  <!-- Tailwind CSS Play CDN with Editorial Academic Metrology Palette -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "surface-container-highest": "#d7e4f3",
-            "inverse-surface": "#26323d",
-            "on-primary-fixed-variant": "#004f50",
-            "on-tertiary-fixed-variant": "#832701",
-            error: "#ba1a1a",
-            "surface-container": "#e3efff",
-            "surface-container-low": "#edf4ff",
-            "secondary-fixed-dim": "#b6c9db",
-            "surface-tint": "#0b6969",
-            "surface-variant": "#d7e4f3",
-            "primary-fixed": "#a3f0ef",
-            "on-error-container": "#93000a",
-            "on-tertiary-container": "#ffd1c2",
-            surface: "#f7f9ff",
-            secondary: "#4f6070",
-            "on-surface-variant": "#3f4948",
-            "on-tertiary": "#ffffff",
-            "surface-bright": "#f7f9ff",
-            "tertiary-fixed": "#ffdbd0",
-            "on-primary": "#ffffff",
-            "surface-dim": "#cfdbeb",
-            "error-container": "#ffdad6",
-            "on-surface": "#111d28",
-            "on-secondary-container": "#536574",
-            "on-error": "#ffffff",
-            tertiary: "#852802",
-            "surface-container-lowest": "#ffffff",
-            "inverse-on-surface": "#e8f2ff",
-            "on-secondary-fixed-variant": "#374958",
-            "secondary-container": "#cfe2f5",
-            "outline-variant": "#bec9c8",
-            "on-primary-container": "#9be9e8",
-            "surface-container-high": "#dde9f9",
-            "tertiary-container": "#a53f19",
-            "on-secondary-fixed": "#0a1d2b",
-            "on-secondary": "#ffffff",
-            "on-background": "#111d28",
-            "primary-fixed-dim": "#87d4d3",
-            background: "#f7f9ff",
-            "secondary-fixed": "#d2e5f7",
-            "on-primary-fixed": "#002020",
-            "inverse-primary": "#87d4d3",
-            "on-tertiary-fixed": "#390c00",
-            "primary-container": "#0f6b6b",
-            "tertiary-fixed-dim": "#ffb59d",
-            primary: "#005151",
-            outline: "#6f7979"
-          },
-          borderRadius: {
-            DEFAULT: "0.25rem",
-            lg: "0.5rem",
-            xl: "0.75rem",
-            full: "9999px"
-          },
-          spacing: {
-            gutter: "1rem",
-            "gutter-lg": "1.5rem",
-            "space-xs": "0.25rem",
-            margin: "1rem",
-            "margin-lg": "2.5rem",
-            "space-xl": "2rem",
-            "space-sm": "0.5rem",
-            "space-lg": "1.25rem",
-            "space-md": "0.75rem",
-            "margin-md": "1.5rem"
-          },
-          fontFamily: {
-            display: ["Inter", "sans-serif"],
-            headline: ["Newsreader", "serif"],
-            body: ["Inter", "sans-serif"],
-            mono: ["JetBrains Mono", "monospace"],
-            "headline-sm": ["Newsreader", "serif"],
-            "headline-md": ["Newsreader", "serif"],
-            "headline-lg": ["Newsreader", "serif"],
-            "title-sm": ["Inter", "sans-serif"],
-            "title-md": ["Inter", "sans-serif"],
-            "body-sm": ["Inter", "sans-serif"],
-            "body-md": ["Inter", "sans-serif"],
-            "body-lg": ["Inter", "sans-serif"],
-            "label-sm": ["JetBrains Mono", "monospace"],
-            "label-md": ["JetBrains Mono", "monospace"],
-            "metric-md": ["JetBrains Mono", "monospace"],
-            "metric-lg": ["JetBrains Mono", "monospace"]
-          }
-        }
-      }
-    };
-  </script>
-  <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f7f9ff; }
-    ::-webkit-scrollbar-thumb { background: #bec9c8; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #6f7979; }
-  </style>
+  <!-- Shared Academic Editorial Intelligence Design System -->
+  <link rel="stylesheet" href="../user/css/style.css"/>
+  <link rel="stylesheet" href="css/admin-style.css"/>
 </head>
-<body class="bg-surface font-body text-on-surface antialiased">
+<body>
 
-  <!-- ==================== LEFT NAVIGATION RAIL ==================== -->
-  <aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between border-r border-outline-variant/30 shadow-sm">
-    <div class="flex flex-col">
-      <!-- Brand & Admin Indicator -->
-      <div class="h-16 px-space-md flex items-center justify-between border-b border-outline-variant/20">
-        <a href="../user/index.html" class="flex items-center gap-space-xs hover:opacity-80 transition-opacity" title="Switch to Scholar Workspace (User Mode)">
-          <span class="material-symbols-outlined text-primary text-[24px]">biotech</span>
-          <span class="font-title-sm text-title-sm tracking-tight text-on-surface font-semibold">Research Platform</span>
+  <div class="admin-layout" id="app-root">
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- ======================================================================
+         LEFT SIDEBAR (Admin Observability Navigation)
+         ====================================================================== -->
+    <aside class="sidebar" id="sidebar">
+      
+      <!-- Brand & Collapser -->
+      <div class="sidebar-header">
+        <a href="index.html" class="brand-wrapper" title="Admin Observability Suite" style="text-decoration: none; color: inherit;">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #ffffff;">
+            <span class="material-symbols-outlined text-[18px]">neurology</span>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="brand-title">Research Hub</span>
+              <span class="sidebar-admin-tag">Admin</span>
+            </div>
+            <span style="font-size: 0.6875rem; color: var(--outline); font-family: var(--font-mono);">Observability Suite</span>
+          </div>
         </a>
-        <span class="font-label-sm text-label-sm px-space-xs py-[2px] rounded bg-primary/10 text-primary border border-primary/20 uppercase font-bold">Admin</span>
+        <button class="icon-btn" id="sidebar-close-btn" title="Close sidebar" type="button">
+          <span class="material-symbols-outlined text-[18px]">dock_to_left</span>
+        </button>
       </div>
 
-      <!-- Suite Label -->
-      <div class="px-space-md py-space-sm">
-        <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Observability Suite</span>
+      <!-- Action Search -->
+      <div class="sidebar-actions">
+        <div class="search-trigger-btn" style="cursor: default;">
+          <div class="search-trigger-left" style="width: 100%;">
+            <span class="material-symbols-outlined text-[16px]">search</span>
+            <input
+              type="text"
+              id="headerGlobalSearch"
+              placeholder="Filter telemetry..."
+              style="background: transparent; border: none; outline: none; width: 100%; font-size: 0.75rem; color: var(--on-surface);"
+            />
+          </div>
+          <kbd class="shortcut-kbd" style="background: var(--surface-container-high); color: var(--on-surface-variant);">Ctrl K</kbd>
+        </div>
       </div>
 
-      <!-- Navigation Links -->
-      <nav class="flex flex-col gap-1 px-space-sm" id="sidebarNav">
-        <a href="#overview-health" data-path="overview-health" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">monitoring</span>
+      <!-- Observability Navigation Tabs -->
+      <nav class="sidebar-nav" id="adminSidebarNav" style="gap: 3px;">
+        <a class="admin-nav-item active" data-path="overview-health" href="#overview-health">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">monitoring</span>
             <span>Overview &amp; Health</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-primary font-medium">5/5</span>
+          <span class="admin-nav-chip">5/5</span>
         </a>
 
-        <a href="#metrics-latency" data-path="metrics-latency" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">speed</span>
+        <a class="admin-nav-item" data-path="metrics-latency" href="#metrics-latency">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">speed</span>
             <span>Metrics &amp; Latency</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">24h</span>
+          <span class="admin-nav-chip">24h</span>
         </a>
 
-        <a href="#agent-traces" data-path="agent-traces" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">account_tree</span>
+        <a class="admin-nav-item" data-path="agent-traces" href="#agent-traces">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">account_tree</span>
             <span>Agent Traces</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">1.4k</span>
+          <span class="admin-nav-chip">Live</span>
         </a>
 
-        <a href="#quality-judge" data-path="quality-judge" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">gavel</span>
+        <a class="admin-nav-item" data-path="quality-judge" href="#quality-judge">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">gavel</span>
             <span>Quality &amp; Judge</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">9.12</span>
+          <span class="admin-nav-chip">LLM</span>
         </a>
 
-        <a href="#safety-red-team" data-path="safety-red-team" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">security</span>
+        <a class="admin-nav-item" data-path="safety-red-team" href="#safety-red-team">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">shield</span>
             <span>Safety &amp; Red-Team</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">96%</span>
+          <span class="admin-nav-chip">PyRIT</span>
         </a>
 
-        <a href="#memory-cache" data-path="memory-cache" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">memory</span>
+        <a class="admin-nav-item" data-path="memory-cache" href="#memory-cache">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">memory</span>
             <span>Memory &amp; Cache</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-on-surface-variant">380</span>
+          <span class="admin-nav-chip">Redis</span>
         </a>
 
-        <a href="#audit-logs-config" data-path="audit-logs-config" class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-          <div class="flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-[20px]">history_toggle_off</span>
-            <span>Audit Logs &amp; Config</span>
+        <a class="admin-nav-item" data-path="audit-logs-config" href="#audit-logs-config">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">history_toggle_off</span>
+            <span>Audit &amp; Config</span>
           </div>
-          <span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-lg bg-surface-container text-secondary">Live</span>
+          <span class="admin-nav-chip">Logs</span>
         </a>
       </nav>
-    </div>
 
-    <!-- Cluster Diagnostics Footnote -->
-    <div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest">
-      <div class="px-space-sm py-space-xs rounded bg-surface-container-low border border-outline-variant/20 mb-space-xs">
-        <div class="flex items-center justify-between">
-          <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Runtime Mesh</span>
-          <span class="font-label-sm text-label-sm text-primary font-mono font-semibold">Active Tier-0</span>
-        </div>
-        <div class="flex items-center justify-between mt-1">
-          <span class="font-label-sm text-label-sm text-outline uppercase">Node Ping</span>
-          <span class="font-label-sm text-label-sm text-on-surface font-mono" id="lastCheckTimeDisplay">12s ago</span>
-        </div>
-      </div>
-      <div class="text-center flex flex-col gap-1 items-center">
-        <a href="../user/index.html" class="text-[11px] text-primary hover:underline font-medium flex items-center gap-1" title="Return to Scholar Workspace (User Mode)">
-          <span class="material-symbols-outlined text-[13px]">arrow_back</span>
-          <span>Return to User Mode</span>
-        </a>
-        <span class="font-label-sm text-[10px] text-outline">Multi-Agent Research Platform v3.4</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ==================== TOP CHROME / HEADER ==================== -->
-  <div class="pl-72">
-    <header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 z-40 px-gutter-lg flex items-center justify-between shadow-sm">
-      <!-- Search & Status Pill -->
-      <div class="flex items-center gap-space-lg flex-1 max-w-xl">
-        <div class="relative w-full max-w-sm">
-          <span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
-          <input id="headerGlobalSearch" class="w-full bg-surface-container-lowest text-on-surface pl-9 pr-14 py-space-sm rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-outline border border-outline-variant/30" placeholder="Search telemetry, traces..." type="text"/>
-          <div class="absolute right-space-md top-1/2 -translate-y-1/2 flex items-center">
-            <kbd class="font-label-sm text-label-sm text-outline bg-surface-container px-1 rounded border border-outline-variant/30">⌘K</kbd>
+      <!-- Sidebar Footer with Status & Password-Protected Return to User Mode -->
+      <div class="sidebar-footer" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.75rem 1rem;">
+        <div class="backend-status-pill" style="justify-content: space-between; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot-active"></span>
+            <span style="font-size: 0.6875rem; font-weight: 600;">Live Backend</span>
           </div>
-        </div>
-        <div class="hidden md:flex items-center gap-space-sm px-space-md py-1 rounded-full bg-surface-container-lowest border border-outline-variant/30">
-          <div class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></div>
-          <span class="font-label-sm text-label-sm text-on-surface font-medium">All systems healthy</span>
-        </div>
-      </div>
-
-      <!-- Controls & Admin Profile -->
-      <div class="flex items-center gap-space-md">
-        <!-- Cadence Select -->
-        <div class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/30">
-          <div class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></div>
-          <span class="font-label-sm text-label-sm text-outline">Interval:</span>
-          <select id="headerIntervalSelect" class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer">
-            <option value="15s" selected>15s</option>
-            <option value="paused">Paused</option>
-            <option value="5s">5s</option>
-            <option value="30s">30s</option>
-            <option value="60s">60s</option>
-          </select>
+          <span style="font-size: 0.625rem; font-family: var(--font-mono); color: var(--outline);" id="lastCheckTimeDisplay">Live</span>
         </div>
 
-        <!-- Refresh Button -->
-        <button id="headerRefreshBtn" class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md shadow-sm border border-outline-variant/20">
-          <span class="material-symbols-outlined text-[16px]">sync</span>
-          <span>Refresh now</span>
+        <button type="button" class="btn-sidebar-return-user" id="btn-sidebar-switch-user" title="Switch to Scholar Workspace (Password Required)">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Switch to User Mode</span>
         </button>
-
-        <!-- Export Dropdown -->
-        <div class="relative group">
-          <button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-label-md text-label-md shadow-sm border border-outline-variant/20">
-            <span class="material-symbols-outlined text-[16px]">download</span>
-            <span>Export</span>
-            <span class="material-symbols-outlined text-[14px]">expand_more</span>
-          </button>
-          <div class="absolute right-0 top-full mt-1 hidden group-hover:flex flex-col w-40 rounded-lg bg-surface-container-lowest shadow-xl border border-outline-variant/30 p-1 z-50">
-            <button id="exportCsvAction" class="px-3 py-1.5 text-left font-label-sm text-label-sm text-on-surface hover:bg-surface-container rounded transition-colors flex items-center justify-between">
-              <span>Export CSV</span>
-              <span class="text-outline">.csv</span>
-            </button>
-            <button id="exportJsonAction" class="px-3 py-1.5 text-left font-label-sm text-label-sm text-on-surface hover:bg-surface-container rounded transition-colors flex items-center justify-between">
-              <span>Export JSON</span>
-              <span class="text-outline">.json</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Admin Profile & Lock -->
-        <div class="flex items-center gap-space-md pl-space-sm border-l border-outline-variant/30">
-          <div class="flex items-center gap-space-sm">
-            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
-              <span class="material-symbols-outlined text-[18px]">person</span>
-            </div>
-            <div class="hidden lg:flex flex-col text-left">
-              <span class="font-title-sm text-title-sm text-on-surface leading-tight font-semibold">admin</span>
-              <span class="font-label-sm text-label-sm text-outline leading-tight text-[11px]">Role: admin</span>
-            </div>
-          </div>
-          <a href="../user/index.html" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm transition-colors border border-outline-variant/30 font-medium" title="Switch to Scholar Workspace (User Mode)">
-            <span class="material-symbols-outlined text-[16px]">school</span>
-            <span>Scholar Mode</span>
-          </a>
-          <button id="headerLogoutBtn" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-surface-container transition-colors" title="Lock Admin Session">
-            <span class="material-symbols-outlined text-[20px]">lock</span>
-          </button>
-        </div>
       </div>
-    </header>
+    </aside>
 
-    <!-- ==================== MAIN VIEWPORT CONTENT ==================== -->
-    <main class="w-full pt-20 px-gutter-lg pb-margin-lg min-h-screen bg-surface">
+    <!-- Mobile Sidebar Backdrop -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
-      <!-- ==================== TAB 1: OVERVIEW & HEALTH ==================== -->
-      <section id="panel-overview-health" class="admin-view-panel flex flex-col gap-space-xl">
-        <!-- Banner & Quick Controls -->
-        <div class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-sm border border-outline-variant/20 p-space-lg flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-              <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary px-2 py-0.5 rounded bg-surface-container-highest font-semibold">System Verification Matrix</span>
-              <span class="font-label-sm text-label-sm text-outline font-mono">SCIPHI-IAD-04</span>
-            </div>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Overview &amp; System Health</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Real-time dependency reachability, roundtrip latency probes, and diagnostic infrastructure vitals across the 5 core substrates.
-            </p>
+    <!-- ======================================================================
+         MAIN CONTENT AREA
+         ====================================================================== -->
+    <div class="admin-main">
+      
+      <!-- Top App Header (Consistent with User Mode) -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle navigation sidebar" type="button">
+            <span class="material-symbols-outlined text-[20px]" id="sidebar-toggle-icon">menu_open</span>
+          </button>
+          <div class="header-breadcrumb">
+            <span class="breadcrumb-root">Workspace</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current" id="admin-breadcrumb-title">Overview &amp; Health</span>
           </div>
-          <div class="flex flex-wrap items-center gap-space-sm">
-            <button id="triggerProbeBtn" class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm hover:bg-primary-container transition-colors shadow-sm">
-              <span class="material-symbols-outlined text-[18px]">bolt</span>
-              <span>Trigger Synthetic Probe</span>
+        </div>
+
+        <div class="header-right">
+          <!-- Refresh Interval Selector -->
+          <div style="display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: var(--radius-md); background: var(--surface-container); border: 1px solid var(--border-color); font-size: 0.75rem;">
+            <span class="status-dot-active"></span>
+            <span style="color: var(--on-surface-variant); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;">Cadence:</span>
+            <select id="headerIntervalSelect" style="background: transparent; border: none; font-family: inherit; font-size: 0.75rem; color: var(--on-surface); font-weight: 600; outline: none; cursor: pointer;">
+              <option value="15s" selected>15s</option>
+              <option value="paused">Paused</option>
+              <option value="5s">5s</option>
+              <option value="30s">30s</option>
+              <option value="60s">60s</option>
+            </select>
+          </div>
+
+          <!-- Refresh Now Button -->
+          <button class="btn-header-action" id="headerRefreshBtn" type="button" title="Poll Live Telemetry Now">
+            <span class="material-symbols-outlined text-[16px]">sync</span>
+            <span>Refresh</span>
+          </button>
+
+          <!-- Export Dropdown -->
+          <div class="relative-dropdown-container" style="position: relative;">
+            <button class="btn-header-action" id="headerExportBtn" type="button" title="Export Telemetry Data">
+              <span class="material-symbols-outlined text-[16px]">download</span>
+              <span>Export</span>
+              <span class="material-symbols-outlined text-[14px]">expand_more</span>
             </button>
-            <button onclick="AdminController.exportScoresData('csv')" class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-              <span class="material-symbols-outlined text-[18px]">terminal</span>
-              <span>Diagnostic Dump</span>
+            <div class="profile-dropdown" id="exportDropdownMenu" style="right: 0; min-width: 160px; top: calc(100% + 6px);">
+              <button class="profile-action-item" id="exportCsvAction" type="button">
+                <span class="material-symbols-outlined text-[16px]">table_view</span>
+                <span>Export CSV (.csv)</span>
+              </button>
+              <button class="profile-action-item" id="exportJsonAction" type="button">
+                <span class="material-symbols-outlined text-[16px]">data_object</span>
+                <span>Export JSON (.json)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Profile Component: Exactly identical to User Mode -->
+          <div class="profile-container" id="profile-container">
+            <button class="btn-profile" id="btn-profile-trigger" type="button" title="Admin Profile &amp; Role Access">
+              <div class="profile-avatar-badge" id="profile-avatar-badge" style="background: var(--primary-container); color: #ffffff;">
+                <span class="material-symbols-outlined text-[16px]" id="profile-avatar-icon">admin_panel_settings</span>
+              </div>
+              <div class="profile-label-group">
+                <span class="profile-user-name" id="profile-user-name">Admin Evaluator</span>
+                <span class="profile-role-tag" id="profile-role-tag" style="background: rgba(0, 81, 81, 0.12); color: var(--primary);">Admin</span>
+              </div>
+              <span class="material-symbols-outlined text-[16px] profile-chevron" id="profile-chevron">expand_more</span>
+            </button>
+
+            <!-- Profile Dropdown Menu -->
+            <div class="profile-dropdown" id="profile-dropdown">
+              <div class="profile-dropdown-header">
+                <div class="profile-dropdown-avatar" style="background: var(--primary-container); color: #ffffff;">
+                  <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                </div>
+                <div class="profile-dropdown-info">
+                  <h4 class="profile-dropdown-name">Admin Evaluator</h4>
+                  <p class="profile-dropdown-email">admin@platform.ai</p>
+                  <div class="profile-status-pill">
+                    <span class="status-dot-active"></span>
+                    <span>System Admin (Evaluator)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-dropdown-divider"></div>
+
+              <!-- Role Switcher: Switching to User asks for User Password! -->
+              <div class="profile-role-section">
+                <div class="profile-section-title">Login Role Access</div>
+                <div class="profile-role-toggle-group">
+                  <button class="profile-role-switch-btn" id="profile-switch-user" type="button">
+                    <span class="material-symbols-outlined text-[15px]">person</span>
+                    <span>User Mode</span>
+                  </button>
+                  <button class="profile-role-switch-btn active" id="profile-switch-admin" type="button">
+                    <span class="material-symbols-outlined text-[15px]">admin_panel_settings</span>
+                    <span>Admin Mode</span>
+                  </button>
+                </div>
+                <p class="profile-role-desc">
+                  Full model diagnostics active: LLM-as-a-judge scores, prompt critiques, and agent trace latencies are visible.
+                </p>
+              </div>
+
+              <div class="profile-dropdown-divider"></div>
+
+              <div class="profile-dropdown-actions">
+                <button class="profile-action-item" id="btn-switch-to-user-dropdown" type="button">
+                  <span class="material-symbols-outlined text-[16px]">logout</span>
+                  <span>Switch to User Mode (Verify Password)</span>
+                </button>
+                <button class="profile-action-item" id="headerLogoutBtn" type="button">
+                  <span class="material-symbols-outlined text-[16px]">lock</span>
+                  <span>Lock Admin Session</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Admin Views Canvas -->
+      <div class="admin-scroll-area">
+
+        <!-- ==================== TAB 1: OVERVIEW & HEALTH ==================== -->
+        <section id="panel-overview-health" class="admin-view-panel">
+          <!-- Banner -->
+          <div class="dashboard-banner">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="sidebar-admin-tag">System Verification Matrix</span>
+                <span style="font-size: 0.6875rem; font-family: var(--font-mono); color: var(--outline);">SCIPHI-IAD-04</span>
+              </div>
+              <h1 class="dashboard-banner-title">Overview &amp; System Health</h1>
+              <p class="dashboard-banner-desc">
+                Real-time dependency reachability, roundtrip latency probes, and diagnostic infrastructure vitals across the 5 core substrates.
+              </p>
+            </div>
+            <div class="dashboard-banner-actions">
+              <button class="btn-new-inquiry" id="triggerProbeBtn" type="button" style="padding: 0.5rem 1rem; width: auto;">
+                <span class="material-symbols-outlined text-[18px]">bolt</span>
+                <span>Trigger Synthetic Probe</span>
+              </button>
+              <button class="btn-header-action" onclick="AdminController.exportScoresData('csv')" type="button">
+                <span class="material-symbols-outlined text-[18px]">terminal</span>
+                <span>Diagnostic Dump</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 Core Dependency Probes Grid -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title-group">
+                <span class="material-symbols-outlined text-[20px]" style="color: var(--primary);">hub</span>
+                <div>
+                  <h3 class="admin-card-title">Subsystem Reachability &amp; Socket Probes</h3>
+                  <p class="admin-card-subtitle">Continuous ping verification across all 5 operational substrates</p>
+                </div>
+              </div>
+              <span class="admin-nav-chip">HTTP / TCP / Socket</span>
+            </div>
+
+            <div class="probes-grid">
+              <!-- 1. Redis -->
+              <div class="probe-card">
+                <div class="probe-card-top">
+                  <span class="probe-tier-tag">Cache Tier</span>
+                  <span id="status-redis" class="probe-status-badge">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
+                  </span>
+                </div>
+                <div>
+                  <h4 class="probe-name">Redis</h4>
+                  <p class="probe-desc">STM sessions &amp; semantic cache</p>
+                </div>
+                <div class="probe-metrology-row">
+                  <span style="color: var(--outline);">RTT Ping:</span>
+                  <span id="rtt-redis" class="probe-latency-val">—</span>
+                </div>
+              </div>
+
+              <!-- 2. Postgres -->
+              <div class="probe-card">
+                <div class="probe-card-top">
+                  <span class="probe-tier-tag">Vector Store</span>
+                  <span id="status-postgres" class="probe-status-badge">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
+                  </span>
+                </div>
+                <div>
+                  <h4 class="probe-name">PostgreSQL</h4>
+                  <p class="probe-desc">pgvector LTM cosine storage</p>
+                </div>
+                <div class="probe-metrology-row">
+                  <span style="color: var(--outline);">RTT Ping:</span>
+                  <span id="rtt-postgres" class="probe-latency-val">—</span>
+                </div>
+              </div>
+
+              <!-- 3. Groq LLM -->
+              <div class="probe-card">
+                <div class="probe-card-top">
+                  <span class="probe-tier-tag">Primary LLM</span>
+                  <span id="status-groq" class="probe-status-badge">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
+                  </span>
+                </div>
+                <div>
+                  <h4 class="probe-name">Groq API</h4>
+                  <p class="probe-desc">Llama-3.3-70b-versatile</p>
+                </div>
+                <div class="probe-metrology-row">
+                  <span style="color: var(--outline);">API RTT:</span>
+                  <span id="rtt-groq" class="probe-latency-val">—</span>
+                </div>
+              </div>
+
+              <!-- 4. Ollama Local -->
+              <div class="probe-card">
+                <div class="probe-card-top">
+                  <span class="probe-tier-tag">Fallback LLM</span>
+                  <span id="status-ollama" class="probe-status-badge">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
+                  </span>
+                </div>
+                <div>
+                  <h4 class="probe-name">Ollama Local</h4>
+                  <p class="probe-desc">Llama-3.2 (CUDA daemon)</p>
+                </div>
+                <div class="probe-metrology-row">
+                  <span style="color: var(--outline);">Socket RTT:</span>
+                  <span id="rtt-ollama" class="probe-latency-val">—</span>
+                </div>
+              </div>
+
+              <!-- 5. Tavily Search -->
+              <div class="probe-card">
+                <div class="probe-card-top">
+                  <span class="probe-tier-tag">Search Agent</span>
+                  <span id="status-tavily" class="probe-status-badge">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
+                  </span>
+                </div>
+                <div>
+                  <h4 class="probe-name">Tavily API</h4>
+                  <p class="probe-desc">arXiv, PubMed, NOAA, IEEE</p>
+                </div>
+                <div class="probe-metrology-row">
+                  <span style="color: var(--outline);">Search RTT:</span>
+                  <span id="rtt-tavily" class="probe-latency-val">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Server Process Card -->
+          <div class="process-runtime-card">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--surface-container); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                <span class="material-symbols-outlined text-[26px]">dns</span>
+              </div>
+              <div>
+                <span class="process-stat-label">Active Server Process</span>
+                <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--on-surface); margin-top: 2px;" id="healthPythonDisplay">—</h4>
+              </div>
+            </div>
+
+            <div class="process-tiles-cluster">
+              <div class="process-stat-tile">
+                <span class="process-stat-label">Process PID</span>
+                <span class="process-stat-val" id="healthPidDisplay">—</span>
+              </div>
+              <div class="process-stat-tile">
+                <span class="process-stat-label">Uptime</span>
+                <span class="process-stat-val" id="healthUptimeDisplay" style="color: var(--primary);">—</span>
+              </div>
+              <div class="process-stat-tile">
+                <span class="process-stat-label">Failure Budget</span>
+                <span class="process-stat-val" style="color: var(--primary);">99.98%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2: METRICS & LATENCY ==================== -->
+        <section id="panel-metrics-latency" class="admin-view-panel hidden">
+          <!-- Banner & Time Filter -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">Performance Metrology</span>
+              <h1 class="dashboard-banner-title">Metrics &amp; Latency Telemetry</h1>
+              <p class="dashboard-banner-desc">
+                Distribution percentiles, cache hit ratios, error rates, and provider fallback trends across time windows.
+              </p>
+            </div>
+            <!-- Time Filter -->
+            <div style="display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--surface-container); border: 1px solid var(--border-color);">
+              <button class="time-pill-btn metrics-range-btn" data-range="1h">1h</button>
+              <button class="time-pill-btn metrics-range-btn active" data-range="24h">24h</button>
+              <button class="time-pill-btn metrics-range-btn" data-range="7d">7d</button>
+              <button class="time-pill-btn metrics-range-btn" data-range="all">All</button>
+            </div>
+          </div>
+
+          <!-- Top Throughput & Health Summary (4 Cards) -->
+          <div class="summary-tiles-grid">
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Total Inquiries</span>
+              <div class="summary-stat-num" id="metricTotalRequests">0</div>
+              <span class="summary-stat-sub" style="color: var(--primary);">Live telemetry captured</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Error Rate</span>
+              <div class="summary-stat-num" id="metricErrorRate">0.00%</div>
+              <span class="summary-stat-sub">Pipeline error ratio</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Semantic Cache Hit Rate</span>
+              <div class="summary-stat-num" id="metricCacheHitRate" style="color: var(--primary);">0.0%</div>
+              <span class="summary-stat-sub" style="color: var(--primary);">Direct vector hits</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Provider Fallbacks</span>
+              <div class="summary-stat-num" id="metricFallbacks">0</div>
+              <span class="summary-stat-sub">Fallback routing events</span>
+            </div>
+          </div>
+
+          <!-- End-to-End Latency Distribution -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title-group">
+                <span class="material-symbols-outlined text-[20px]" style="color: var(--primary);">timer</span>
+                <div>
+                  <h3 class="admin-card-title">End-to-End Synthesis Latency Distribution</h3>
+                  <p class="admin-card-subtitle">Percentile boundaries computed over selected time window</p>
+                </div>
+              </div>
+              <span class="admin-nav-chip">Percentile Metrics</span>
+            </div>
+
+            <div class="metric-tiles-grid">
+              <div class="metric-tile">
+                <span class="metric-tile-label">P50 (Median)</span>
+                <span class="metric-tile-number" id="metricP50">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">P90</span>
+                <span class="metric-tile-number" id="metricP90">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">P95</span>
+                <span class="metric-tile-number accent" id="metricP95">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">P99</span>
+                <span class="metric-tile-number warning" id="metricP99">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Average</span>
+                <span class="metric-tile-number" id="metricAvg">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Min / Max</span>
+                <span class="metric-tile-number" id="metricMinMax" style="font-size: 0.9375rem;">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 3: AGENT TRACES & WATERFALL ==================== -->
+        <section id="panel-agent-traces" class="admin-view-panel hidden">
+          <!-- Banner & Outcome Filters -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">LangGraph 4-Agent Pipeline</span>
+              <h1 class="dashboard-banner-title">Agent Execution Traces</h1>
+              <p class="dashboard-banner-desc">
+                Inspect granular multi-agent execution spans, prompt cache efficiency, and step-by-step waterfall latency analysis.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--surface-container); border: 1px solid var(--border-color);">
+              <button class="time-pill-btn trace-filter-outcome active" data-outcome="all">All</button>
+              <button class="time-pill-btn trace-filter-outcome" data-outcome="success">Success</button>
+              <button class="time-pill-btn trace-filter-outcome" data-outcome="blocked">Blocked</button>
+            </div>
+          </div>
+
+          <!-- Split Layout: Table (7) & Waterfall (5) -->
+          <div class="traces-split-layout">
+            <!-- Traces Table -->
+            <div class="admin-table-container">
+              <div class="admin-table-header">
+                <span class="admin-card-title">Recorded Inquiries &amp; Traces</span>
+                <span class="admin-card-subtitle">Click row to inspect waterfall</span>
+              </div>
+              <div class="admin-table-scroll">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Request ID</th>
+                      <th>Topic Preview</th>
+                      <th>Outcome</th>
+                      <th>Duration</th>
+                      <th style="text-align: center;">Cache</th>
+                      <th>Sources</th>
+                      <th>Score</th>
+                      <th style="text-align: right;">Inspect</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tracesTableBody">
+                    <!-- Injected dynamically via admin-app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Waterfall Inspector -->
+            <div class="waterfall-inspector-card">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span class="sidebar-admin-tag">Execution Waterfall</span>
+                  <span id="waterfallDuration" style="font-family: var(--font-mono); font-weight: 700; color: var(--primary); font-size: 0.8125rem;">—</span>
+                </div>
+                <h3 id="waterfallTopicTitle" style="font-size: 1.0625rem; font-weight: 600; color: var(--on-surface); margin-top: 2px;">No Trace Selected</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--outline);">
+                  <span id="waterfallRequestId">—</span>
+                  <span id="waterfallModel">—</span>
+                </div>
+              </div>
+
+              <!-- Steps Breakdown Container -->
+              <div style="display: flex; flex-direction: column; gap: 0.625rem; overflow-y: auto; max-height: 480px; padding-right: 4px;" id="waterfallStepsContainer">
+                <!-- Injected dynamically via renderTraceWaterfall -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 4: QUALITY & LLM-AS-A-JUDGE ==================== -->
+        <section id="panel-quality-judge" class="admin-view-panel hidden">
+          <!-- Banner & Action -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">Automated &amp; Human Evaluation</span>
+              <h1 class="dashboard-banner-title">Quality &amp; LLM-as-a-Judge</h1>
+              <p class="dashboard-banner-desc">
+                Continuous automated evaluation scores ingested from <code style="font-family: var(--font-mono); color: var(--primary);">logs/scores.jsonl</code> with human reviewer calibration.
+              </p>
+            </div>
+            <button class="btn-new-inquiry" id="open-human-modal-btn" type="button" style="padding: 0.5rem 1rem; width: auto;">
+              <span class="material-symbols-outlined text-[18px]">add_task</span>
+              <span>Submit Human Review</span>
             </button>
           </div>
-        </div>
 
-        <!-- 5 Core Dependency Probes Grid -->
-        <div class="flex flex-col gap-space-md">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-space-sm">
-              <span class="material-symbols-outlined text-primary text-[22px]">hub</span>
-              <h2 class="font-headline-sm text-headline-sm text-on-surface">Subsystem Verifications &amp; Reachability Probes</h2>
+          <!-- Gauges Cluster -->
+          <div class="metric-tiles-grid">
+            <div class="metric-tile">
+              <span class="metric-tile-label">Average Overall</span>
+              <span class="metric-tile-number accent" id="qualityAvgOverall">—</span>
             </div>
-            <span class="font-label-sm text-label-sm text-outline">HTTP / TCP / Socket Diagnostics</span>
+            <div class="metric-tile">
+              <span class="metric-tile-label">Relevance</span>
+              <span class="metric-tile-number" id="qualityAvgRelevance">—</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-tile-label">Accuracy</span>
+              <span class="metric-tile-number" id="qualityAvgAccuracy">—</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-tile-label">Clarity</span>
+              <span class="metric-tile-number" id="qualityAvgClarity">—</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-tile-label">Truncations</span>
+              <span class="metric-tile-number warning" id="qualityTruncatedCount">0</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-tile-label">Failed Gradings</span>
+              <span class="metric-tile-number error" id="qualityFailedCount">0</span>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-space-md">
-            <!-- 1. Redis -->
-            <div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Cache Tier</span>
-                  <span id="status-redis" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
-                    <span>Checking...</span>
-                  </span>
-                </div>
-                <div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-semibold">Redis</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">STM sessions &amp; semantic cache</p>
-                </div>
-              </div>
-              <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
-                <span class="text-outline">RTT Ping:</span>
-                <span id="rtt-redis" class="font-mono text-primary font-bold">—</span>
-              </div>
+          <!-- Scores Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">Evaluation Scores Feed</span>
+              <span class="admin-card-subtitle">Total records: <span id="qualityTotalGraded">0</span></span>
             </div>
-
-            <!-- 2. Postgres -->
-            <div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Vector Store</span>
-                  <span id="status-postgres" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
-                    <span>Checking...</span>
-                  </span>
-                </div>
-                <div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-semibold">PostgreSQL</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">pgvector LTM cosine storage</p>
-                </div>
-              </div>
-              <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
-                <span class="text-outline">RTT Ping:</span>
-                <span id="rtt-postgres" class="font-mono text-primary font-bold">—</span>
-              </div>
-            </div>
-
-            <!-- 3. Groq LLM -->
-            <div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Primary LLM</span>
-                  <span id="status-groq" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
-                    <span>Checking...</span>
-                  </span>
-                </div>
-                <div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-semibold">Groq API</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">Llama-3.3-70b-versatile</p>
-                </div>
-              </div>
-              <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
-                <span class="text-outline">API RTT:</span>
-                <span id="rtt-groq" class="font-mono text-primary font-bold">—</span>
-              </div>
-            </div>
-
-            <!-- 4. Ollama Local -->
-            <div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Fallback LLM</span>
-                  <span id="status-ollama" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
-                    <span>Checking...</span>
-                  </span>
-                </div>
-                <div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-semibold">Ollama Local</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">Llama-3.2 (CUDA daemon)</p>
-                </div>
-              </div>
-              <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
-                <span class="text-outline">Socket RTT:</span>
-                <span id="rtt-ollama" class="font-mono text-primary font-bold">—</span>
-              </div>
-            </div>
-
-            <!-- 5. Tavily Search -->
-            <div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Search Agent</span>
-                  <span id="status-tavily" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
-                    <span>Checking...</span>
-                  </span>
-                </div>
-                <div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-semibold">Tavily API</h3>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">arXiv, PubMed, NOAA, IEEE</p>
-                </div>
-              </div>
-              <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
-                <span class="text-outline">Search RTT:</span>
-                <span id="rtt-tavily" class="font-mono text-primary font-bold">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Runtime Process Health Card -->
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col md:flex-row items-center justify-between gap-space-md">
-          <div class="flex items-center gap-space-md">
-            <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary">
-              <span class="material-symbols-outlined text-[28px]">dns</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Active Server Process</span>
-              <span id="healthPythonDisplay" class="font-title-sm text-title-sm text-on-surface font-semibold">—</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-space-xl font-mono text-label-sm">
-            <div>
-              <span class="text-outline uppercase text-[10px]">Process PID:</span>
-              <div id="healthPidDisplay" class="font-bold text-on-surface text-metric-md">—</div>
-            </div>
-            <div>
-              <span class="text-outline uppercase text-[10px]">Uptime:</span>
-              <div id="healthUptimeDisplay" class="font-bold text-primary text-metric-md">—</div>
-            </div>
-            <div>
-              <span class="text-outline uppercase text-[10px]">Failure Budget:</span>
-              <div class="font-bold text-primary text-metric-md">99.98%</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== TAB 2: METRICS & LATENCY ==================== -->
-      <section id="panel-metrics-latency" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Performance Metrology</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Metrics &amp; Latency Telemetry</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Distribution percentiles, cache hit ratios, error rates, and provider fallback trends across time windows.
-            </p>
-          </div>
-          <!-- Time Range Filter -->
-          <div class="flex items-center gap-1 bg-surface-container p-1 rounded-lg border border-outline-variant/30">
-            <button class="metrics-range-btn px-space-sm py-1 rounded text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface" data-range="1h">1h</button>
-            <button class="metrics-range-btn px-space-sm py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-sm" data-range="24h">24h</button>
-            <button class="metrics-range-btn px-space-sm py-1 rounded text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface" data-range="7d">7d</button>
-            <button class="metrics-range-btn px-space-sm py-1 rounded text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface" data-range="all">All</button>
-          </div>
-        </div>
-
-        <!-- Latency Percentiles Card -->
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col gap-space-md">
-          <div class="flex items-center justify-between">
-            <h2 class="font-headline-sm text-headline-sm text-on-surface">End-to-End Synthesis Latency Distribution</h2>
-            <span class="font-label-sm text-label-sm text-outline">Calculated over selected window</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-md text-center">
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">P50 (Median)</span>
-              <div id="metricP50" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">P90</span>
-              <div id="metricP90" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">P95</span>
-              <div id="metricP95" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">P99</span>
-              <div id="metricP99" class="font-mono text-metric-lg font-bold text-secondary mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Average</span>
-              <div id="metricAvg" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Min / Max</span>
-              <div id="metricMinMax" class="font-mono text-label-md font-semibold text-on-surface-variant mt-2">—</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Throughput and Error Ratios -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-          <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Total Inquiries</span>
-            <div id="metricTotalRequests" class="font-mono text-metric-lg font-bold text-on-surface my-2">0</div>
-            <span class="font-label-sm text-label-sm text-primary">Live telemetry connected</span>
-          </div>
-          <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Error Rate</span>
-            <div id="metricErrorRate" class="font-mono text-metric-lg font-bold text-on-surface my-2">0.00%</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">0 pipeline errors</span>
-          </div>
-          <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Semantic Cache Hit Rate</span>
-            <div id="metricCacheHitRate" class="font-mono text-metric-lg font-bold text-primary my-2">0.0%</div>
-            <span class="font-label-sm text-label-sm text-primary font-medium">0 direct vector hits</span>
-          </div>
-          <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Provider Fallbacks</span>
-            <div id="metricFallbacks" class="font-mono text-metric-lg font-bold text-secondary my-2">0</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">Provider fallbacks</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== TAB 3: AGENT TRACES & WATERFALL ==================== -->
-      <section id="panel-agent-traces" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">LangGraph 4-Agent Pipeline</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Agent Execution Traces</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Inspect granular multi-agent execution spans, prompt cache efficiency, and step-by-step waterfall latency analysis.
-            </p>
-          </div>
-          <div class="flex items-center gap-space-xs">
-            <button class="trace-filter-outcome px-3 py-1.5 rounded-lg bg-primary/20 text-primary font-bold font-label-sm" data-outcome="all">All</button>
-            <button class="trace-filter-outcome px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm hover:text-on-surface" data-outcome="success">Success</button>
-            <button class="trace-filter-outcome px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm hover:text-on-surface" data-outcome="blocked">Blocked</button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
-          <!-- Traces Table (Span 7) -->
-          <div class="lg:col-span-7 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-            <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-              <span class="font-title-sm text-title-sm text-on-surface font-semibold">Recorded Inquiries &amp; Traces</span>
-              <span class="font-label-sm text-label-sm text-outline">Click row to inspect waterfall</span>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left font-body-sm text-body-sm">
+            <div class="admin-table-scroll">
+              <table class="admin-table">
                 <thead>
-                  <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px] bg-surface-container-lowest">
-                    <th class="px-space-md py-2.5">Request ID</th>
-                    <th class="px-space-md py-2.5">Topic Preview</th>
-                    <th class="px-space-md py-2.5">Outcome</th>
-                    <th class="px-space-md py-2.5">Duration</th>
-                    <th class="px-space-md py-2.5 text-center">Cache</th>
-                    <th class="px-space-md py-2.5">Sources</th>
-                    <th class="px-space-md py-2.5">Score</th>
-                    <th class="px-space-md py-2.5 text-right">Inspect</th>
+                  <tr>
+                    <th>Research Topic</th>
+                    <th>Overall</th>
+                    <th>Rel</th>
+                    <th>Acc</th>
+                    <th>Cla</th>
+                    <th>Status</th>
+                    <th>Judge Critique</th>
                   </tr>
                 </thead>
-                <tbody id="tracesTableBody">
+                <tbody id="qualityScoresTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 5: SAFETY & RED-TEAMING ==================== -->
+        <section id="panel-safety-red-team" class="admin-view-panel hidden">
+          <!-- Banner -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">Guardrails &amp; Adversarial Benchmarking</span>
+              <h1 class="dashboard-banner-title">Safety &amp; Red-Teaming</h1>
+              <p class="dashboard-banner-desc">
+                Real-time guardrail block telemetry strictly segregated from offline PyRIT red-team attack campaign evaluations.
+              </p>
+            </div>
+          </div>
+
+          <!-- PyRIT Benchmark Suite (4 Tiles) -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title-group">
+                <span class="material-symbols-outlined text-[20px]" style="color: var(--primary);">shield</span>
+                <div>
+                  <h3 class="admin-card-title">Offline PyRIT Red-Team Benchmark Suite</h3>
+                  <p class="admin-card-subtitle">Multi-turn jailbreak and indirect prompt injection defense verification</p>
+                </div>
+              </div>
+              <span class="admin-nav-chip">pyrit-run-001</span>
+            </div>
+
+            <div class="summary-tiles-grid">
+              <div class="metric-tile">
+                <span class="metric-tile-label">Defense Rate</span>
+                <span class="metric-tile-number accent" id="safetyDefenseRate">—</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Attacks Defended</span>
+                <span class="metric-tile-number" id="safetyTotalAttacks">0 / 0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Indirect Attacks (XPIA)</span>
+                <span class="metric-tile-number" id="safetyIndirectAttacks">0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Direct Jailbreaks</span>
+                <span class="metric-tile-number" id="safetyDirectAttacks">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Production Incidents Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">Live Production Safety Incidents</span>
+              <span class="admin-card-subtitle">PII-Sanitized Excerpts (&lt;160 chars)</span>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Event ID</th>
+                    <th>Check Type</th>
+                    <th>Reason</th>
+                    <th>Sanitized Excerpt</th>
+                    <th>Outcome</th>
+                  </tr>
+                </thead>
+                <tbody id="safetyEventsTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 6: MEMORY & CACHE ==================== -->
+        <section id="panel-memory-cache" class="admin-view-panel hidden">
+          <!-- Banner & Action -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">Data Substrate Management</span>
+              <h1 class="dashboard-banner-title">Memory &amp; Semantic Cache</h1>
+              <p class="dashboard-banner-desc">
+                Inspect indexed long-term monographs, redis semantic cache entries with TTL countdowns, and active researcher session metadata.
+              </p>
+            </div>
+            <button class="btn-header-action" id="clearAllCacheBtn" type="button" style="background-color: var(--error, #ba1a1a); color: #ffffff; border-color: transparent;">
+              <span class="material-symbols-outlined text-[16px]">cleaning_services</span>
+              <span>Clear Semantic Cache</span>
+            </button>
+          </div>
+
+          <!-- 6a: Redis Semantic Cache Entries -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">Active Semantic Cache Entries (Redis)</span>
+              <span class="admin-nav-chip">Similarity Threshold: 0.85</span>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Cache Key</th>
+                    <th>Topic Query</th>
+                    <th>TTL Remaining</th>
+                    <th>Cached Preview</th>
+                    <th style="text-align: right;">Invalidate</th>
+                  </tr>
+                </thead>
+                <tbody id="semanticCacheTableBody">
                   <!-- Injected via admin-app.js -->
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- Trace Waterfall Inspector (Span 5) -->
-          <div class="lg:col-span-5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm p-space-md flex flex-col gap-space-md">
-            <div class="flex flex-col gap-1 pb-space-sm border-b border-outline-variant/20">
-              <div class="flex items-center justify-between">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Execution Waterfall</span>
-                <span id="waterfallDuration" class="font-mono text-primary font-bold text-label-sm">—</span>
-              </div>
-              <h3 id="waterfallTopicTitle" class="font-title-md text-title-md text-on-surface font-semibold truncate">No Trace Selected</h3>
-              <div class="flex items-center justify-between text-outline font-mono text-[11px] mt-1">
-                <span id="waterfallRequestId">—</span>
-                <span id="waterfallModel">—</span>
-              </div>
+          <!-- 6b: PostgreSQL Long-Term Memory (LTM) Reports -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">PostgreSQL Long-Term Memory (pgvector IVFFlat)</span>
+              <span class="admin-nav-chip">Double-Confirmation Enforced</span>
             </div>
-
-            <!-- Steps Breakdown -->
-            <div class="flex flex-col gap-space-sm overflow-y-auto max-h-[540px] pr-1" id="waterfallStepsContainer">
-              <!-- Injected dynamically via renderTraceWaterfall -->
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== TAB 4: QUALITY & LLM-AS-A-JUDGE ==================== -->
-      <section id="panel-quality-judge" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Automated &amp; Human Evaluation</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Quality &amp; LLM-as-a-Judge</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Continuous automated evaluation scores ingested from <code class="text-primary font-mono text-label-sm">logs/scores.jsonl</code> with human reviewer calibration.
-            </p>
-          </div>
-          <div class="flex items-center gap-space-sm">
-            <button id="open-human-modal-btn" class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm hover:bg-primary-container transition-colors shadow-sm">
-              <span class="material-symbols-outlined text-[18px]">add_task</span>
-              <span>Submit Human Review</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Metric Gauges Cluster -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-md text-center">
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Average Overall</span>
-            <div id="qualityAvgOverall" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
-          </div>
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Relevance</span>
-            <div id="qualityAvgRelevance" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-          </div>
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Accuracy</span>
-            <div id="qualityAvgAccuracy" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-          </div>
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Clarity</span>
-            <div id="qualityAvgClarity" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
-          </div>
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Truncations</span>
-            <div id="qualityTruncatedCount" class="font-mono text-metric-lg font-bold text-secondary mt-1">0</div>
-          </div>
-          <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
-            <span class="font-label-sm text-label-sm text-outline uppercase">Failed Gradings</span>
-            <div id="qualityFailedCount" class="font-mono text-metric-lg font-bold text-error mt-1">0</div>
-          </div>
-        </div>
-
-        <!-- Scores Table -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">Evaluation Scores Feed</span>
-            <span class="font-label-sm text-label-sm text-outline">Total records: <span id="qualityTotalGraded">0</span></span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Research Topic</th>
-                  <th class="px-space-md py-2.5">Overall</th>
-                  <th class="px-space-md py-2.5">Rel</th>
-                  <th class="px-space-md py-2.5">Acc</th>
-                  <th class="px-space-md py-2.5">Cla</th>
-                  <th class="px-space-md py-2.5">Status</th>
-                  <th class="px-space-md py-2.5">Judge Critique</th>
-                </tr>
-              </thead>
-              <tbody id="qualityScoresTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== TAB 5: SAFETY & RED-TEAMING ==================== -->
-      <section id="panel-safety-red-team" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Guardrails &amp; Adversarial Benchmarking</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Safety &amp; Red-Teaming</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Real-time guardrail block telemetry strictly segregated from offline PyRIT red-team attack campaign evaluations.
-            </p>
-          </div>
-        </div>
-
-        <!-- PyRIT Benchmark Widget -->
-        <div class="p-space-lg rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col gap-space-md">
-          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-            <div class="flex items-center gap-space-sm">
-              <span class="material-symbols-outlined text-primary text-[22px]">shield</span>
-              <h2 class="font-headline-sm text-headline-sm text-on-surface">Offline PyRIT Red-Team Benchmark Suite</h2>
-            </div>
-            <span class="font-label-sm text-label-sm text-primary px-2 py-0.5 rounded bg-primary/10 font-mono">pyrit-run-001</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-space-md text-center">
-            <div class="p-space-md rounded-lg bg-surface-container-low">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Defense Rate</span>
-              <div id="safetyDefenseRate" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-low">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Attacks Defended</span>
-              <div id="safetyTotalAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0 / 0</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-low">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Indirect Attacks (XPIA)</span>
-              <div id="safetyIndirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0</div>
-            </div>
-            <div class="p-space-md rounded-lg bg-surface-container-low">
-              <span class="font-label-sm text-label-sm text-outline uppercase">Direct Jailbreaks</span>
-              <div id="safetyDirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0</div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Report ID</th>
+                    <th>Topic</th>
+                    <th>Sources</th>
+                    <th>Monograph Excerpt</th>
+                    <th style="text-align: right;">Delete</th>
+                  </tr>
+                </thead>
+                <tbody id="ltmReportsTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
 
-        <!-- Production Safety Events Table -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">Live Production Safety Incidents</span>
-            <span class="font-label-sm text-label-sm text-outline">PII-Sanitized Excerpts (&lt;160 chars)</span>
+          <!-- 6c: Active Sessions Metadata -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">Short-Term Memory Active Sessions (Redis STM)</span>
+              <span class="admin-nav-chip">Confidentiality Preserved</span>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Turn Count</th>
+                    <th>Last Role</th>
+                    <th>TTL Countdown</th>
+                    <th>Privacy Safeguard</th>
+                  </tr>
+                </thead>
+                <tbody id="activeSessionsTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Event ID</th>
-                  <th class="px-space-md py-2.5">Check Type</th>
-                  <th class="px-space-md py-2.5">Reason</th>
-                  <th class="px-space-md py-2.5">Sanitized Excerpt</th>
-                  <th class="px-space-md py-2.5">Outcome</th>
-                </tr>
-              </thead>
-              <tbody id="safetyEventsTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- ==================== TAB 6: MEMORY & CACHE ==================== -->
-      <section id="panel-memory-cache" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Data Substrate Management</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Memory &amp; Semantic Cache</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Inspect indexed long-term monographs, redis semantic cache entries with TTL countdowns, and active researcher session metadata.
-            </p>
-          </div>
-          <button id="clearAllCacheBtn" class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-error text-on-error font-title-sm text-title-sm hover:bg-error/90 transition-colors shadow-sm">
-            <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
-            <span>Clear Semantic Cache</span>
-          </button>
-        </div>
-
-        <!-- 6a: Redis Semantic Cache Entries -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">Active Semantic Cache Entries (Redis)</span>
-            <span class="font-label-sm text-label-sm text-primary font-mono">Similarity Threshold: 0.85</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Cache Key</th>
-                  <th class="px-space-md py-2.5">Topic Query</th>
-                  <th class="px-space-md py-2.5">TTL Remaining</th>
-                  <th class="px-space-md py-2.5">Cached Preview</th>
-                  <th class="px-space-md py-2.5 text-right">Invalidate</th>
-                </tr>
-              </thead>
-              <tbody id="semanticCacheTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 6b: PostgreSQL Long-Term Memory (LTM) Reports -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">PostgreSQL Long-Term Memory (pgvector IVFFlat)</span>
-            <span class="font-label-sm text-label-sm text-outline">Double-Confirmation Enforced</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Report ID</th>
-                  <th class="px-space-md py-2.5">Topic</th>
-                  <th class="px-space-md py-2.5">Sources</th>
-                  <th class="px-space-md py-2.5">Monograph Excerpt</th>
-                  <th class="px-space-md py-2.5 text-right">Delete</th>
-                </tr>
-              </thead>
-              <tbody id="ltmReportsTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 6c: Active Sessions Metadata -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">Short-Term Memory Active Sessions (Redis STM)</span>
-            <span class="font-label-sm text-label-sm text-primary font-mono">Confidentiality Preserved</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Session ID</th>
-                  <th class="px-space-md py-2.5">Turn Count</th>
-                  <th class="px-space-md py-2.5">Last Role</th>
-                  <th class="px-space-md py-2.5">TTL Countdown</th>
-                  <th class="px-space-md py-2.5">Privacy Safeguard</th>
-                </tr>
-              </thead>
-              <tbody id="activeSessionsTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== TAB 7: AUDIT LOGS & CONFIG ==================== -->
-      <section id="panel-audit-logs-config" class="admin-view-panel hidden flex flex-col gap-space-xl">
-        <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-          <div>
-            <span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Immutable Governance Ledger</span>
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Audit Logs &amp; System Configuration</h1>
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-              Append-only administrative operations log from <code class="text-primary font-mono text-label-sm">logs/admin_audit.jsonl</code> and read-only runtime configuration draft.
-            </p>
-          </div>
-          <div class="flex items-center gap-space-sm">
-            <button onclick="AdminController.exportScoresData('csv')" class="flex items-center gap-2 px-space-md py-2 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-title-sm text-title-sm">
-              <span class="material-symbols-outlined text-[18px]">download</span>
+        <!-- ==================== TAB 7: AUDIT LOGS & CONFIG ==================== -->
+        <section id="panel-audit-logs-config" class="admin-view-panel hidden">
+          <!-- Banner & Action -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">Immutable Governance Ledger</span>
+              <h1 class="dashboard-banner-title">Audit Logs &amp; System Configuration</h1>
+              <p class="dashboard-banner-desc">
+                Append-only administrative operations log from <code style="font-family: var(--font-mono); color: var(--primary);">logs/admin_audit.jsonl</code> and read-only runtime configuration draft.
+              </p>
+            </div>
+            <button class="btn-header-action" onclick="AdminController.exportScoresData('csv')" type="button">
+              <span class="material-symbols-outlined text-[16px]">download</span>
               <span>Export Audit Trail</span>
             </button>
           </div>
-        </div>
 
-        <!-- Audit Table -->
-        <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
-            <span class="font-title-sm text-title-sm text-on-surface font-semibold">Administrative Operations Journal</span>
-            <span class="font-label-sm text-label-sm text-primary font-mono">APPEND-ONLY SECURE STREAM</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr class="border-b border-surface-container text-outline uppercase font-label-sm text-[11px]">
-                  <th class="px-space-md py-2.5">Time (UTC)</th>
-                  <th class="px-space-md py-2.5">Actor</th>
-                  <th class="px-space-md py-2.5">Action</th>
-                  <th class="px-space-md py-2.5">Target Resource</th>
-                  <th class="px-space-md py-2.5">Status</th>
-                  <th class="px-space-md py-2.5">IP Address</th>
-                </tr>
-              </thead>
-              <tbody id="auditLogsTableBody">
-                <!-- Injected via admin-app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Configuration Blueprint Draft -->
-        <div class="p-space-lg rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col gap-space-md">
-          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-            <div class="flex items-center gap-space-sm">
-              <span class="material-symbols-outlined text-primary text-[22px]">tune</span>
-              <h2 class="font-headline-sm text-headline-sm text-on-surface">Runtime Configuration Blueprint (Read-Only)</h2>
+          <!-- Audit Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">Administrative Operations Journal</span>
+              <span class="admin-nav-chip">APPEND-ONLY SECURE STREAM</span>
             </div>
-            <span class="font-label-sm text-label-sm text-outline font-mono">Blueprint v3.4</span>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Time (UTC)</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Target Resource</th>
+                    <th>Status</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
+                <tbody id="auditLogsTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
           </div>
-          <pre id="configBlueprintJson" class="font-mono text-label-sm text-on-surface bg-surface-container-low p-space-md rounded-lg overflow-x-auto leading-relaxed border border-outline-variant/20 max-h-96"></pre>
-        </div>
-      </section>
 
-    </main>
+          <!-- Configuration Blueprint Draft -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div class="admin-card-title-group">
+                <span class="material-symbols-outlined text-[20px]" style="color: var(--primary);">tune</span>
+                <div>
+                  <h3 class="admin-card-title">Runtime Configuration Blueprint (Read-Only)</h3>
+                  <p class="admin-card-subtitle">Active model hyperparameters, rate limits, and memory thresholds</p>
+                </div>
+              </div>
+              <span class="admin-nav-chip">Blueprint v3.4</span>
+            </div>
+            <pre id="configBlueprintJson" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface); background: var(--surface-container-low); padding: 1rem; border-radius: var(--radius-md); overflow-x: auto; line-height: 1.6; border: 1px solid var(--border-color); max-height: 380px;"></pre>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </div>
 
   <!-- ==================== MODAL 1: DESTRUCTIVE CONFIRMATION ==================== -->
-  <div id="destructiveConfirmModal" class="admin-modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="relative w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-2xl border-2 border-error p-6 flex flex-col gap-4">
-      <div class="flex items-center gap-3 text-error">
-        <span class="material-symbols-outlined text-[28px]">warning</span>
-        <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Double Confirmation Required</h3>
-      </div>
-      <p id="destructiveTargetDescription" class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-        This action will permanently purge the target resource. This operation is strictly irreversible.
-      </p>
-      <div class="flex flex-col gap-1.5 pt-2">
-        <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">
-          Type <span class="text-error font-mono font-bold">CONFIRM</span> to proceed:
-        </label>
-        <input id="destructiveConfirmInput" type="text" placeholder="CONFIRM" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-mono text-body-sm focus:outline-none focus:ring-2 focus:ring-error border border-outline-variant/30"/>
-      </div>
-      <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
-        <button data-close-modal class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-title-sm text-title-sm hover:bg-surface-container-high transition-colors">
-          Cancel
+  <div class="modal-backdrop" id="destructiveConfirmModal">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="login-modal-header" style="border-bottom: 2px solid var(--error, #ba1a1a);">
+        <div class="login-brand-group">
+          <div class="brand-icon" style="background-color: rgba(186, 26, 26, 0.12); color: var(--error, #ba1a1a);">
+            <span class="material-symbols-outlined text-[20px]">warning</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title" style="color: var(--error, #ba1a1a);">Double Confirmation Required</h3>
+            <p class="login-modal-subtitle">Irreversible administrative action</p>
+          </div>
+        </div>
+        <button class="icon-btn" data-close-modal type="button" title="Cancel">
+          <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
-        <button id="destructiveExecuteBtn" disabled class="opacity-50 cursor-not-allowed px-4 py-2 rounded-lg bg-error text-on-error font-title-sm text-title-sm hover:bg-error/90 transition-colors shadow-sm">
-          Purge Resource
-        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <p id="destructiveTargetDescription" style="font-size: 0.8125rem; color: var(--on-surface-variant); line-height: 1.45;">
+          This action will permanently purge the target resource from cache or database.
+        </p>
+
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label class="form-label">Type <code style="color: var(--error, #ba1a1a); font-weight: 700; font-family: var(--font-mono);">CONFIRM</code> to proceed:</label>
+          <div class="form-input-wrapper">
+            <input id="destructiveConfirmInput" type="text" placeholder="CONFIRM" class="form-input" style="font-family: var(--font-mono);" />
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 0.75rem;">
+          <button data-close-modal class="btn-header-action" type="button">Cancel</button>
+          <button id="destructiveExecuteBtn" disabled class="btn-new-inquiry" type="button" style="background-color: var(--error, #ba1a1a); opacity: 0.5; cursor: not-allowed; width: auto; padding: 0.5rem 1rem;">
+            Purge Resource
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ==================== MODAL 2: HUMAN REVIEW SUBMISSION ==================== -->
-  <div id="humanReviewModal" class="admin-modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="relative w-full max-w-xl bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/30 p-6 flex flex-col gap-5">
-      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary text-[24px]">rate_review</span>
-          <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Submit Human Expert Review</h3>
+  <div class="modal-backdrop" id="humanReviewModal">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #ffffff;">
+            <span class="material-symbols-outlined text-[20px]">rate_review</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Submit Human Expert Review</h3>
+            <p class="login-modal-subtitle">Calibrate pipeline LLM-as-a-judge scoring with ground truth</p>
+          </div>
         </div>
-        <button data-close-modal class="text-outline hover:text-on-surface">
-          <span class="material-symbols-outlined text-[20px]">close</span>
+        <button class="icon-btn" data-close-modal type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
       </div>
 
-      <form id="humanReviewForm" class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1">
-          <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Research Inquiry Topic</label>
-          <input id="hrTopicInput" type="text" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-body-sm text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="e.g. Quantum Error Mitigation Review" required/>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3">
-          <div class="flex flex-col gap-1">
-            <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Relevance (1-10)</label>
-            <input id="hrRelInput" type="number" min="1" max="10" value="9" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-mono text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary" required/>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Accuracy (1-10)</label>
-            <input id="hrAccInput" type="number" min="1" max="10" value="9" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-mono text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary" required/>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Clarity (1-10)</label>
-            <input id="hrClaInput" type="number" min="1" max="10" value="9" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-mono text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary" required/>
+      <form id="humanReviewForm" class="login-modal-body" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="hrTopicInput">Research Inquiry Topic</label>
+          <div class="form-input-wrapper">
+            <input id="hrTopicInput" type="text" class="form-input" placeholder="e.g. Quantum Error Mitigation Review" required />
           </div>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Examiner Feedback Notes</label>
-          <textarea id="hrNotesInput" rows="3" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-body-sm text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Provide empirical feedback or reason for divergence..."></textarea>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label" for="hrRelInput">Relevance (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrRelInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hrAccInput">Accuracy (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrAccInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hrClaInput">Clarity (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrClaInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 pt-1">
-          <input id="hrRerunCheckbox" type="checkbox" class="rounded text-primary focus:ring-primary"/>
-          <label for="hrRerunCheckbox" class="font-body-sm text-body-sm text-on-surface-variant cursor-pointer">Flag inquiry for automated pipeline rerun</label>
+        <div class="form-group">
+          <label class="form-label" for="hrNotesInput">Feedback Notes &amp; Critique</label>
+          <textarea id="hrNotesInput" rows="3" class="form-input" style="height: auto; padding: 0.625rem; resize: vertical;" placeholder="Add qualitative critique on hallucinations, citations..."></textarea>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
-          <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-title-sm text-title-sm hover:bg-surface-container-high transition-colors">
-            Cancel
-          </button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm hover:bg-primary-container transition-colors shadow-sm">
-            Save Review
-          </button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input id="hrRerunCheckbox" type="checkbox" style="cursor: pointer;" />
+          <label for="hrRerunCheckbox" style="font-size: 0.75rem; color: var(--on-surface); cursor: pointer;">Flag inquiry for pipeline automated re-run</label>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+          <button data-close-modal class="btn-header-action" type="button">Cancel</button>
+          <button type="submit" class="btn-new-inquiry" style="width: auto; padding: 0.5rem 1rem;">Submit Review</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- ==================== MODAL 3: ADMIN SIGN-IN / LOCK OVERLAY ==================== -->
-  <div id="adminLockModal" class="admin-modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-    <div class="relative w-full max-w-md bg-surface-container-low rounded-xl shadow-2xl border border-outline-variant/30 p-6 sm:p-8 flex flex-col gap-6">
-      <div class="w-full bg-secondary/15 rounded-lg p-3 flex items-start gap-3 border border-secondary/20">
-        <span class="material-symbols-outlined text-secondary shrink-0 text-[20px]">history_toggle_off</span>
-        <div class="flex flex-col text-left">
-          <span class="font-label-sm text-label-sm uppercase font-semibold text-secondary">Session Locked</span>
-          <p class="font-body-sm text-body-sm text-on-surface-variant leading-tight mt-0.5">
-            Admin console locked. Enter authorized passphrase to resume session.
-          </p>
+  <!-- ==================== MODAL 3: PASSWORD VERIFICATION TO SWITCH TO USER MODE ==================== -->
+  <div class="modal-backdrop" id="switch-user-modal">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">lock</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title" id="switch-user-modal-title">Sign In</h3>
+            <p class="login-modal-subtitle" id="switch-user-modal-subtitle">Enter your credentials to continue</p>
+          </div>
         </div>
-      </div>
-
-      <div class="flex flex-col items-center text-center gap-1">
-        <div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shadow-inner">
-          <span class="material-symbols-outlined text-[28px]">lock</span>
-        </div>
-        <h2 class="font-headline-md text-headline-md text-on-surface mt-2 font-normal">Admin Sign In</h2>
-        <span class="font-label-sm text-label-sm text-outline">Default: admin / admin123</span>
-      </div>
-
-      <form id="lockSignInForm" class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1 text-left">
-          <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Administrator Username</label>
-          <input type="text" value="admin" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-body-sm text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary"/>
-        </div>
-        <div class="flex flex-col gap-1 text-left">
-          <label class="font-label-sm text-label-sm text-outline uppercase font-semibold">Passphrase</label>
-          <input type="password" value="admin123" class="w-full bg-surface-container text-on-surface px-3 py-2 rounded-lg font-body-sm text-body-sm border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary"/>
-        </div>
-        <button type="submit" class="w-full py-2.5 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm hover:bg-primary-container transition-colors shadow-sm mt-2">
-          Unlock Dashboard
+        <button class="icon-btn" id="btn-close-switch-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
         </button>
-      </form>
+      </div>
+
+      <div class="login-modal-body">
+        <!-- Clean Role Switcher Tabs (Matching Image 1) -->
+        <div class="login-role-tabs">
+          <button class="login-role-tab active" id="switch-tab-user" type="button">
+            <span class="material-symbols-outlined text-[18px]">person</span>
+            <span class="login-tab-name">User</span>
+          </button>
+          <button class="login-role-tab" id="switch-tab-admin" type="button">
+            <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+            <span class="login-tab-name">Admin</span>
+          </button>
+        </div>
+
+        <!-- Verification Error Banner -->
+        <div class="login-error-banner" id="switch-user-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="switch-user-error-text">Verification failed: Invalid user password. Access denied.</span>
+        </div>
+
+        <!-- Clean Standard Login Form -->
+        <form class="login-form" id="switchUserForm" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="switchUserEmailInput">Email or User ID</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">mail</span>
+              <input class="form-input" id="switchUserEmailInput" type="text" value="user@platform.ai" placeholder="user@platform.ai or user" required autocomplete="username" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="switchUserPasswordInput">Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">key</span>
+              <input class="form-input" id="switchUserPasswordInput" type="password" placeholder="Enter password (user123)" required autocomplete="current-password" />
+              <button type="button" class="btn-password-visibility" id="btn-toggle-switch-pass" title="Toggle password visibility">
+                <span class="material-symbols-outlined text-[18px]" id="switch-pass-toggle-icon">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-switch-user" type="submit">
+              <span class="material-symbols-outlined text-[18px]">login</span>
+              <span id="btn-switch-user-text">Sign In as User</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Compact Demo Credentials Hint -->
+        <div class="login-credentials-hint">
+          <span class="material-symbols-outlined text-[15px]">info</span>
+          <span>Demo IDs: <strong>User:</strong> <code>user@platform.ai</code> (<code>user123</code>) &bull; <strong>Admin:</strong> <code>admin@platform.ai</code> (<code>admin123</code>)</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Scripts: Live Backend API Controller -->
+  <!-- Toast Notification Container -->
+  <div id="adminToastContainer" class="admin-toast-container"></div>
+
+  <!-- Application Script -->
   <script src="js/admin-app.js"></script>
 </body>
 </html>

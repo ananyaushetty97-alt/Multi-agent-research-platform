@@ -27,7 +27,15 @@ class InMemoryUserStorage(UserStorageInterface):
 
     def get_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         with self._lock:
-            return self._users_by_name.get(username.lower())
+            if not username:
+                return None
+            key = username.strip().lower()
+            if key in self._users_by_name:
+                return self._users_by_name[key]
+            for u in self._users_by_id.values():
+                if (u.get("email") or "").strip().lower() == key or (u.get("username") or "").strip().lower() == key:
+                    return u
+            return None
 
     def get_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         with self._lock:

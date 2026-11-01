@@ -13,8 +13,8 @@ class UserRole(str, Enum):
 
 
 class LoginRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50, examples=["admin"])
-    password: str = Field(..., min_length=8, max_length=128)
+    username: str = Field(..., min_length=1, max_length=100, examples=["admin", "user"])
+    password: str = Field(..., min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):

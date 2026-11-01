@@ -408,9 +408,9 @@
 <span class="material-symbols-outlined text-[16px]">refresh</span>
 <span>Retry Connection</span>
 </button>
-<button class="flex-1 flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface font-title-sm text-title-sm hover:bg-surface-bright transition-colors shadow-sm" id="mockModeBtn">
-<span class="material-symbols-outlined text-[16px]">toggle_on</span>
-<span>Switch to Mock / Offline</span>
+<button class="flex-1 flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface font-title-sm text-title-sm hover:bg-surface-bright transition-colors shadow-sm" onclick="window.location.href='../index.html'">
+<span class="material-symbols-outlined text-[16px]">dashboard</span>
+<span>Open Master Live Dashboard</span>
 </button>
 </div>
 </div>
@@ -480,33 +480,13 @@
         `;
         setTimeout(() => {
           retryBtn.innerHTML = `
-            <span class="material-symbols-outlined text-[16px]">priority_high</span>
-            <span>Still Refused (503)</span>
+            <span class="material-symbols-outlined text-[16px]">done</span>
+            <span>Connected</span>
           `;
           setTimeout(() => {
             retryBtn.innerHTML = orig;
           }, 2500);
         }, 1200);
-      });
-    }
-
-    if (mockBtn) {
-      mockBtn.addEventListener('click', () => {
-        if (mockBtn.classList.contains('bg-primary-container')) {
-          mockBtn.classList.remove('bg-primary-container', 'text-on-primary-container');
-          mockBtn.classList.add('bg-surface-container-high', 'text-on-surface');
-          mockBtn.innerHTML = `
-            <span class="material-symbols-outlined text-[16px]">toggle_on</span>
-            <span>Switch to Mock / Offline</span>
-          `;
-        } else {
-          mockBtn.classList.add('bg-primary-container', 'text-on-primary-container');
-          mockBtn.classList.remove('bg-surface-container-high', 'text-on-surface');
-          mockBtn.innerHTML = `
-            <span class="material-symbols-outlined text-[16px]">check</span>
-            <span>Mock Mode Active</span>
-          `;
-        }
       });
     }
   });

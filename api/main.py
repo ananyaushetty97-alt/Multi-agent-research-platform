@@ -9,6 +9,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -242,6 +243,13 @@ def scores(limit: int = 20):
 # ---------------------------------------------------------------------------
 app.include_router(admin_router, prefix="/api")
 app.include_router(admin_router)
+
+# ---------------------------------------------------------------------------
+# Default opening mode: redirect root to User Mode
+# ---------------------------------------------------------------------------
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/user/index.html")
 
 # ---------------------------------------------------------------------------
 # Serve the front-end (the ui/ folder) at http://localhost:8000

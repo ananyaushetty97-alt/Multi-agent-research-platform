@@ -14,8 +14,8 @@ ui/
 ├── css/
 │   └── style.css      # Vanilla CSS stylesheet based on DESIGN.md design tokens
 ├── js/
-│   ├── mock-data.js   # Rich mock data matching backend schemas (TopicRequest, judge scores, agent traces)
-│   └── app.js         # Interactive client-side UI controller (Search modal, drawer, citations, pipeline simulator)
+│   ├── api.js         # Real FastAPI backend client (`/generate`, `/scores`, `/health`, local persistence)
+│   └── app.js         # Interactive client-side UI controller (Search modal, drawer, citations, pipeline coordinator)
 └── README.md          # Documentation & usage guide
 ```
 

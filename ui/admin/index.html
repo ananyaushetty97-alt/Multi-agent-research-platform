@@ -205,7 +205,11 @@
           <span class="font-label-sm text-label-sm text-on-surface font-mono" id="lastCheckTimeDisplay">12s ago</span>
         </div>
       </div>
-      <div class="text-center">
+      <div class="text-center flex flex-col gap-1 items-center">
+        <a href="../user/index.html" class="text-[11px] text-primary hover:underline font-medium flex items-center gap-1" title="Return to Scholar Workspace (User Mode)">
+          <span class="material-symbols-outlined text-[13px]">arrow_back</span>
+          <span>Return to User Mode</span>
+        </a>
         <span class="font-label-sm text-[10px] text-outline">Multi-Agent Research Platform v3.4</span>
       </div>
     </div>
@@ -336,9 +340,9 @@
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Cache Tier</span>
-                  <span id="status-redis" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>Healthy</span>
+                  <span id="status-redis" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
                   </span>
                 </div>
                 <div>
@@ -348,7 +352,7 @@
               </div>
               <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
                 <span class="text-outline">RTT Ping:</span>
-                <span id="rtt-redis" class="font-mono text-primary font-bold">1.2 ms</span>
+                <span id="rtt-redis" class="font-mono text-primary font-bold">—</span>
               </div>
             </div>
 
@@ -357,9 +361,9 @@
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Vector Store</span>
-                  <span id="status-postgres" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>Healthy</span>
+                  <span id="status-postgres" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
                   </span>
                 </div>
                 <div>
@@ -369,7 +373,7 @@
               </div>
               <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
                 <span class="text-outline">RTT Ping:</span>
-                <span id="rtt-postgres" class="font-mono text-primary font-bold">4.5 ms</span>
+                <span id="rtt-postgres" class="font-mono text-primary font-bold">—</span>
               </div>
             </div>
 
@@ -378,9 +382,9 @@
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Primary LLM</span>
-                  <span id="status-groq" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>Healthy</span>
+                  <span id="status-groq" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
                   </span>
                 </div>
                 <div>
@@ -390,7 +394,7 @@
               </div>
               <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
                 <span class="text-outline">API RTT:</span>
-                <span id="rtt-groq" class="font-mono text-primary font-bold">184.2 ms</span>
+                <span id="rtt-groq" class="font-mono text-primary font-bold">—</span>
               </div>
             </div>
 
@@ -399,9 +403,9 @@
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Fallback LLM</span>
-                  <span id="status-ollama" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>Healthy</span>
+                  <span id="status-ollama" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
                   </span>
                 </div>
                 <div>
@@ -411,7 +415,7 @@
               </div>
               <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
                 <span class="text-outline">Socket RTT:</span>
-                <span id="rtt-ollama" class="font-mono text-primary font-bold">14.8 ms</span>
+                <span id="rtt-ollama" class="font-mono text-primary font-bold">—</span>
               </div>
             </div>
 
@@ -420,9 +424,9 @@
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Search Agent</span>
-                  <span id="status-tavily" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
-                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                    <span>Healthy</span>
+                  <span id="status-tavily" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm font-semibold">
+                    <span class="material-symbols-outlined text-[13px]">hourglass_empty</span>
+                    <span>Checking...</span>
                   </span>
                 </div>
                 <div>
@@ -432,7 +436,7 @@
               </div>
               <div class="mt-4 pt-2 border-t border-outline-variant/20 flex justify-between items-baseline font-label-sm">
                 <span class="text-outline">Search RTT:</span>
-                <span id="rtt-tavily" class="font-mono text-primary font-bold">218.0 ms</span>
+                <span id="rtt-tavily" class="font-mono text-primary font-bold">—</span>
               </div>
             </div>
           </div>
@@ -446,17 +450,17 @@
             </div>
             <div class="flex flex-col">
               <span class="font-label-sm text-label-sm text-outline uppercase">Active Server Process</span>
-              <span id="healthPythonDisplay" class="font-title-sm text-title-sm text-on-surface font-semibold">Python 3.11.9 (Windows-10)</span>
+              <span id="healthPythonDisplay" class="font-title-sm text-title-sm text-on-surface font-semibold">—</span>
             </div>
           </div>
           <div class="flex items-center gap-space-xl font-mono text-label-sm">
             <div>
               <span class="text-outline uppercase text-[10px]">Process PID:</span>
-              <div id="healthPidDisplay" class="font-bold text-on-surface text-metric-md">14820</div>
+              <div id="healthPidDisplay" class="font-bold text-on-surface text-metric-md">—</div>
             </div>
             <div>
               <span class="text-outline uppercase text-[10px]">Uptime:</span>
-              <div id="healthUptimeDisplay" class="font-bold text-primary text-metric-md">5h 7m</div>
+              <div id="healthUptimeDisplay" class="font-bold text-primary text-metric-md">—</div>
             </div>
             <div>
               <span class="text-outline uppercase text-[10px]">Failure Budget:</span>
@@ -494,27 +498,27 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-md text-center">
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">P50 (Median)</span>
-              <div id="metricP50" class="font-mono text-metric-lg font-bold text-on-surface mt-1">2.40s</div>
+              <div id="metricP50" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">P90</span>
-              <div id="metricP90" class="font-mono text-metric-lg font-bold text-on-surface mt-1">4.10s</div>
+              <div id="metricP90" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">P95</span>
-              <div id="metricP95" class="font-mono text-metric-lg font-bold text-primary mt-1">5.20s</div>
+              <div id="metricP95" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">P99</span>
-              <div id="metricP99" class="font-mono text-metric-lg font-bold text-secondary mt-1">7.10s</div>
+              <div id="metricP99" class="font-mono text-metric-lg font-bold text-secondary mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">Average</span>
-              <div id="metricAvg" class="font-mono text-metric-lg font-bold text-on-surface mt-1">2840 ms</div>
+              <div id="metricAvg" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-lowest border border-outline-variant/20">
               <span class="font-label-sm text-label-sm text-outline uppercase">Min / Max</span>
-              <div id="metricMinMax" class="font-mono text-label-md font-semibold text-on-surface-variant mt-2">120ms / 8.4s</div>
+              <div id="metricMinMax" class="font-mono text-label-md font-semibold text-on-surface-variant mt-2">—</div>
             </div>
           </div>
         </div>
@@ -523,23 +527,23 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
           <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
             <span class="font-label-sm text-label-sm text-outline uppercase">Total Inquiries</span>
-            <div id="metricTotalRequests" class="font-mono text-metric-lg font-bold text-on-surface my-2">1,420</div>
-            <span class="font-label-sm text-label-sm text-primary">100% telemetry captured</span>
+            <div id="metricTotalRequests" class="font-mono text-metric-lg font-bold text-on-surface my-2">0</div>
+            <span class="font-label-sm text-label-sm text-primary">Live telemetry connected</span>
           </div>
           <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
             <span class="font-label-sm text-label-sm text-outline uppercase">Error Rate</span>
-            <div id="metricErrorRate" class="font-mono text-metric-lg font-bold text-on-surface my-2">1.76%</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">25 pipeline errors</span>
+            <div id="metricErrorRate" class="font-mono text-metric-lg font-bold text-on-surface my-2">0.00%</div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">0 pipeline errors</span>
           </div>
           <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
             <span class="font-label-sm text-label-sm text-outline uppercase">Semantic Cache Hit Rate</span>
-            <div id="metricCacheHitRate" class="font-mono text-metric-lg font-bold text-primary my-2">26.8%</div>
-            <span class="font-label-sm text-label-sm text-primary font-medium">380 direct vector hits</span>
+            <div id="metricCacheHitRate" class="font-mono text-metric-lg font-bold text-primary my-2">0.0%</div>
+            <span class="font-label-sm text-label-sm text-primary font-medium">0 direct vector hits</span>
           </div>
           <div class="p-space-lg rounded-xl bg-surface-container-low border border-outline-variant/30 shadow-sm flex flex-col justify-between">
             <span class="font-label-sm text-label-sm text-outline uppercase">Provider Fallbacks</span>
-            <div id="metricFallbacks" class="font-mono text-metric-lg font-bold text-secondary my-2">14</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">Groq 429 ➔ Local Ollama</span>
+            <div id="metricFallbacks" class="font-mono text-metric-lg font-bold text-secondary my-2">0</div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">Provider fallbacks</span>
           </div>
         </div>
       </section>
@@ -594,12 +598,12 @@
             <div class="flex flex-col gap-1 pb-space-sm border-b border-outline-variant/20">
               <div class="flex items-center justify-between">
                 <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Execution Waterfall</span>
-                <span id="waterfallDuration" class="font-mono text-primary font-bold text-label-sm">3.82s total</span>
+                <span id="waterfallDuration" class="font-mono text-primary font-bold text-label-sm">—</span>
               </div>
-              <h3 id="waterfallTopicTitle" class="font-title-md text-title-md text-on-surface font-semibold truncate">Loading trace...</h3>
+              <h3 id="waterfallTopicTitle" class="font-title-md text-title-md text-on-surface font-semibold truncate">No Trace Selected</h3>
               <div class="flex items-center justify-between text-outline font-mono text-[11px] mt-1">
-                <span id="waterfallRequestId">req-991a</span>
-                <span id="waterfallModel">groq / llama-3.3-70b-versatile</span>
+                <span id="waterfallRequestId">—</span>
+                <span id="waterfallModel">—</span>
               </div>
             </div>
 
@@ -633,27 +637,27 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-space-md text-center">
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Average Overall</span>
-            <div id="qualityAvgOverall" class="font-mono text-metric-lg font-bold text-primary mt-1">9.1 / 10</div>
+            <div id="qualityAvgOverall" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
           </div>
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Relevance</span>
-            <div id="qualityAvgRelevance" class="font-mono text-metric-lg font-bold text-on-surface mt-1">9.4</div>
+            <div id="qualityAvgRelevance" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
           </div>
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Accuracy</span>
-            <div id="qualityAvgAccuracy" class="font-mono text-metric-lg font-bold text-on-surface mt-1">9.0</div>
+            <div id="qualityAvgAccuracy" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
           </div>
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Clarity</span>
-            <div id="qualityAvgClarity" class="font-mono text-metric-lg font-bold text-on-surface mt-1">8.9</div>
+            <div id="qualityAvgClarity" class="font-mono text-metric-lg font-bold text-on-surface mt-1">—</div>
           </div>
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Truncations</span>
-            <div id="qualityTruncatedCount" class="font-mono text-metric-lg font-bold text-secondary mt-1">2</div>
+            <div id="qualityTruncatedCount" class="font-mono text-metric-lg font-bold text-secondary mt-1">0</div>
           </div>
           <div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-sm">
             <span class="font-label-sm text-label-sm text-outline uppercase">Failed Gradings</span>
-            <div id="qualityFailedCount" class="font-mono text-metric-lg font-bold text-error mt-1">4</div>
+            <div id="qualityFailedCount" class="font-mono text-metric-lg font-bold text-error mt-1">0</div>
           </div>
         </div>
 
@@ -661,7 +665,7 @@
         <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
           <div class="px-space-md py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
             <span class="font-title-sm text-title-sm text-on-surface font-semibold">Evaluation Scores Feed</span>
-            <span class="font-label-sm text-label-sm text-outline">Total records: <span id="qualityTotalGraded">128</span></span>
+            <span class="font-label-sm text-label-sm text-outline">Total records: <span id="qualityTotalGraded">0</span></span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left font-body-sm text-body-sm">
@@ -708,19 +712,19 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-space-md text-center">
             <div class="p-space-md rounded-lg bg-surface-container-low">
               <span class="font-label-sm text-label-sm text-outline uppercase">Defense Rate</span>
-              <div id="safetyDefenseRate" class="font-mono text-metric-lg font-bold text-primary mt-1">96.0%</div>
+              <div id="safetyDefenseRate" class="font-mono text-metric-lg font-bold text-primary mt-1">—</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-low">
               <span class="font-label-sm text-label-sm text-outline uppercase">Attacks Defended</span>
-              <div id="safetyTotalAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">48 / 50</div>
+              <div id="safetyTotalAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0 / 0</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-low">
               <span class="font-label-sm text-label-sm text-outline uppercase">Indirect Attacks (XPIA)</span>
-              <div id="safetyIndirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">30</div>
+              <div id="safetyIndirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0</div>
             </div>
             <div class="p-space-md rounded-lg bg-surface-container-low">
               <span class="font-label-sm text-label-sm text-outline uppercase">Direct Jailbreaks</span>
-              <div id="safetyDirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">20</div>
+              <div id="safetyDirectAttacks" class="font-mono text-metric-lg font-bold text-on-surface mt-1">0</div>
             </div>
           </div>
         </div>
@@ -1018,8 +1022,7 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="js/admin-data.js"></script>
+  <!-- Scripts: Live Backend API Controller -->
   <script src="js/admin-app.js"></script>
 </body>
 </html>

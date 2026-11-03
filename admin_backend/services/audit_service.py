@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 from admin_backend.config import settings
@@ -56,7 +56,8 @@ class AuditService:
         """
         Record an administrative action to both repository and audit file.
         """
-        now_iso = datetime.now(timezone.utc).isoformat()
+        IST = timezone(timedelta(hours=5, minutes=30))
+        now_iso = datetime.now(IST).isoformat()
         sanitized_details = _sanitize_dict(details or {})
 
         entry = AuditLogEntry(

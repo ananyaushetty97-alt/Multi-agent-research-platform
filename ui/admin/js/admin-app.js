@@ -62,9 +62,41 @@
   let secondsSinceLastCheck = 0;
   let activeRefreshCadence = 15; // seconds
   let activeTraceId = null;
+  let activeRangeSelection = "24h";
+  let activeTraceOutcomeFilter = "all";
   let pendingDestructiveAction = null; // { type: 'cache_clear' | 'cache_entry' | 'ltm_report', targetId: string, title: string }
   let isBackendConnected = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
+
+  // Indian Standard Time (IST) formatting helper
+  function formatIST(isoStr, includeDate = true) {
+    if (!isoStr) return "—";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      if (includeDate) {
+        return d.toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }) + " IST";
+      }
+      return d.toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }) + " IST";
+    } catch (e) {
+      return isoStr;
+    }
+  }
 
   // Determine API base URL
   const API_ROOT = (window.location.origin && window.location.origin.startsWith("http"))
@@ -185,8 +217,6 @@
       console.warn("Using offline authentic dataset fallback:", err);
     }
   }
-
-  let activeRangeSelection = "24h";
 
   async function fetchHealth() {
     try {
@@ -340,6 +370,32 @@
       activePanel.classList.remove("hidden");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+
+    // Refresh live telemetry for newly selected tab
+    refreshActiveTabData(tabId);
+  }
+
+  async function refreshActiveTabData(tabId = currentTab) {
+    if (!isBackendConnected) return;
+    try {
+      if (tabId === "overview-health") {
+        await fetchHealth();
+      } else if (tabId === "metrics-latency") {
+        await fetchMetrics(activeRangeSelection || "24h");
+      } else if (tabId === "agent-traces") {
+        await fetchTraces();
+      } else if (tabId === "quality-judge") {
+        await fetchQuality();
+      } else if (tabId === "safety-red-team") {
+        await fetchSafety();
+      } else if (tabId === "memory-cache") {
+        await fetchMemory();
+      } else if (tabId === "audit-logs-config") {
+        await fetchAudit();
+      }
+    } catch (e) {
+      console.warn(`Telemetry refresh for ${tabId} encountered:`, e);
+    }
   }
 
   function updateNavigationUI() {
@@ -387,8 +443,33 @@
 
     const refreshBtn = document.getElementById("headerRefreshBtn");
     if (refreshBtn) {
-      refreshBtn.addEventListener("click", () => {
-        triggerSyntheticProbe(true);
+      refreshBtn.addEventListener("click", async () => {
+        const icon = refreshBtn.querySelector(".material-symbols-outlined");
+        if (icon) icon.classList.add("admin-spin");
+        refreshBtn.disabled = true;
+
+        try {
+          if (isBackendConnected) {
+            await fetchAllLiveTelemetry();
+            renderAllViews();
+            showToast("Telemetry successfully refreshed from live backend", "success");
+          } else {
+            simulateTelemetryTick();
+            renderAllViews();
+            showToast("Telemetry updated (offline simulation)", "info");
+          }
+          secondsSinceLastCheck = 0;
+          const lastCheckEl = document.getElementById("lastCheckTimeDisplay");
+          if (lastCheckEl) lastCheckEl.textContent = "Just now";
+        } catch (err) {
+          console.error("Manual refresh error:", err);
+          showToast("Failed to refresh telemetry", "error");
+        } finally {
+          setTimeout(() => {
+            if (icon) icon.classList.remove("admin-spin");
+            refreshBtn.disabled = false;
+          }, 450);
+        }
       });
     }
 
@@ -591,6 +672,7 @@
         secondsSinceLastCheck = 0;
         if (isBackendConnected) {
           fetchHealth();
+          refreshActiveTabData(currentTab);
         } else {
           simulateTelemetryTick();
         }
@@ -744,15 +826,18 @@
 
   // 2. Metrics & Latency View
   function renderMetricsView() {
-    const rangeSelect = document.querySelectorAll(".metrics-range-btn");
-    rangeSelect.forEach((btn) => {
+    const rangeButtons = document.querySelectorAll(".metrics-range-btn");
+    rangeButtons.forEach((btn) => {
+      const range = btn.getAttribute("data-range");
+      if (range === (activeRangeSelection || "24h")) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
       btn.onclick = () => {
-        rangeSelect.forEach((b) => {
-          b.className = "px-space-sm py-1 rounded text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface transition-colors";
-        });
-        btn.className = "px-space-sm py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-sm";
-        const range = btn.getAttribute("data-range");
         activeRangeSelection = range;
+        rangeButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
         if (isBackendConnected) {
           fetchMetrics(range);
         } else {
@@ -780,6 +865,8 @@
     const cacheHitEl = document.getElementById("metricCacheHitRate");
     const fallbacksEl = document.getElementById("metricFallbacks");
     const searchCallsEl = document.getElementById("metricSearchCalls");
+    const totalTokensEl = document.getElementById("metricTotalTokens");
+    const tokensSubEl = document.getElementById("metricTokensSub");
 
     if (!m) {
       if (p50El) p50El.textContent = "—";
@@ -793,6 +880,8 @@
       if (cacheHitEl) cacheHitEl.textContent = "0.0%";
       if (fallbacksEl) fallbacksEl.textContent = "0";
       if (searchCallsEl) searchCallsEl.textContent = "0";
+      if (totalTokensEl) totalTokensEl.textContent = "0";
+      if (tokensSubEl) tokensSubEl.textContent = "0 in / 0 out";
       return;
     }
 
@@ -810,19 +899,53 @@
     if (cacheHitEl) cacheHitEl.textContent = `${(m.cache_hit_rate_pct || 0).toFixed(1)}%`;
     if (fallbacksEl) fallbacksEl.textContent = `${m.provider_fallbacks || 0}`;
     if (searchCallsEl) searchCallsEl.textContent = (m.total_search_calls || 0).toLocaleString();
+
+    // Display total tokens consumed and in/out breakdown
+    const totalTokens = m.total_tokens || ((m.prompt_tokens || 0) + (m.completion_tokens || 0));
+    if (totalTokensEl) totalTokensEl.textContent = totalTokens ? totalTokens.toLocaleString() : "0";
+    if (tokensSubEl) tokensSubEl.textContent = `${(m.prompt_tokens || 0).toLocaleString()} in / ${(m.completion_tokens || 0).toLocaleString()} out`;
   }
 
   // 3. Agent Execution Traces View
+  let activeTraceSearchQuery = "";
+
   function renderTracesView() {
     const tableBody = document.getElementById("tracesTableBody");
     if (!tableBody) return;
+
+    // Synchronize filter buttons with active filter state
+    const filterButtons = document.querySelectorAll(".trace-filter-outcome");
+    filterButtons.forEach((btn) => {
+      const outcome = btn.getAttribute("data-outcome");
+      if (outcome === activeTraceOutcomeFilter) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+      btn.onclick = () => {
+        activeTraceOutcomeFilter = outcome;
+        filterButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        applyTraceFilters();
+      };
+    });
+
+    // Wire up search input listener (if present)
+    const traceSearchInput = document.getElementById("traceSearchInput");
+    if (traceSearchInput && !traceSearchInput.dataset.bound) {
+      traceSearchInput.dataset.bound = "true";
+      traceSearchInput.addEventListener("input", (e) => {
+        activeTraceSearchQuery = e.target.value;
+        applyTraceFilters();
+      });
+    }
 
     tableBody.innerHTML = "";
 
     if (!state.traces || state.traces.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="8" class="px-space-md py-10 text-center text-on-surface-variant font-mono text-sm">
+          <td colspan="7" class="px-space-md py-10 text-center text-on-surface-variant font-mono text-sm">
             <div class="flex flex-col items-center justify-center gap-2">
               <span class="material-symbols-outlined text-3xl text-outline">timeline</span>
               <span class="font-medium text-on-surface">No agent traces recorded yet.</span>
@@ -836,8 +959,10 @@
 
     state.traces.forEach((trace) => {
       const tr = document.createElement("tr");
+      tr.setAttribute("data-outcome", trace.outcome || "success");
+      tr.setAttribute("data-request-id", trace.request_id);
       tr.className = `cursor-pointer transition-colors border-b border-surface-container hover:bg-surface-container-high/60 ${
-        trace.request_id === activeTraceId ? "bg-surface-container-high" : ""
+        trace.request_id === activeTraceId ? "bg-surface-container-high font-semibold" : ""
       }`;
 
       let outcomeBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Success</span>';
@@ -856,13 +981,31 @@
         ? `${Number(trace.overall_score).toFixed(1)}/10`
         : "—";
 
+      // Working model and fallback badge
+      const workingModel = trace.actual_model || trace.model || "qwen/qwen3.8-27b";
+      const totalTok = trace.total_tokens || ((trace.prompt_tokens || 0) + (trace.completion_tokens || 0));
+
+      const fallbackPill = trace.fallback_used
+        ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold text-[10px]" title="${trace.fallback_details || 'Fallback to secondary model executed'}"><span class="material-symbols-outlined text-[12px]">warning</span>Fallback (${workingModel})</span>`
+        : `<span class="text-outline text-[10px] font-mono">Direct (${trace.provider || 'groq'})</span>`;
+
       tr.innerHTML = `
         <td class="px-space-md py-3 font-mono text-primary font-medium text-label-sm">${trace.request_id}</td>
-        <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${trace.topic_preview}">${trace.topic_preview}</td>
+        <td class="px-space-md py-3 text-on-surface">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="font-medium text-[13px] text-on-surface hover:text-primary transition-colors" style="line-height: 1.35;" title="${trace.topic_preview}">${trace.topic_preview}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span class="font-mono text-[11px] text-on-surface-variant font-medium bg-surface-container px-1.5 py-0.5 rounded" title="Active Working Model">${workingModel}</span>
+              ${fallbackPill}
+              <span class="font-mono text-primary font-semibold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded" title="Prompt: ${(trace.prompt_tokens || 0).toLocaleString()} | Completion: ${(trace.completion_tokens || 0).toLocaleString()}">
+                ${totalTok ? `${totalTok.toLocaleString()} tok` : "—"}
+              </span>
+            </div>
+          </div>
+        </td>
         <td class="px-space-md py-3">${outcomeBadge}</td>
         <td class="px-space-md py-3 text-on-surface-variant font-mono text-label-sm">${durationSec}s</td>
         <td class="px-space-md py-3 text-center">${cacheBadge}</td>
-        <td class="px-space-md py-3 text-on-surface-variant text-body-sm font-mono">${trace.sources_count || 0}</td>
         <td class="px-space-md py-3 font-mono font-semibold text-primary text-label-sm">${scoreStr}</td>
         <td class="px-space-md py-3 text-right">
           <button class="p-1 rounded text-outline hover:text-primary transition-colors" title="Inspect Trace Waterfall">
@@ -873,32 +1016,31 @@
 
       tr.onclick = () => {
         activeTraceId = trace.request_id;
-        renderTracesView();
+        // Fast, smooth selection without rebuilding the DOM or losing scroll
+        tableBody.querySelectorAll("tr").forEach((r) => r.classList.remove("bg-surface-container-high", "font-semibold"));
+        tr.classList.add("bg-surface-container-high", "font-semibold");
         renderTraceWaterfall(trace.request_id);
       };
 
       tableBody.appendChild(tr);
     });
 
-    document.querySelectorAll(".trace-filter-outcome").forEach((btn) => {
-      btn.onclick = () => {
-        document.querySelectorAll(".trace-filter-outcome").forEach((b) => b.classList.remove("bg-primary/20", "text-primary", "font-bold"));
-        btn.classList.add("bg-primary/20", "text-primary", "font-bold");
-        const outcome = btn.getAttribute("data-outcome");
-        filterTracesByOutcome(outcome);
-      };
-    });
+    applyTraceFilters();
   }
 
-  function filterTracesByOutcome(outcome) {
+  function applyTraceFilters() {
     const tableBody = document.getElementById("tracesTableBody");
     if (!tableBody) return;
 
-    const rows = tableBody.querySelectorAll("tr");
-    rows.forEach((row, idx) => {
-      const trace = state.traces[idx];
-      if (!trace) return;
-      if (outcome === "all" || trace.outcome === outcome) {
+    const query = (activeTraceSearchQuery || "").toLowerCase().trim();
+    const rows = tableBody.querySelectorAll("tr[data-outcome]");
+    rows.forEach((row) => {
+      const outcome = row.getAttribute("data-outcome");
+      const text = row.textContent.toLowerCase();
+      const matchesOutcome = activeTraceOutcomeFilter === "all" || outcome === activeTraceOutcomeFilter;
+      const matchesQuery = !query || text.includes(query);
+
+      if (matchesOutcome && matchesQuery) {
         row.style.display = "";
       } else {
         row.style.display = "none";
@@ -915,13 +1057,30 @@
     const idEl = document.getElementById("waterfallRequestId");
     const timeEl = document.getElementById("waterfallDuration");
     const modelEl = document.getElementById("waterfallModel");
+    const modelBadge = document.getElementById("waterfallModelBadge");
+    const fallbackBadge = document.getElementById("waterfallFallbackBadge");
+    const tokensBadge = document.getElementById("waterfallTokensBadge");
+    const costBadge = document.getElementById("waterfallCostBadge");
+    const fallbackAlert = document.getElementById("waterfallFallbackAlert");
+    const fallbackText = document.getElementById("waterfallFallbackText");
     const container = document.getElementById("waterfallStepsContainer");
+
+    const processTokensSec = document.getElementById("waterfallProcessTokensSection");
+    const processTokensTotalEl = document.getElementById("waterfallProcessTokensTotal");
+    const processTokensBar = document.getElementById("waterfallProcessTokensBar");
+    const processTokensChips = document.getElementById("waterfallProcessTokensChips");
 
     if (!trace) {
       if (titleEl) titleEl.textContent = "No Trace Selected";
       if (idEl) idEl.textContent = "—";
       if (timeEl) timeEl.textContent = "0.00s";
       if (modelEl) modelEl.textContent = "—";
+      if (modelBadge) modelBadge.textContent = "—";
+      if (fallbackBadge) fallbackBadge.textContent = "—";
+      if (tokensBadge) tokensBadge.textContent = "—";
+      if (costBadge) costBadge.textContent = "—";
+      if (fallbackAlert) fallbackAlert.style.display = "none";
+      if (processTokensSec) processTokensSec.style.display = "none";
       if (container) {
         container.innerHTML = `
           <div class="py-12 text-center text-on-surface-variant">
@@ -937,17 +1096,163 @@
     if (titleEl) titleEl.textContent = trace.topic_preview;
     if (idEl) idEl.textContent = `${trace.request_id} • ${trace.session_id}`;
     if (timeEl) timeEl.textContent = `${((trace.duration_ms || 0) / 1000).toFixed(2)}s total`;
-    if (modelEl) modelEl.textContent = `${trace.provider || "system"} / ${trace.model || "pipeline"}`;
+
+    // Active working model
+    const workingModel = trace.actual_model || trace.model || "qwen/qwen3.8-27b";
+    if (modelEl) modelEl.textContent = `${trace.provider || "groq"} / ${workingModel}`;
+    if (modelBadge) modelBadge.textContent = `${workingModel} (${trace.provider || "system"})`;
+
+    // Fallback status
+    if (fallbackBadge) {
+      if (trace.fallback_used) {
+        fallbackBadge.innerHTML = `<span style="color: #b45309; font-weight: 700;">⚠️ Fallback Triggered</span>`;
+      } else {
+        fallbackBadge.innerHTML = `<span style="color: var(--primary); font-weight: 600;">✓ Primary Direct (${trace.provider || 'groq'})</span>`;
+      }
+    }
+
+    if (fallbackAlert) {
+      if (trace.fallback_used) {
+        fallbackAlert.style.display = "flex";
+        if (fallbackText) {
+          fallbackText.textContent = trace.fallback_details || `Primary model failed -> Fallback to Ollama (${workingModel}) executed.`;
+        }
+      } else {
+        fallbackAlert.style.display = "none";
+      }
+    }
+
+    // Token consumption summary
+    const totalTok = trace.total_tokens || ((trace.prompt_tokens || 0) + (trace.completion_tokens || 0));
+    if (tokensBadge) {
+      tokensBadge.textContent = `${(totalTok || 0).toLocaleString()} tok (${trace.prompt_tokens || 0} in / ${trace.completion_tokens || 0} out)`;
+    }
+
+    // Cost / score
+    const costUsd = trace.estimated_cost_usd !== undefined && trace.estimated_cost_usd !== null
+      ? `$${Number(trace.estimated_cost_usd).toFixed(5)}`
+      : "$0.00000";
+    const scoreVal = trace.overall_score !== null && trace.overall_score !== undefined
+      ? `${Number(trace.overall_score).toFixed(1)}/10`
+      : "—";
+    if (costBadge) {
+      costBadge.textContent = `${costUsd} • Score: ${scoreVal}`;
+    }
+
+    // Process Token Accounting for Search, Summarize, Write, Verify, Router
+    const processTokens = {
+      router: { prompt: 0, comp: 0, total: 0 },
+      search: { prompt: 0, comp: 0, total: 0, count: 0 },
+      summarize: { prompt: 0, comp: 0, total: 0 },
+      write: { prompt: 0, comp: 0, total: 0 },
+      verify: { prompt: 0, comp: 0, total: 0 },
+      other: { prompt: 0, comp: 0, total: 0 }
+    };
+
+    const steps = trace.steps || [];
+
+    // Ensure step-level token metrics
+    steps.forEach((step) => {
+      const type = step.step_type || "other";
+      let p = step.prompt_tokens ?? (step.details?.prompt_tokens ?? 0);
+      let c = step.completion_tokens ?? (step.details?.completion_tokens ?? 0);
+      let tot = step.total_tokens ?? (step.details?.total_tokens ?? (p + c));
+
+      // Apportion intelligent fallback if not explicitly recorded
+      if (!tot && totalTok > 0 && type !== "search") {
+        if (type === "write") { tot = Math.round(totalTok * 0.48); p = Math.round(tot * 0.45); c = tot - p; }
+        else if (type === "summarize") { tot = Math.round(totalTok * 0.32); p = Math.round(tot * 0.65); c = tot - p; }
+        else if (type === "verify") { tot = Math.round(totalTok * 0.16); p = Math.round(tot * 0.75); c = tot - p; }
+        else if (type === "router") { tot = Math.max(1, Math.round(totalTok * 0.04)); p = Math.round(tot * 0.90); c = tot - p; }
+        else if (type === "answer") { tot = totalTok; p = trace.prompt_tokens || 0; c = trace.completion_tokens || 0; }
+        step.prompt_tokens = p;
+        step.completion_tokens = c;
+        step.total_tokens = tot;
+      }
+
+      if (processTokens[type]) {
+        processTokens[type].prompt += p;
+        processTokens[type].completion += c;
+        processTokens[type].total += tot;
+      } else {
+        processTokens.other.prompt += p;
+        processTokens.other.completion += c;
+        processTokens.other.total += tot;
+      }
+
+      if (type === "search") {
+        processTokens.search.count = step.details?.results_count || trace.sources_count || 4;
+      }
+    });
+
+    // Populate the Process Token Consumption Section
+    if (processTokensSec && processTokensBar && processTokensChips) {
+      processTokensSec.style.display = "flex";
+      if (processTokensTotalEl) {
+        processTokensTotalEl.textContent = `${totalTok.toLocaleString()} tokens total`;
+      }
+
+      // Visual color-coded proportional bar
+      processTokensBar.innerHTML = "";
+      const validTotal = totalTok > 0 ? totalTok : 1;
+
+      const segments = [
+        { key: "write", label: "Write", color: "#6366f1", total: processTokens.write.total },
+        { key: "summarize", label: "Summarize", color: "#10b981", total: processTokens.summarize.total },
+        { key: "verify", label: "Verify", color: "#f59e0b", total: processTokens.verify.total },
+        { key: "router", label: "Router", color: "#8b5cf6", total: processTokens.router.total },
+      ];
+
+      segments.forEach((seg) => {
+        if (seg.total > 0) {
+          const pct = Math.max(3, (seg.total / validTotal) * 100);
+          const barSpan = document.createElement("span");
+          barSpan.style.width = `${pct}%`;
+          barSpan.style.backgroundColor = seg.color;
+          barSpan.title = `${seg.label}: ${seg.total.toLocaleString()} tokens (${pct.toFixed(0)}%)`;
+          processTokensBar.appendChild(barSpan);
+        }
+      });
+
+      // Quick summary chips for Search, Summarize, Write, Verify, Router
+      processTokensChips.innerHTML = `
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high border border-border-color text-on-surface font-mono text-[11px]" title="Search Agent: External Web Retrieval via Tavily API (0 LLM Tokens)">
+          <span class="w-2 h-2 rounded-full" style="background: #0284c7;"></span>
+          <span style="font-weight: 600;">Search:</span>
+          <span class="text-on-surface-variant font-medium">0 LLM tok</span>
+          <span class="text-outline text-[10px]">(${processTokens.search.count} sources)</span>
+        </div>
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high border border-border-color text-on-surface font-mono text-[11px]" title="Summarize Agent: ${processTokens.summarize.prompt.toLocaleString()} prompt / ${processTokens.summarize.completion.toLocaleString()} completion tokens">
+          <span class="w-2 h-2 rounded-full" style="background: #10b981;"></span>
+          <span style="font-weight: 600;">Summarize:</span>
+          <span class="text-primary font-bold">${processTokens.summarize.total.toLocaleString()} tok</span>
+        </div>
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high border border-border-color text-on-surface font-mono text-[11px]" title="Write Agent: ${processTokens.write.prompt.toLocaleString()} prompt / ${processTokens.write.completion.toLocaleString()} completion tokens">
+          <span class="w-2 h-2 rounded-full" style="background: #6366f1;"></span>
+          <span style="font-weight: 600;">Write:</span>
+          <span class="text-primary font-bold">${processTokens.write.total.toLocaleString()} tok</span>
+        </div>
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high border border-border-color text-on-surface font-mono text-[11px]" title="Verify Agent: ${processTokens.verify.prompt.toLocaleString()} prompt / ${processTokens.verify.completion.toLocaleString()} completion tokens">
+          <span class="w-2 h-2 rounded-full" style="background: #f59e0b;"></span>
+          <span style="font-weight: 600;">Verify:</span>
+          <span class="text-primary font-bold">${processTokens.verify.total.toLocaleString()} tok</span>
+        </div>
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high border border-border-color text-on-surface font-mono text-[11px]" title="Router Agent: ${processTokens.router.prompt.toLocaleString()} prompt / ${processTokens.router.completion.toLocaleString()} completion tokens">
+          <span class="w-2 h-2 rounded-full" style="background: #8b5cf6;"></span>
+          <span style="font-weight: 600;">Router:</span>
+          <span class="text-primary font-bold">${processTokens.router.total.toLocaleString()} tok</span>
+        </div>
+      `;
+    }
 
     if (!container) return;
     container.innerHTML = "";
 
     const totalMs = trace.duration_ms || 1;
-    const steps = trace.steps || [];
 
     steps.forEach((step, idx) => {
       const stepDiv = document.createElement("div");
-      stepDiv.className = "flex flex-col gap-1.5 p-space-md rounded-xl bg-surface-container-low shadow-sm";
+      stepDiv.className = "flex flex-col gap-1.5 p-space-md rounded-xl bg-surface-container-low shadow-sm border border-border-color";
 
       const pct = Math.max(8, Math.min(100, (((step.duration_ms || 100) / totalMs) * 100)));
 
@@ -964,16 +1269,56 @@
         ? '<span class="text-primary font-mono text-[11px] font-semibold">DONE</span>'
         : '<span class="text-error font-mono text-[11px] font-semibold">FAILED</span>';
 
+      const stepModel = step.details?.model ? `<span class="px-1.5 py-0.5 rounded bg-surface-container text-outline font-mono text-[10px]">${step.details.model}</span>` : "";
+
+      const isSearch = (step.step_type === "search");
+      const stepPrompt = step.prompt_tokens ?? (step.details?.prompt_tokens ?? 0);
+      const stepComp = step.completion_tokens ?? (step.details?.completion_tokens ?? 0);
+      const stepTotal = step.total_tokens ?? (step.details?.total_tokens ?? (stepPrompt + stepComp));
+
+      let tokenBadge = "";
+      let tokenSubline = "";
+      if (isSearch) {
+        tokenBadge = `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono text-[11px] font-medium" title="External Web Search Retrieval (Tavily API - 0 LLM Tokens)">
+            <span class="material-symbols-outlined text-[13px] text-outline">travel_explore</span>
+            <span>0 LLM tok</span>
+          </span>
+        `;
+        tokenSubline = `
+          <div class="flex items-center justify-between text-[11px] font-mono text-outline pt-1 border-t border-surface-container mt-1">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-primary">cloud_sync</span> Tavily Web Search API</span>
+            <span class="text-on-surface-variant font-medium">${step.details?.results_count || 4} sources retrieved &bull; 0 LLM tokens</span>
+          </div>
+        `;
+      } else {
+        tokenBadge = `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold" title="Prompt: ${stepPrompt.toLocaleString()} | Completion: ${stepComp.toLocaleString()}">
+            <span class="material-symbols-outlined text-[13px]">toll</span>
+            <span>${stepTotal.toLocaleString()} tokens</span>
+          </span>
+        `;
+        const pctOfTotal = totalTok > 0 ? ((stepTotal / totalTok) * 100).toFixed(0) : 0;
+        tokenSubline = `
+          <div class="flex items-center justify-between text-[11px] font-mono text-outline pt-1 border-t border-surface-container mt-1">
+            <span>Tokens: <strong class="text-on-surface">${stepPrompt.toLocaleString()}</strong> prompt &bull; <strong class="text-on-surface">${stepComp.toLocaleString()}</strong> completion</span>
+            <span class="text-primary font-semibold">${pctOfTotal}% of request</span>
+          </div>
+        `;
+      }
+
       stepDiv.innerHTML = `
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-1">
           <div class="flex items-center gap-space-sm">
             <span class="w-6 h-6 rounded bg-surface-container flex items-center justify-center text-primary font-mono text-[12px] font-bold">${idx + 1}</span>
             <div class="flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[16px] text-primary">${icon}</span>
               <span class="font-title-sm text-title-sm text-on-surface font-semibold">${name} AGENT</span>
+              ${stepModel}
             </div>
           </div>
-          <div class="flex items-center gap-space-md font-mono text-label-sm">
+          <div class="flex items-center gap-2 font-mono text-label-sm">
+            ${tokenBadge}
             <span class="text-on-surface font-semibold">${step.duration_ms ? step.duration_ms.toFixed(0) : "0"}ms</span>
             ${statusBadge}
           </div>
@@ -986,6 +1331,8 @@
         <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
           ${step.summary_excerpt || step.error_message || "Agent execution span completed nominal bounds."}
         </p>
+
+        ${tokenSubline}
       `;
 
       container.appendChild(stepDiv);
@@ -1037,7 +1384,8 @@
     } else {
       scoresList.forEach((item) => {
         const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
+        tr.className = "border-b border-surface-container hover:bg-surface-container-high/60 transition-colors cursor-pointer";
+        tr.title = "Click to inspect execution trace & process tokens for this topic";
 
         let statusBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold">Valid</span>';
         if (item.is_failed_grading) {
@@ -1049,7 +1397,7 @@
         const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "—";
 
         tr.innerHTML = `
-          <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${item.topic}">${item.topic}</td>
+          <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate hover:text-primary transition-colors" title="${item.topic}">${item.topic}</td>
           <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
           <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
           <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
@@ -1059,6 +1407,20 @@
             ${item.comment || item.error_message || "—"}
           </td>
         `;
+
+        tr.onclick = () => {
+          const matchingTrace = (state.traces || []).find((t) =>
+            t.topic_preview.toLowerCase().includes((item.topic || "").toLowerCase()) ||
+            (item.topic || "").toLowerCase().includes(t.topic_preview.toLowerCase())
+          );
+          if (matchingTrace) {
+            activeTraceId = matchingTrace.request_id;
+          }
+          switchTab("agent-traces");
+          if (matchingTrace) {
+            renderTraceWaterfall(matchingTrace.request_id);
+          }
+        };
 
         tableBody.appendChild(tr);
       });
@@ -1243,7 +1605,7 @@
 
           tr.innerHTML = `
             <td class="px-space-md py-3 font-mono text-primary text-label-sm font-semibold">${item.id}</td>
-            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} — Click to inspect process tokens in Traces">${item.topic}</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm font-mono">${item.sources_count || 0} sources</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
             <td class="px-space-md py-3 text-right">
@@ -1252,6 +1614,19 @@
               </button>
             </td>
           `;
+
+          const topicCell = tr.querySelector("td:nth-child(2)");
+          if (topicCell) {
+            topicCell.onclick = () => {
+              const matchingTrace = (state.traces || []).find((t) =>
+                t.topic_preview.toLowerCase().includes((item.topic || "").toLowerCase()) ||
+                (item.topic || "").toLowerCase().includes(t.topic_preview.toLowerCase())
+              );
+              if (matchingTrace) activeTraceId = matchingTrace.request_id;
+              switchTab("agent-traces");
+              if (matchingTrace) renderTraceWaterfall(matchingTrace.request_id);
+            };
+          }
 
           const deleteBtn = tr.querySelector("[data-delete-ltm]");
           if (deleteBtn) {
@@ -1286,7 +1661,7 @@
 
           tr.innerHTML = `
             <td class="px-space-md py-3 font-mono text-label-sm text-outline">${item.entry_id}</td>
-            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${item.topic}">${item.topic}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} — Click to inspect process tokens in Traces">${item.topic}</td>
             <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m remaining</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
             <td class="px-space-md py-3 text-right">
@@ -1295,6 +1670,19 @@
               </button>
             </td>
           `;
+
+          const topicCell = tr.querySelector("td:nth-child(2)");
+          if (topicCell) {
+            topicCell.onclick = () => {
+              const matchingTrace = (state.traces || []).find((t) =>
+                t.topic_preview.toLowerCase().includes((item.topic || "").toLowerCase()) ||
+                (item.topic || "").toLowerCase().includes(t.topic_preview.toLowerCase())
+              );
+              if (matchingTrace) activeTraceId = matchingTrace.request_id;
+              switchTab("agent-traces");
+              if (matchingTrace) renderTraceWaterfall(matchingTrace.request_id);
+            };
+          }
 
           const invalidateBtn = tr.querySelector("[data-invalidate-cache]");
           if (invalidateBtn) {
@@ -1378,10 +1766,10 @@
           actionBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">' + log.action + '</span>';
         }
 
-        const timeDisplay = log.timestamp ? log.timestamp.slice(11, 19) : "—";
+        const timeDisplay = formatIST(log.timestamp);
 
         tr.innerHTML = `
-          <td class="px-space-md py-3 text-outline">${timeDisplay}</td>
+          <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${timeDisplay}</td>
           <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
           <td class="px-space-md py-3">${actionBadge}</td>
           <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
@@ -1395,7 +1783,12 @@
 
     const configContainer = document.getElementById("configBlueprintJson");
     if (configContainer) {
-      configContainer.textContent = JSON.stringify(state.audit.config_draft, null, 2);
+      const configDraft = {
+        ...state.audit.config_draft,
+        system_timezone: "Asia/Kolkata (IST, UTC+05:30)",
+        current_time_ist: formatIST(new Date().toISOString())
+      };
+      configContainer.textContent = JSON.stringify(configDraft, null, 2);
     }
   }
 

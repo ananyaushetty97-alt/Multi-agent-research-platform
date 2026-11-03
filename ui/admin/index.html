@@ -454,8 +454,8 @@
             </div>
           </div>
 
-          <!-- Top Throughput & Health Summary (4 Cards) -->
-          <div class="summary-tiles-grid">
+          <!-- Top Throughput & Health Summary (5 Cards) -->
+          <div class="summary-tiles-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
             <div class="summary-stat-card">
               <span class="process-stat-label">Total Inquiries</span>
               <div class="summary-stat-num" id="metricTotalRequests">0</div>
@@ -475,6 +475,11 @@
               <span class="process-stat-label">Provider Fallbacks</span>
               <div class="summary-stat-num" id="metricFallbacks">0</div>
               <span class="summary-stat-sub">Fallback routing events</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Tokens Consumed</span>
+              <div class="summary-stat-num" id="metricTotalTokens" style="color: var(--primary);">0</div>
+              <span class="summary-stat-sub" id="metricTokensSub">Prompt &amp; Completion tokens</span>
             </div>
           </div>
 
@@ -531,10 +536,17 @@
                 Inspect granular multi-agent execution spans, prompt cache efficiency, and step-by-step waterfall latency analysis.
               </p>
             </div>
-            <div style="display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--surface-container); border: 1px solid var(--border-color);">
-              <button class="time-pill-btn trace-filter-outcome active" data-outcome="all">All</button>
-              <button class="time-pill-btn trace-filter-outcome" data-outcome="success">Success</button>
-              <button class="time-pill-btn trace-filter-outcome" data-outcome="blocked">Blocked</button>
+            <!-- Status & Search Filter -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--surface-container); border: 1px solid var(--border-color);">
+                <button class="time-pill-btn trace-filter-outcome active" data-outcome="all">All</button>
+                <button class="time-pill-btn trace-filter-outcome" data-outcome="success">Success</button>
+                <button class="time-pill-btn trace-filter-outcome" data-outcome="blocked">Blocked</button>
+              </div>
+              <div style="position: relative; display: flex; align-items: center;">
+                <span class="material-symbols-outlined text-[15px]" style="position: absolute; left: 8px; color: var(--outline); pointer-events: none;">search</span>
+                <input type="text" id="traceSearchInput" placeholder="Search inquiries or models..." style="padding: 0.35rem 0.65rem 0.35rem 1.75rem; font-size: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--surface-container); color: var(--on-surface); outline: none; width: 190px;" />
+              </div>
             </div>
           </div>
 
@@ -550,14 +562,13 @@
                 <table class="admin-table">
                   <thead>
                     <tr>
-                      <th>Request ID</th>
-                      <th>Topic Preview</th>
-                      <th>Outcome</th>
-                      <th>Duration</th>
-                      <th style="text-align: center;">Cache</th>
-                      <th>Sources</th>
-                      <th>Score</th>
-                      <th style="text-align: right;">Inspect</th>
+                      <th style="width: 85px;">Request ID</th>
+                      <th>Inquiry &amp; Model Execution</th>
+                      <th style="width: 85px;">Outcome</th>
+                      <th style="width: 75px;">Duration</th>
+                      <th style="width: 60px; text-align: center;">Cache</th>
+                      <th style="width: 65px;">Score</th>
+                      <th style="width: 45px; text-align: right;">Inspect</th>
                     </tr>
                   </thead>
                   <tbody id="tracesTableBody">
@@ -569,7 +580,7 @@
 
             <!-- Waterfall Inspector -->
             <div class="waterfall-inspector-card">
-              <div style="display: flex; flex-direction: column; gap: 4px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="sidebar-admin-tag">Execution Waterfall</span>
                   <span id="waterfallDuration" style="font-family: var(--font-mono); font-weight: 700; color: var(--primary); font-size: 0.8125rem;">—</span>
@@ -579,10 +590,57 @@
                   <span id="waterfallRequestId">—</span>
                   <span id="waterfallModel">—</span>
                 </div>
+
+                <!-- Detailed Model, Fallback & Token Telemetry Box -->
+                <div id="waterfallDiagnosticsCard" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 0.6875rem;">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Active Model</span>
+                    <span id="waterfallModelBadge" style="font-weight: 600; color: var(--on-surface); word-break: break-all;">—</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Fallback Status</span>
+                    <span id="waterfallFallbackBadge" style="font-weight: 600; color: var(--primary);">—</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Tokens Consumed</span>
+                    <span id="waterfallTokensBadge" style="font-weight: 600; color: var(--primary);">—</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Est. Cost / Score</span>
+                    <span id="waterfallCostBadge" style="font-weight: 600; color: var(--on-surface);">—</span>
+                  </div>
+                </div>
+
+                <!-- Fallback Details Alert Banner (Visible when fallback occurred) -->
+                <div id="waterfallFallbackAlert" style="display: none; padding: 6px 8px; background: rgba(234, 155, 0, 0.12); border: 1px solid rgba(234, 155, 0, 0.3); border-radius: var(--radius-sm); font-size: 0.6875rem; color: #b45309;">
+                  <span class="material-symbols-outlined text-[14px]" style="vertical-align: middle; margin-right: 4px;">warning</span>
+                  <span id="waterfallFallbackText">Fallback triggered</span>
+                </div>
+
+                <!-- Process Token Consumption Belt (Search, Summarize, Write, Verify...) -->
+                <div id="waterfallProcessTokensSection" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--surface-container); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.6875rem; font-weight: 700; color: var(--on-surface); text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 4px;">
+                      <span class="material-symbols-outlined text-[15px]" style="color: var(--primary);">donut_small</span>
+                      Process Token Breakdown
+                    </span>
+                    <span id="waterfallProcessTokensTotal" style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 700; color: var(--primary);">0 tokens</span>
+                  </div>
+
+                  <!-- Segmented visual proportion bar -->
+                  <div id="waterfallProcessTokensBar" style="display: flex; width: 100%; height: 6px; border-radius: 9999px; overflow: hidden; background: var(--surface-container-high); gap: 2px;">
+                    <!-- Segmented spans injected dynamically -->
+                  </div>
+
+                  <!-- Chips for Router, Search, Summarize, Write, Verify -->
+                  <div id="waterfallProcessTokensChips" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                    <!-- Process badges injected dynamically -->
+                  </div>
+                </div>
               </div>
 
               <!-- Steps Breakdown Container -->
-              <div style="display: flex; flex-direction: column; gap: 0.625rem; overflow-y: auto; max-height: 480px; padding-right: 4px;" id="waterfallStepsContainer">
+              <div style="display: flex; flex-direction: column; gap: 0.625rem; overflow-y: auto; max-height: 440px; padding-right: 4px;" id="waterfallStepsContainer">
                 <!-- Injected dynamically via renderTraceWaterfall -->
               </div>
             </div>
@@ -849,7 +907,7 @@
               <table class="admin-table">
                 <thead>
                   <tr>
-                    <th>Time (UTC)</th>
+                    <th>Time (IST)</th>
                     <th>Actor</th>
                     <th>Action</th>
                     <th>Target Resource</th>
@@ -1067,7 +1125,7 @@
   <!-- Toast Notification Container -->
   <div id="adminToastContainer" class="admin-toast-container"></div>
 
-  <!-- Application Script -->
-  <script src="js/admin-app.js"></script>
+  <!-- Application Script (Cache Busted) -->
+  <script src="js/admin-app.js?v=20261104.2"></script>
 </body>
 </html>

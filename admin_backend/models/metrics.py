@@ -18,6 +18,9 @@ class RequestMetric(BaseModel):
     fallback_occurred: bool = False
     is_rate_limited_429: bool = False
     search_called: bool = False
+    prompt_tokens: Optional[int] = 0
+    completion_tokens: Optional[int] = 0
+    total_tokens: Optional[int] = 0
 
 
 class LatencyPercentiles(BaseModel):
@@ -42,6 +45,9 @@ class MetricsSummary(BaseModel):
     provider_fallbacks: int
     rate_limits_429: int
     total_search_calls: int
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
     latency: LatencyPercentiles
     requests_by_day: Dict[str, int]
     provider_breakdown: Dict[str, int]

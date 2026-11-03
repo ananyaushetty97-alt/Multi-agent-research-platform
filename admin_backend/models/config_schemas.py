@@ -3,6 +3,7 @@ Read-only draft schemas for future system configuration.
 These schemas define future contracts for cache thresholds, model selection,
 and retry limits WITHOUT modifying active runtime settings.
 """
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -48,6 +49,10 @@ class FutureExtensibilityDraft(BaseModel):
 class SystemConfigDraft(BaseModel):
     version: str = "1.0.0-draft"
     is_active: bool = False
+    system_timezone: str = "Asia/Kolkata (IST, UTC+05:30)"
+    current_time_ist: str = Field(
+        default_factory=lambda: datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%Y-%m-%d %H:%M:%S IST")
+    )
     notice: str = "This configuration is draft/scaffolding and does not mutate runtime behavior."
     cache: CacheConfigDraft = Field(default_factory=CacheConfigDraft)
     models: ModelRoutingConfigDraft = Field(default_factory=ModelRoutingConfigDraft)

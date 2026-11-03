@@ -47,6 +47,9 @@ class MetricsService:
         fallback_occurred: bool = False,
         is_rate_limited_429: bool = False,
         search_called: bool = False,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        total_tokens: int = 0,
         timestamp_iso: Optional[str] = None,
     ) -> RequestMetric:
         """Record an individual request event."""
@@ -64,6 +67,9 @@ class MetricsService:
             fallback_occurred=fallback_occurred,
             is_rate_limited_429=is_rate_limited_429 or (status_code == 429),
             search_called=search_called,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens or (prompt_tokens + completion_tokens),
         )
         self.storage.record_metric(metric)
         return metric
@@ -113,6 +119,9 @@ class MetricsService:
         fallbacks = sum(1 for m in metrics if m.fallback_occurred)
         rate_limits = sum(1 for m in metrics if m.is_rate_limited_429 or m.status_code == 429)
         searches = sum(1 for m in metrics if m.search_called)
+        sum_prompt_tokens = sum(getattr(m, "prompt_tokens", 0) or 0 for m in metrics)
+        sum_comp_tokens = sum(getattr(m, "completion_tokens", 0) or 0 for m in metrics)
+        sum_total_tokens = sum(getattr(m, "total_tokens", 0) or 0 for m in metrics)
 
         by_day: Dict[str, int] = defaultdict(int)
         by_provider: Dict[str, int] = defaultdict(int)
@@ -149,6 +158,9 @@ class MetricsService:
             provider_fallbacks=fallbacks,
             rate_limits_429=rate_limits,
             total_search_calls=searches,
+            prompt_tokens=sum_prompt_tokens,
+            completion_tokens=sum_comp_tokens,
+            total_tokens=sum_total_tokens,
             latency=latency_stats,
             requests_by_day=dict(sorted(by_day.items())),
             provider_breakdown=dict(by_provider),
@@ -159,19 +171,19 @@ class MetricsService:
 def _seed_default_metrics(svc: MetricsService):
     now = datetime.now(timezone.utc)
     sample_runs = [
-        (1, 3740.0, False, "groq", "llama-3.3-70b-versatile", False, True, 5),
-        (2, 140.0, True, "groq", "llama-3.3-70b-versatile", False, False, 12),
-        (3, 3450.0, False, "groq", "llama-3.3-70b-versatile", False, True, 20),
-        (4, 3200.0, False, "groq", "llama-3.3-70b-versatile", False, True, 28),
-        (5, 3820.0, False, "groq", "llama-3.3-70b-versatile", False, True, 35),
-        (6, 2400.0, False, "groq", "llama-3.3-70b-versatile", False, True, 45),
-        (7, 4220.0, False, "groq", "llama-3.3-70b-versatile", False, True, 55),
-        (8, 2650.0, False, "groq", "llama-3.3-70b-versatile", False, True, 70),
-        (9, 2100.0, True, "groq", "llama-3.3-70b-versatile", False, False, 90),
-        (10, 3100.0, True, "groq", "llama-3.3-70b-versatile", False, False, 120),
-        (11, 4120.0, False, "ollama", "llama-3.2:latest", True, True, 180),
+        (1, 3740.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1420, 860, 5),
+        (2, 140.0, True, "groq", "qwen/qwen3.8-27b", False, False, 120, 50, 12),
+        (3, 3450.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1150, 790, 20),
+        (4, 3200.0, False, "ollama", "qwen2.5:7b", True, True, 980, 650, 28),
+        (5, 3820.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1310, 890, 35),
+        (6, 2400.0, False, "groq", "qwen/qwen3.8-27b", False, True, 850, 520, 45),
+        (7, 4220.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1540, 930, 55),
+        (8, 2650.0, False, "groq", "qwen/qwen3.8-27b", False, True, 910, 610, 70),
+        (9, 2100.0, True, "groq", "qwen/qwen3.8-27b", False, False, 150, 60, 90),
+        (10, 3100.0, True, "groq", "qwen/qwen3.8-27b", False, False, 160, 70, 120),
+        (11, 4120.0, False, "ollama", "qwen2.5:7b", True, True, 1200, 750, 180),
     ]
-    for idx, dur, hit, prov, mod, fb, search, mins_ago in sample_runs:
+    for idx, dur, hit, prov, mod, fb, search, p_tok, c_tok, mins_ago in sample_runs:
         ts_iso = (now - timedelta(minutes=mins_ago)).isoformat()
         svc.record_request(
             request_id=f"run-{idx:02d}",
@@ -184,6 +196,9 @@ def _seed_default_metrics(svc: MetricsService):
             model_used=mod,
             fallback_occurred=fb,
             search_called=search,
+            prompt_tokens=p_tok,
+            completion_tokens=c_tok,
+            total_tokens=p_tok + c_tok,
             timestamp_iso=ts_iso,
         )
 

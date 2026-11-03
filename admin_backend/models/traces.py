@@ -32,6 +32,9 @@ class AgentStepRecord(BaseModel):
     started_at: str
     completed_at: Optional[str] = None
     duration_ms: Optional[float] = None
+    prompt_tokens: Optional[int] = Field(None, description="Tokens consumed in prompt for this step")
+    completion_tokens: Optional[int] = Field(None, description="Tokens generated in output for this step")
+    total_tokens: Optional[int] = Field(None, description="Total tokens consumed by this step")
     summary_excerpt: Optional[str] = Field(
         None,
         description="Redacted/shortened excerpt of agent output (max 160 chars)"
@@ -64,8 +67,14 @@ class RequestTrace(BaseModel):
     error_category: Optional[str] = None  # "guardrail_block", "llm_unavailable", "pipeline_error"
     provider: Optional[str] = None
     model: Optional[str] = None
+    actual_model: Optional[str] = None
     fallback_used: bool = False
+    fallback_details: Optional[str] = None
     rate_limited_429: bool = False
+    prompt_tokens: Optional[int] = 0
+    completion_tokens: Optional[int] = 0
+    total_tokens: Optional[int] = 0
+    estimated_cost_usd: Optional[float] = 0.0
     steps: List[AgentStepRecord] = Field(default_factory=list)
 
 

@@ -5,7 +5,7 @@ from agents.citation_utils import with_sources
 
 def write_agent(state: ResearchState) -> dict:
     results = state.get("search_results") or []
-    source_list = "\n".join(f"[{i + 1}] {r['title']}" for i, r in enumerate(results))
+    source_list = "\n".join(f"[{i + 1}] {r['title']}" for i, r in enumerate(results)) or "No external sources list."
 
     revision_note = ""
     if state.get("verification_notes"):

@@ -36,7 +36,7 @@ class LongTermMemory:
         self._dsn = dsn or settings.postgres_dsn
 
     def _connect(self, register_vector_type: bool = True) -> psycopg.Connection:
-        conn = psycopg.connect(self._dsn, row_factory=dict_row)
+        conn = psycopg.connect(self._dsn, connect_timeout=2, row_factory=dict_row)
         if register_vector_type:
             register_vector(conn)
         return conn

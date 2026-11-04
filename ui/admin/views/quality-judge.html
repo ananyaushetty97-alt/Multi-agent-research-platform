@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Newsreader:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-error": "#ffffff", "on-primary-container": "#9be9e8", "on-tertiary-container": "#ffd1c2", "secondary-fixed": "#d2e5f7", "surface-tint": "#0b6969", error: "#ba1a1a", "surface-bright": "#f7f9ff", "primary-fixed": "#a3f0ef", "tertiary-container": "#a53f19", "on-surface": "#111d28", "inverse-on-surface": "#e8f2ff", primary: "#005151", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", background: "#f7f9ff", secondary: "#4f6070", "on-secondary-fixed": "#0a1d2b", "on-background": "#111d28", "on-secondary-fixed-variant": "#374958", "surface-variant": "#d7e4f3", "on-tertiary-fixed": "#390c00", "surface-container": "#e3efff", "surface-dim": "#cfdbeb", "on-surface-variant": "#3f4948", "secondary-fixed-dim": "#b6c9db", "secondary-container": "#cfe2f5", "on-primary-fixed-variant": "#004f50", "primary-fixed-dim": "#87d4d3", tertiary: "#852802", "on-primary-fixed": "#002020", "tertiary-fixed-dim": "#ffb59d", "on-error-container": "#93000a", "surface-container-highest": "#d7e4f3", "error-container": "#ffdad6", "tertiary-fixed": "#ffdbd0", "inverse-surface": "#26323d", "surface-container-lowest": "#ffffff", "primary-container": "#0f6b6b", "on-secondary-container": "#536574", "outline-variant": "#bec9c8", outline: "#6f7979", "surface-container-high": "#dde9f9", "surface-container-low": "#edf4ff", "on-tertiary-fixed-variant": "#832701", "on-primary": "#ffffff", surface: "#f7f9ff", "inverse-primary": "#87d4d3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {gutter: "1rem", "gutter-lg": "1.5rem", "margin-md": "1.5rem", "space-md": "0.75rem", "space-lg": "1.25rem", margin: "1rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "margin-lg": "2.5rem"}, fontFamily: {"headline-lg-mobile": ["Newsreader"], "title-md": ["Inter"], "label-sm": ["JetBrains Mono"], "title-sm": ["Inter"], display: ["Inter"], "body-sm": ["Inter"], "label-md": ["JetBrains Mono"], "body-md": ["Inter"], "headline-lg": ["Newsreader"], "metric-md": ["JetBrains Mono"], "metric-lg": ["JetBrains Mono"], "body-lg": ["Inter"], "headline-sm": ["Newsreader"], "headline-md": ["Newsreader"], headline: ["Inter"], body: ["Newsreader"], label: ["Inter"]}, fontSize: {"headline-lg-mobile": ["28px", {lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "500"}], "title-md": ["16px", {lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600"}], "label-sm": ["10px", {lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "500"}], "title-sm": ["14px", {lineHeight: "20px", fontWeight: "600"}], display: ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "400"}], "body-sm": ["12px", {lineHeight: "18px", fontWeight: "400"}], "label-md": ["12px", {lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500"}], "body-md": ["14px", {lineHeight: "22px", fontWeight: "400"}], "headline-lg": ["36px", {lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "400"}], "metric-md": ["18px", {lineHeight: "24px", letterSpacing: "-0.02em", fontWeight: "500"}], "metric-lg": ["28px", {lineHeight: "32px", letterSpacing: "-0.03em", fontWeight: "600"}], "body-lg": ["16px", {lineHeight: "26px", fontWeight: "400"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "500"}], "headline-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.2)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center justify-between border-b border-outline-variant/20"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">biotech</span><span class="font-title-sm text-title-sm tracking-tight text-on-surface">Scientific Observability</span></div><span class="font-label-sm text-label-sm px-space-xs py-[2px] rounded bg-surface-container text-primary border border-primary/20">v3.4-prod</span></div><nav class="flex flex-col gap-space-xs p-space-sm" data-active-classes="bg-primary-container text-on-primary-container font-title-sm"><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all group" data-path="overview-health" href="overview-health.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">vital_signs</span><span class="font-body-sm text-body-sm">Overview &amp; Health</span></div><span class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-sm text-label-sm text-primary">5/5</span></span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="metrics-latency" href="metrics-latency.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">speed</span><span class="font-body-sm text-body-sm">Metrics &amp; Latency</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">24h</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="agent-traces" href="agent-traces.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">schema</span><span class="font-body-sm text-body-sm">Agent Traces</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">1.4k</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="quality-judge" href="quality-judge.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">gavel</span><span class="font-body-sm text-body-sm">Quality &amp; Judge</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-primary">9.12</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="safety-red-team" href="safety-red-team.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">shield</span><span class="font-body-sm text-body-sm">Safety &amp; Red-Team</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">96%</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="memory-cache" href="memory-cache.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">memory</span><span class="font-body-sm text-body-sm">Memory &amp; Cache</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant">380</span></a><a class="flex items-center justify-between px-space-sm py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="audit-logs-config" href="audit-config.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">terminal</span><span class="font-body-sm text-body-sm">Audit Logs &amp; Config</span></div><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-secondary">Live</span></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><div class="px-space-sm py-space-xs rounded bg-surface-container-low border border-outline-variant/20 mb-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Cluster</span><span class="font-label-sm text-label-sm text-primary">us-east-sciphi</span></div><div class="flex items-center justify-between mt-space-xs"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Node Ping</span><span class="font-label-sm text-label-sm text-on-surface">4.2 ms</span></div></div><button class="w-full flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" type="button"><span class="font-label-sm text-label-sm uppercase tracking-wider">Collapse Rail</span><span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30 z-40 px-gutter-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="font-title-md text-title-md text-on-surface tracking-tight">Research Platform</span><span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 uppercase">Admin</span></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span><span class="font-body-sm text-body-sm text-on-surface">All systems healthy</span></div></div><div class="flex items-center gap-space-md"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left- space-sm text-outline text-[18px] pl-2">search</span><input class="w-64 bg-surface-container-low text-on-surface font-body-sm text-body-sm pl-8 pr-12 py-1.5 rounded-lg border border-outline-variant/40 focus:outline-none focus:border-primary transition-colors" placeholder="Quick command search..." type="text"/><kbd class="absolute right-2 font-label-sm text-label-sm text-outline bg-surface-container px-1 py-0.5 rounded border border-outline-variant/40">⌘K</kbd></div><div class="flex items-center gap-space-xs bg-surface-container-low px-space-xs py-1 rounded-lg border border-outline-variant/40"><span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping ml-1"></span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none pr-1 cursor-pointer"><option class="bg-surface-container-high text-on-surface" value="paused">Paused</option><option class="bg-surface-container-high text-on-surface" value="5s">5s</option><option class="bg-surface-container-high text-on-surface" selected="" value="15s">15s</option><option class="bg-surface-container-high text-on-surface" value="30s">30s</option><option class="bg-surface-container-high text-on-surface" value="60s">60s</option></select></div><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">sync</span><span class="font-label-sm text-label-sm hidden md:inline">Sync</span></button><div class="relative"><button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">ios_share</span><span class="font-label-sm text-label-sm hidden md:inline">Export</span><span class="material-symbols-outlined text-[14px]">arrow_drop_down</span></button></div><div class="flex items-center gap-space-sm pl-space-xs border-l border-outline-variant/30"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden lg:flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface font-semibold leading-tight">admin</span><span class="font-label-sm text-label-sm text-on-surface-variant text-[9px] leading-tight">Role: admin</span></div><button class="text-on-surface-variant hover:text-error transition-colors ml-space-xs" title="Logout" onclick="window.location.href='sign-in.html'" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div></div></header><main class="w-full pt-16 bg-surface min-h-screen px-gutter-lg py-gutter"><div class="flex flex-col w-full">
+<script>
+    (function highlightNav() {
+      const navLinks = document.querySelectorAll('aside nav a');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'quality-judge') {
+          link.className = 'flex items-center justify-between px-space-sm py-space-sm rounded-lg bg-primary-container text-on-primary-container font-title-sm shadow-sm transition-all';
+          const badge = link.querySelector('span:last-child');
+          if (badge) {
+            badge.className = 'font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-lowest/80 text-primary-fixed font-bold';
+          }
+        }
+      });
+    })();
+  </script>
+<!-- Section 1: Page Header & Telemetry Identity -->
+<div class="flex flex-col gap-space-sm mb-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-primary tracking-widest uppercase">SYNAPSE-V RUNTIME TELEMETRY</span>
+<span class="text-outline text-[11px]">::</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase">LLM-AS-A-JUDGE &amp; SYNTHETIC QUALITY METROLOGY</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] rounded bg-surface-container-highest text-primary font-bold ml-space-xs">EVAL-ENGINE-V4</span>
+</div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-normal">Quality &amp; LLM-as-a-Judge</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl mt-space-xs">
+          Continuous automated synthesis verification via multi-model consensus, empirical citation alignment, and human expert calibration.
+        </p>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-title-sm text-title-sm shadow-md transition-all" id="open-human-modal-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+<span>Submit Human Review</span>
+</button>
+<div class="relative group">
+<button class="flex items-center gap-space-xs px-space-sm py-2 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+<span>Export Registry</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<div class="absolute right-0 top-full mt-1 hidden group-hover:flex flex-col w-44 rounded-lg bg-surface-container-highest shadow-xl p-space-xs z-30">
+<button class="flex items-center justify-between w-full px-space-sm py-1.5 rounded text-left font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors" type="button">
+<span>Export CSV (Quorum)</span>
+<span class="text-outline">.csv</span>
+</button>
+<button class="flex items-center justify-between w-full px-space-sm py-1.5 rounded text-left font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors" type="button">
+<span>Export Telemetry NDJSON</span>
+<span class="text-outline">.json</span>
+</button>
+<button class="flex items-center justify-between w-full px-space-sm py-1.5 rounded text-left font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors" type="button">
+<span>Export Parquet Ground-Truth</span>
+<span class="text-outline">.parquet</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Stats Live Bar -->
+<div class="flex items-center justify-between flex-wrap gap-space-sm px-space-md py-2 rounded-lg bg-surface-container-lowest shadow-sm mt-space-xs">
+<div class="flex items-center gap-space-md flex-wrap text-on-surface-variant">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold uppercase">Total Graded:</span>
+<span class="font-metric-md text-metric-md text-primary font-bold">1,420</span>
+</div>
+<span class="text-outline-variant text-[14px]">|</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase">Agreement Quorum:</span>
+<span class="font-metric-md text-metric-md text-on-surface font-semibold">99.4%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(Claude-3.5-Sonnet Self-Consistency n=3)</span>
+</div>
+<span class="text-outline-variant text-[14px]">|</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase">Mean Inter-Annotator Kappa:</span>
+<span class="font-metric-md text-metric-md text-primary font-semibold">κ = 0.912</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Calibration Anchor:</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-mono">v4.8-empirical-gold</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Summary Metric Cards with Radial Gauges & Triage Cluster -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md mb-space-lg">
+<!-- 4 Radial Gauges Cluster (Span 8) -->
+<div class="xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Gauge 1: Average Overall -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center text-center shadow-sm relative group hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full mb-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Overall Metric</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/10 text-primary font-bold">+0.2 vs 7d</span>
+</div>
+<div class="relative w-28 h-28 my-space-xs flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="7"></circle>
+<circle class="text-primary transition-all duration-1000" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="22.6" stroke-linecap="round" stroke-width="7"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-metric-lg text-metric-lg font-bold text-on-surface leading-none">9.1</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">/ 10.0</span>
+</div>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface mt-1">Synthesis Standard</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] mt-0.5">Composite weighted score</span>
+</div>
+<!-- Gauge 2: Relevance -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center text-center shadow-sm relative hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full mb-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Relevance</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/10 text-primary">Top Decile</span>
+</div>
+<div class="relative w-28 h-28 my-space-xs flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="7"></circle>
+<circle class="text-primary-container transition-all duration-1000" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="15.1" stroke-linecap="round" stroke-width="7"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-metric-lg text-metric-lg font-bold text-on-surface leading-none">9.4</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">/ 10.0</span>
+</div>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface mt-1">Grounding Index</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] mt-0.5">Intent &amp; Query Grounding</span>
+</div>
+<!-- Gauge 3: Accuracy -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center text-center shadow-sm relative hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full mb-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Accuracy</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono">σ=0.18</span>
+</div>
+<div class="relative w-28 h-28 my-space-xs flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="7"></circle>
+<circle class="text-primary transition-all duration-1000" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="25.1" stroke-linecap="round" stroke-width="7"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-metric-lg text-metric-lg font-bold text-on-surface leading-none">9.0</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">/ 10.0</span>
+</div>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface mt-1">Fact Alignment</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] mt-0.5">Empirical Claim Factualness</span>
+</div>
+<!-- Gauge 4: Clarity -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center text-center shadow-sm relative hover:bg-surface-container-low transition-colors">
+<div class="flex items-center justify-between w-full mb-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Clarity</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-bold">Stable</span>
+</div>
+<div class="relative w-28 h-28 my-space-xs flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="7"></circle>
+<circle class="text-primary-fixed-dim transition-all duration-1000" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="27.6" stroke-linecap="round" stroke-width="7"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-metric-lg text-metric-lg font-bold text-on-surface leading-none">8.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">/ 10.0</span>
+</div>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface mt-1">Coherence Score</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] mt-0.5">Academic Monograph Flow</span>
+</div>
+</div>
+<!-- Diagnostic Triage Counts Cluster (Span 4) -->
+<div class="xl:col-span-4 rounded-xl bg-surface-container-lowest p-space-md flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">troubleshoot</span>
+<span class="font-title-sm text-title-sm text-on-surface">Diagnostic Triage Matrix</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Active Buffer</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Low Scoring Tile -->
+<div class="rounded-lg bg-surface-container-low p-space-sm flex flex-col justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Low (&lt; 7.0)</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">priority_high</span>
+</div>
+<div class="flex items-baseline justify-between mt-space-sm">
+<span class="font-metric-lg text-metric-lg font-bold text-secondary">6</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-secondary/10 text-secondary">Alert Active</span>
+</div>
+</div>
+<!-- Failed Grading Tile -->
+<div class="rounded-lg bg-surface-container-low p-space-sm flex flex-col justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Failed Grades</span>
+<span class="material-symbols-outlined text-error text-[16px]">error</span>
+</div>
+<div class="flex items-baseline justify-between mt-space-sm">
+<span class="font-metric-lg text-metric-lg font-bold text-error">4</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-error/10 text-error">Retry Req</span>
+</div>
+</div>
+<!-- Suspected Truncated Tile -->
+<div class="rounded-lg bg-surface-container-low p-space-sm flex flex-col justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Truncated</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">content_cut</span>
+</div>
+<div class="flex items-baseline justify-between mt-space-sm">
+<span class="font-metric-lg text-metric-lg font-bold text-secondary">2</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-secondary/10 text-secondary">8k Token Ceil</span>
+</div>
+</div>
+<!-- Human Reviews Calibrated Tile -->
+<div class="rounded-lg bg-surface-container-low p-space-sm flex flex-col justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Human Ground</span>
+<span class="material-symbols-outlined text-primary text-[16px]">verified</span>
+</div>
+<div class="flex items-baseline justify-between mt-space-sm">
+<span class="font-metric-lg text-metric-lg font-bold text-primary">18</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/10 text-primary">Calibrated</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-space-sm pt-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Heuristic Gate: Active Quorum</span>
+<span class="font-label-sm text-label-sm text-primary font-mono cursor-pointer hover:underline">Configure Gates ↗</span>
+</div>
+</div>
+</div>
+<!-- Section 3: Telemetry Filter Toolbar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl mb-space-md shadow-sm">
+<!-- Filter segmented pills -->
+<div class="flex items-center gap-space-xs flex-wrap" id="filter-pills-container">
+<button class="filter-btn active px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold transition-all shadow-sm" type="button">
+        All Records (128)
+      </button>
+<button class="filter-btn px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-secondary font-label-md text-label-md transition-all" type="button">
+        Low Scoring (&lt; 7.0) [6]
+      </button>
+<button class="filter-btn px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-error font-label-md text-label-md transition-all" type="button">
+        Failed Grades [4]
+      </button>
+<button class="filter-btn px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-secondary font-label-md text-label-md transition-all" type="button">
+        Truncation Suspected [2]
+      </button>
+<button class="filter-btn px-space-sm py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md transition-all" type="button">
+        Human Overrides [18]
+      </button>
+</div>
+<!-- Search & Model Select Cluster -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<div class="relative flex items-center min-w-[240px]">
+<span class="material-symbols-outlined absolute left-2 text-outline text-[16px]">search</span>
+<input class="w-full bg-surface-container-low text-on-surface font-body-sm text-body-sm pl-8 pr-3 py-1.5 rounded-lg focus:outline-none focus:bg-surface-container-high transition-colors" placeholder="Search topic or judge comment..." type="text"/>
+</div>
+<div class="flex items-center bg-surface-container-low px-space-sm py-1 rounded-lg">
+<span class="material-symbols-outlined text-primary text-[16px] mr-1">psychology</span>
+<select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer pr-1">
+<option class="bg-surface-container-high text-on-surface">Claude-3.5-Sonnet (Self-Consistency n=3)</option>
+<option class="bg-surface-container-high text-on-surface">GPT-4o Consensus (n=5)</option>
+<option class="bg-surface-container-high text-on-surface">Llama-3.1-405B Judge (Zero-shot CoT)</option>
+<option class="bg-surface-container-high text-on-surface">Human Calibrated Cohort (Vance, Liang)</option>
+</select>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Download TSV" type="button">
+<span class="material-symbols-outlined text-[18px]">table_rows</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Refresh Telemetry Matrix" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section 4: Comprehensive Telemetry Scorecard Table -->
+<div class="w-full bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm mb-space-xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-space-sm px-space-md whitespace-nowrap">Time (UTC)</th>
+<th class="py-space-sm px-space-md min-w-[280px]">Topic Preview</th>
+<th class="py-space-sm px-space-sm text-right whitespace-nowrap">Relevance</th>
+<th class="py-space-sm px-space-sm text-right whitespace-nowrap">Accuracy</th>
+<th class="py-space-sm px-space-sm text-right whitespace-nowrap">Clarity</th>
+<th class="py-space-sm px-space-md text-center whitespace-nowrap">Overall Score</th>
+<th class="py-space-sm px-space-md min-w-[340px]">Judge Comment / Grounding Evidence</th>
+<th class="py-space-sm px-space-md text-right whitespace-nowrap">Actions &amp; Badges</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface font-body-sm text-body-sm">
+<!-- Row 1: High Quality -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface-variant whitespace-nowrap">
+              2026-10-31<br/><span class="text-primary text-[12px]">21:05:14</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface hover:text-primary cursor-pointer transition-colors leading-snug">
+                Impact of microplastics on marine life and pelagic ecosystems
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-on-surface-variant text-[11px] font-label-sm">
+<span>REQ-8841a</span>
+<span>•</span>
+<span>PubMed / Nature DeepScan</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.8</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.6</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.4</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px- space-sm py-1 rounded bg-primary/10 text-primary min-w-[54px]">
+                9.6
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-on-surface italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low/40 py-1 pr-2 rounded">
+                “Rigorous empirical synthesis with direct line-level DOI citations; full claim verification against NOAA and Nature databases.”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-on-surface-variant">
+<span class="text-primary font-mono">Consensus: 3/3 Sonnet</span>
+<span>•</span>
+<span>0 Hallucinated Nodes</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/15 text-primary font-semibold">Passed Quorum</span>
+<button class="text-on-surface-variant hover:text-primary font-label-sm text-label-sm flex items-center gap-1 transition-colors mt-1" type="button">
+<span>Inspect Traces</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: High Quality -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface-variant whitespace-nowrap">
+              2026-10-31<br/><span class="text-primary text-[12px]">20:50:02</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface hover:text-primary cursor-pointer transition-colors leading-snug">
+                Quantum error mitigation architectures in intermediate devices
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-on-surface-variant text-[11px] font-label-sm">
+<span>REQ-9104f</span>
+<span>•</span>
+<span>arXiv Quantum Phys</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.5</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.2</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.1</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px-space-sm py-1 rounded bg-primary/10 text-primary min-w-[54px]">
+                9.3
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-on-surface italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low/40 py-1 pr-2 rounded">
+                “Adjoint state formulation mathematically sound. Zero noise extrapolation claims vetted against arXiv pre-prints.”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-on-surface-variant">
+<span class="text-primary font-mono">Formula check: 100% Valid</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/15 text-primary font-semibold">Passed Quorum</span>
+<button class="text-on-surface-variant hover:text-primary font-label-sm text-label-sm flex items-center gap-1 transition-colors mt-1" type="button">
+<span>Inspect Traces</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Truncation Suspected -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-secondary/5">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface-variant whitespace-nowrap">
+              2026-10-31<br/><span class="text-secondary text-[12px]">20:15:39</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface hover:text-secondary cursor-pointer transition-colors leading-snug">
+                Solid-state battery electrolyte progress across Stanford trials
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-secondary text-[11px] font-label-sm">
+<span>#req-973c</span>
+<span>•</span>
+<span>Stop Token Severed</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-on-surface font-semibold">8.0</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-secondary font-semibold">7.2</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-secondary font-semibold">6.5</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px-space-sm py-1 rounded bg-secondary/15 text-secondary min-w-[54px]">
+                6.8
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-secondary-fixed italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low py-1 pr-2 rounded">
+                “Premature stop token reached. Monograph severed before closing bibliography. Heuristic triggered: Output token ceiling hit (8,192 tok).”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-secondary">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>Heuristic: Output token ceiling 8,192 reached without EOS citation graph.</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-secondary/20 text-secondary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">content_cut</span>
+<span>Truncation Suspected</span>
+</span>
+<button class="quick-calibrate-btn text-primary hover:text-primary-fixed font-label-sm text-label-sm flex items-center gap-1 transition-colors mt-1 font-semibold" data-req="req-973c" data-topic="Solid-state battery electrolyte progress across Stanford trials" type="button">
+<span>Calibrate Review</span>
+<span class="material-symbols-outlined text-[14px]">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Low Scoring / Hallucination -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-secondary/5">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface-variant whitespace-nowrap">
+              2026-10-31<br/><span class="text-secondary text-[12px]">19:40:11</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface hover:text-secondary cursor-pointer transition-colors leading-snug">
+                Synthetic microfiber wastewater acoustic standing wave filtration
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-on-surface-variant text-[11px] font-label-sm">
+<span>REQ-7720b</span>
+<span>•</span>
+<span>Empirical Divergence</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-on-surface font-semibold">7.1</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-error font-semibold">5.8</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-secondary font-semibold">7.2</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px-space-sm py-1 rounded bg-secondary/15 text-secondary min-w-[54px]">
+                6.4
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-on-surface italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low py-1 pr-2 rounded">
+                “Empirical Divergence: Flagged hallucination in acoustic node velocity claim (&gt;3.2 sigma from DOI source). Step rejected by judge.”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-error font-mono">
+<span>DOI: 10.1016/j.jwpe.2024.105432 verification delta = -44%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-secondary/20 text-secondary font-bold">Low Score (&lt; 7.0)</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-error/20 text-error font-semibold mt-0.5">Flagged Divergence</span>
+</div>
+</td>
+</tr>
+<!-- Row 5: Grading Failed -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-error/5">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-error whitespace-nowrap">
+              2026-10-31<br/><span class="text-error text-[12px]">19:12:44</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface leading-snug">
+                CRISPR-Cas9 Prime Editing Ethics in Agriculture and Crop Security
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-error text-[11px] font-label-sm">
+<span>REQ-6639c</span>
+<span>•</span>
+<span>Gateway 504 Evaluator Timeout</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-outline">—</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-outline">—</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-outline">—</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px-space-sm py-1 rounded bg-error-container text-on-error-container min-w-[54px]">
+                ERR
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-error italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low py-1 pr-2 rounded">
+                “Evaluator timeout (Gateway 504 on Claude API after 3 retries). Fallback regex heuristics failed quorum.”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-on-surface-variant font-mono">
+<span>Error trace: EvaluatorQuorumException: Incomplete LLM arbitration packet</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-error/20 text-error font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">sync_problem</span>
+<span>Grading Failed</span>
+</span>
+<button class="px-space-xs py-1 rounded bg-surface-container-high hover:bg-surface-variant text-error font-label-sm text-label-sm flex items-center gap-1 transition-colors mt-1" type="button">
+<span class="material-symbols-outlined text-[14px]">replay</span>
+<span>Retry Evaluation</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Human Calibrated -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-primary/5">
+<td class="py-space-md px-space-md font-metric-md text-metric-md text-on-surface-variant whitespace-nowrap">
+              2026-10-31<br/><span class="text-primary text-[12px]">18:30:19</span>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-title-sm text-title-sm text-on-surface hover:text-primary cursor-pointer transition-colors leading-snug">
+                Bioaccumulation vs Biomagnification distinctions in marine food webs
+              </div>
+<div class="flex items-center gap-space-xs mt-1 text-primary text-[11px] font-label-sm">
+<span>REQ-5501d</span>
+<span>•</span>
+<span>Calibrated by Dr. Vance</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.8</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.7</td>
+<td class="py-space-md px-space-sm text-right font-metric-md text-metric-md text-primary font-semibold">9.5</td>
+<td class="py-space-md px-space-md text-center">
+<span class="inline-flex items-center justify-center font-metric-md text-metric-md font-bold px-space-sm py-1 rounded bg-primary/10 text-primary min-w-[54px]">
+                9.7
+              </span>
+</td>
+<td class="py-space-md px-space-md">
+<blockquote class="font-headline-sm text-headline-sm text-on-surface italic font-normal text-[15px] leading-relaxed pl-space-xs bg-surface-container-low/40 py-1 pr-2 rounded">
+                “Reviewed by Dr. Vance: Verified distinction boundaries between somatic uptake and trophic transfer.”
+              </blockquote>
+<div class="flex items-center gap-space-xs mt-1 text-[11px] text-primary font-mono">
+<span class="material-symbols-outlined text-[13px]">shield</span>
+<span>Gold Calibration Seed #GC-109 Applied</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right whitespace-nowrap">
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+<span>Human Reviewed</span>
+</span>
+<button class="text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors mt-1" type="button">
+<span>Audit Deltas</span>
+<span class="material-symbols-outlined text-[14px]">history</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination / Registry Footer -->
+<div class="flex items-center justify-between flex-wrap gap-space-sm px-space-md py-space-sm bg-surface-container-low">
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+<span>Showing 1 – 6 of 128 recorded evaluations</span>
+<span>•</span>
+<span>Sliding buffer window: 24 Hours</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant disabled:opacity-40 font-label-sm text-label-sm" disabled="" type="button">
+          Previous
+        </button>
+<span class="px-space-xs py-1 text-primary font-label-sm text-label-sm font-bold">1</span>
+<button class="px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm" type="button">2</button>
+<button class="px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm" type="button">3</button>
+<span class="text-outline">...</span>
+<button class="px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm" type="button">22</button>
+<button class="px-space-sm py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+          Next
+        </button>
+</div>
+</div>
+</div>
+<!-- Section 5: "Human Review" Calibration Modal Overlay -->
+<!-- Designed as a high-fidelity diagnostic modal dialog -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-space-md bg-surface-container-lowest/85 backdrop-blur-md" id="human-review-modal">
+<div class="w-full max-w-2xl rounded-2xl bg-surface-container-low p-space-lg shadow-2xl flex flex-col gap-space-md relative overflow-hidden">
+<!-- Ambient decorative glow -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Modal Header -->
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-space-xs mb-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-widest font-mono">CALIBRATION DISPATCH</span>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-primary/10 text-primary">Authority: Principal</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-normal">Submit Human Calibration Review</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Override or calibrate automated LLM-as-a-judge scorecards with authoritative human ground truth.
+          </p>
+</div>
+<button class="p-1 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" id="close-human-modal-btn" title="Close calibration dialog" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Evaluator & Target Request Metadata -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Evaluation Target</span>
+<span class="font-title-sm text-title-sm text-on-surface truncate mt-0.5">Solid-state battery electrolyte progress across Stanford trials</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono mt-0.5">#req-973c (Truncated 8,192 tok)</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Assigned Evaluator</span>
+<span class="font-title-sm text-title-sm text-on-surface mt-0.5">admin (Dr. Elena Vance)</span>
+<span class="font-label-sm text-label-sm text-primary font-mono mt-0.5">Role: Principal Evaluator • ID #VAL-882</span>
+</div>
+</div>
+<!-- 4 Numeric Steppers (1 to 10) Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<!-- Stepper 1: Relevance -->
+<div class="rounded-xl bg-surface-container p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">Relevance (Intent)</span>
+<span class="font-metric-md text-metric-md font-bold text-primary" id="score-val-relevance">8.5</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm mt-2">
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="dec" data-target="relevance" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<input class="w-full accent-teal-400 bg-surface-container-lowest h-1.5 rounded cursor-pointer" id="slider-relevance" max="10" min="1" step="0.1" type="range" value="8.5"/>
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="inc" data-target="relevance" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+<!-- Stepper 2: Accuracy -->
+<div class="rounded-xl bg-surface-container p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">Accuracy (Factualness)</span>
+<span class="font-metric-md text-metric-md font-bold text-primary" id="score-val-accuracy">8.5</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm mt-2">
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="dec" data-target="accuracy" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<input class="w-full accent-teal-400 bg-surface-container-lowest h-1.5 rounded cursor-pointer" id="slider-accuracy" max="10" min="1" step="0.1" type="range" value="8.5"/>
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="inc" data-target="accuracy" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+<!-- Stepper 3: Clarity -->
+<div class="rounded-xl bg-surface-container p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">Clarity (Coherence)</span>
+<span class="font-metric-md text-metric-md font-bold text-primary" id="score-val-clarity">7.5</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm mt-2">
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="dec" data-target="clarity" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<input class="w-full accent-teal-400 bg-surface-container-lowest h-1.5 rounded cursor-pointer" id="slider-clarity" max="10" min="1" step="0.1" type="range" value="7.5"/>
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="inc" data-target="clarity" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+<!-- Stepper 4: Composite Overall -->
+<div class="rounded-xl bg-surface-container p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">Calibrated Overall</span>
+<span class="font-metric-md text-metric-md font-bold text-primary" id="score-val-overall">8.2</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm mt-2">
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="dec" data-target="overall" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<input class="w-full accent-teal-400 bg-surface-container-lowest h-1.5 rounded cursor-pointer" id="slider-overall" max="10" min="1" step="0.1" type="range" value="8.2"/>
+<button class="stepper-btn w-7 h-7 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center justify-center transition-colors" data-op="inc" data-target="overall" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Qualitative Notes Textarea -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center justify-between" for="review-notes">
+<span>Expert Reviewer Justification &amp; Error Annotation</span>
+<span class="text-outline text-[10px]">DOI reference required for delta &gt; 1.5</span>
+</label>
+<textarea class="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm p-space-sm rounded-xl focus:outline-none focus:bg-surface-container-low transition-colors leading-relaxed" id="review-notes" rows="3">Verified that the synthesis correctly captured lithium dendrite suppression, but bibliography was clipped at 8k token limit. Upgrading accuracy from 7.2 to 8.5; requesting pipeline rerun with extended context.</textarea>
+</div>
+<!-- Pipeline Rerun Toggle Switch -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">autorenew</span>
+<div>
+<div class="font-title-sm text-title-sm text-on-surface">Flag for automated pipeline rerun</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">Re-queues synthesis request #req-973c to Groq LPUs with 16k context window.</div>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="rerun-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Modal Footer -->
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors" id="cancel-modal-btn" type="button">
+          Cancel
+        </button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-primary hover:bg-primary-fixed-dim text-on-primary font-title-sm text-title-sm shadow-lg transition-all font-semibold" id="submit-calibration-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Submit Calibration Review</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Interactive JavaScript logic for modal and steppers -->
+<script>
+    (function initQualityJudgeInteractions() {
+      const modal = document.getElementById('human-review-modal');
+      const openBtn = document.getElementById('open-human-modal-btn');
+      const closeBtn = document.getElementById('close-human-modal-btn');
+      const cancelBtn = document.getElementById('cancel-modal-btn');
+      const submitBtn = document.getElementById('submit-calibration-btn');
+
+      function openModal() {
+        if (modal) modal.classList.remove('hidden');
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.add('hidden');
+      }
+
+      if (openBtn) openBtn.addEventListener('click', openModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+      // Calibration buttons in table
+      document.querySelectorAll('.quick-calibrate-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openModal();
+        });
+      });
+
+      // Submit feedback simulation
+      if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+          submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Committed...</span>';
+          setTimeout(() => {
+            closeModal();
+            submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span><span>Submit Calibration Review</span>';
+          }, 600);
+        });
+      }
+
+      // Filter pills switching
+      const filterPills = document.querySelectorAll('#filter-pills-container .filter-btn');
+      filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          filterPills.forEach(p => {
+            p.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            p.classList.add('bg-surface-container-low');
+          });
+          pill.classList.remove('bg-surface-container-low');
+          pill.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+        });
+      });
+
+      // Sliders & Steppers sync
+      const dimensions = ['relevance', 'accuracy', 'clarity', 'overall'];
+      dimensions.forEach(dim => {
+        const slider = document.getElementById(`slider-${dim}`);
+        const display = document.getElementById(`score-val-${dim}`);
+
+        if (slider && display) {
+          slider.addEventListener('input', (e) => {
+            display.textContent = parseFloat(e.target.value).toFixed(1);
+          });
+        }
+      });
+
+      document.querySelectorAll('.stepper-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-target');
+          const op = btn.getAttribute('data-op');
+          const slider = document.getElementById(`slider-${target}`);
+          const display = document.getElementById(`score-val-${target}`);
+          if (slider && display) {
+            let val = parseFloat(slider.value);
+            if (op === 'inc') val = Math.min(10, val + 0.1);
+            if (op === 'dec') val = Math.max(1, val - 0.1);
+            slider.value = val;
+            display.textContent = val.toFixed(1);
+          }
+        });
+      });
+    })();
+  </script>
+</div></main></div></body></html>

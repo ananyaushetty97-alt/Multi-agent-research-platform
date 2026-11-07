@@ -2,6 +2,7 @@
 Request tracing and agent-step instrumentation service.
 Implements privacy redactions (no full prompts stored, length limits, PII masking).
 Provides clean instrumentation hooks ready for future pipeline integration.
+Only returns REAL data from actual pipeline requests - no seeded/fake data.
 """
 import re
 import time
@@ -495,5 +496,5 @@ def _seed_default_traces(svc: TraceService):
         svc.record_manual_trace(t)
 
 
+# No seeding - only real data from actual pipeline requests
 trace_service = TraceService()
-_seed_default_traces(trace_service)

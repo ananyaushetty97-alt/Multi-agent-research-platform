@@ -2,6 +2,7 @@
 Metrics collection and aggregation service.
 Computes latency statistics (avg, p50, p90, p95, p99), error rates,
 cache hit rates, provider fallbacks, 429 rate limits, and volume by day.
+Only returns REAL data from actual API requests - no seeded/fake data.
 """
 import math
 from collections import defaultdict
@@ -168,42 +169,7 @@ class MetricsService:
         )
 
 
-def _seed_default_metrics(svc: MetricsService):
-    now = datetime.now(timezone.utc)
-    sample_runs = [
-        (1, 3740.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1420, 860, 5),
-        (2, 140.0, True, "groq", "qwen/qwen3.8-27b", False, False, 120, 50, 12),
-        (3, 3450.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1150, 790, 20),
-        (4, 3200.0, False, "ollama", "qwen2.5:7b", True, True, 980, 650, 28),
-        (5, 3820.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1310, 890, 35),
-        (6, 2400.0, False, "groq", "qwen/qwen3.8-27b", False, True, 850, 520, 45),
-        (7, 4220.0, False, "groq", "qwen/qwen3.8-27b", False, True, 1540, 930, 55),
-        (8, 2650.0, False, "groq", "qwen/qwen3.8-27b", False, True, 910, 610, 70),
-        (9, 2100.0, True, "groq", "qwen/qwen3.8-27b", False, False, 150, 60, 90),
-        (10, 3100.0, True, "groq", "qwen/qwen3.8-27b", False, False, 160, 70, 120),
-        (11, 4120.0, False, "ollama", "qwen2.5:7b", True, True, 1200, 750, 180),
-    ]
-    for idx, dur, hit, prov, mod, fb, search, p_tok, c_tok, mins_ago in sample_runs:
-        ts_iso = (now - timedelta(minutes=mins_ago)).isoformat()
-        svc.record_request(
-            request_id=f"run-{idx:02d}",
-            endpoint="/generate",
-            method="POST",
-            status_code=200,
-            duration_ms=dur,
-            cache_hit=hit,
-            provider_used=prov,
-            model_used=mod,
-            fallback_occurred=fb,
-            search_called=search,
-            prompt_tokens=p_tok,
-            completion_tokens=c_tok,
-            total_tokens=p_tok + c_tok,
-            timestamp_iso=ts_iso,
-        )
-
-
+# No seeding - only real data from actual API requests
 metrics_service = MetricsService()
-_seed_default_metrics(metrics_service)
 
 

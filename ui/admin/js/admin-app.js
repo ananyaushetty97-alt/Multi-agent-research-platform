@@ -714,54 +714,6 @@
     renderMemoryView();
   }
 
-  async function triggerSyntheticProbe(manual = false) {
-    secondsSinceLastCheck = 0;
-    const probeBtn = document.getElementById("triggerProbeBtn");
-    const subProbeBtn = document.getElementById("probeTriggerBtn");
-
-    if (probeBtn) {
-      probeBtn.classList.add("animate-pulse");
-      probeBtn.disabled = true;
-    }
-    if (subProbeBtn) {
-      subProbeBtn.classList.add("animate-pulse");
-      subProbeBtn.disabled = true;
-    }
-
-    try {
-      if (isBackendConnected) {
-        await fetchHealth();
-        showToast(`Synthetic dependency probe completed: ${state.health.summary || "All 5 core systems healthy"}`, "success");
-      } else {
-        simulateTelemetryTick();
-        showToast("Synthetic mesh probes completed: 5/5 healthy", "success");
-      }
-
-      appendAuditLog({
-        action: "probe.trigger",
-        resource_type: "health",
-        resource_id: "synthetic_probe_mesh",
-        status: "success",
-        details: {
-          manual_trigger: manual,
-          probed: ["redis", "postgres", "groq", "ollama", "tavily"],
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (err) {
-      showToast("Probe executed with local fallback", "info");
-    } finally {
-      if (probeBtn) {
-        probeBtn.classList.remove("animate-pulse");
-        probeBtn.disabled = false;
-      }
-      if (subProbeBtn) {
-        subProbeBtn.classList.remove("animate-pulse");
-        subProbeBtn.disabled = false;
-      }
-    }
-  }
-
   // ---------- VIEW RENDERING FUNCTIONS ----------
   function renderAllViews() {
     renderHealthView();
@@ -814,15 +766,7 @@
       }
     }
 
-    const triggerBtn = document.getElementById("triggerProbeBtn");
-    if (triggerBtn) {
-      triggerBtn.onclick = () => triggerSyntheticProbe(true);
     }
-    const triggerBtn2 = document.getElementById("probeTriggerBtn");
-    if (triggerBtn2) {
-      triggerBtn2.onclick = () => triggerSyntheticProbe(true);
-    }
-  }
 
   // 2. Metrics & Latency View
   function renderMetricsView() {
@@ -2200,7 +2144,6 @@
   window.AdminController = {
     state,
     switchTab,
-    triggerSyntheticProbe,
     exportScoresData,
     openHumanReviewModal,
     requestDestructiveConfirmation,

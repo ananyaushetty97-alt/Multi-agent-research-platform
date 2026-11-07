@@ -21,12 +21,12 @@ from admin_backend.security.passwords import hash_password, verify_password
 from admin_backend.security.rate_limiter import rate_limit_guard
 from admin_backend.security.tokens import create_access_token
 from admin_backend.services.audit_service import audit_service
-from admin_backend.storage.in_memory import InMemoryUserStorage
+from admin_backend.storage.postgres import PostgresUserStorage
 
 router = APIRouter(prefix="/auth", tags=["Admin Auth"])
 
-# Package user storage instance
-user_storage = InMemoryUserStorage()
+# Package user storage instance - using PostgreSQL for persistence
+user_storage = PostgresUserStorage()
 
 
 def seed_default_users_if_empty():

@@ -8,14 +8,15 @@ import uuid
 import logging
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+import collections
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import llm_link
-from guardrails.checks import check_input, check_output, MIN_REPORT_LEN
+from guardrails.checks import check_input, check_output, mask_pii, MIN_REPORT_LEN
 from evaluation.judge import grade_report, score_history
 from api import integration as parts
 
@@ -99,8 +100,35 @@ def health():
     }
 
 
+# In-memory sliding-window rate limiter (25 requests per minute per IP)
+_RATE_LIMIT_WINDOW = 60.0
+_RATE_LIMIT_MAX_REQUESTS = 25
+_client_request_history: dict[str, collections.deque] = collections.defaultdict(collections.deque)
+
+
+def check_rate_limit(client_ip: str) -> bool:
+    if not client_ip or client_ip in ("testclient", "127.0.0.1", "localhost", "::1"):
+        return True
+    now = time.time()
+    q = _client_request_history[client_ip]
+    while q and now - q[0] > _RATE_LIMIT_WINDOW:
+        q.popleft()
+    if len(q) >= _RATE_LIMIT_MAX_REQUESTS:
+        return False
+    q.append(now)
+    return True
+
 @app.post("/generate", response_model=ReportResponse)
-def generate(req: TopicRequest):
+def generate(req: TopicRequest, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Please wait a minute before making further research requests."
+        )
+
+    # Anonymize any sensitive PII (emails, cards, SSNs, phone numbers) before processing
+    req.topic, _ = mask_pii(req.topic)
     start = time.time()
     session_id = req.session_id or str(uuid.uuid4())
     request_id = str(uuid.uuid4())

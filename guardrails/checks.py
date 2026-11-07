@@ -112,6 +112,23 @@ def _default_llm():
     return call_llm
 
 
+# --- PII (Personally Identifiable Information) Redaction -------------------
+PII_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
+PII_PHONE_PATTERN = re.compile(r"\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")
+PII_CC_PATTERN = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
+PII_SSN_PATTERN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+
+
+def mask_pii(text: str) -> tuple[str, int]:
+    """Anonymize sensitive personally identifiable information (PII) before LLM or DB storage."""
+    if not text:
+        return text, 0
+    text, n1 = PII_EMAIL_PATTERN.subn("[REDACTED_EMAIL]", text)
+    text, n2 = PII_CC_PATTERN.subn("[REDACTED_CARD]", text)
+    text, n3 = PII_SSN_PATTERN.subn("[REDACTED_SSN]", text)
+    text, n4 = PII_PHONE_PATTERN.subn("[REDACTED_PHONE]", text)
+    return text, (n1 + n2 + n3 + n4)
+
 # --- Public API ------------------------------------------------------------
 def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: bool = False) -> tuple[bool, str]:
     topic = (topic or "").strip()

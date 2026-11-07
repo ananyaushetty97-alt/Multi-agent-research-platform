@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from tavily import TavilyClient
 from dotenv import load_dotenv
 from graph.state import ResearchState
+from guardrails.checks import sanitize_search_results
 
 load_dotenv()
 tavily = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY"))
@@ -105,7 +106,9 @@ def search_agent(state: ResearchState) -> dict:
             {"title": s["title"], "url": s["url"], "content": s["content"]}
             for s in top_sources
         ]
-        return {"search_results": cleaned_sources}
+        # Sanitize against indirect prompt injections (XPIA) before passing to agents
+        sanitized = sanitize_search_results(cleaned_sources)
+        return {"search_results": sanitized}
 
     except Exception as e:
         import logging

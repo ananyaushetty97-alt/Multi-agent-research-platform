@@ -26,6 +26,7 @@ Rules:
     body = call_llm(
         prompt,
         system_prompt="You are a professional research report writer who cites every claim.",
+        max_tokens=900,
     )
     return {
         "report": with_sources(body, results),

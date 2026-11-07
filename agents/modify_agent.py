@@ -25,10 +25,18 @@ def modify_agent(state: ResearchState) -> dict:
 
 The user now asks: "{state['topic']}"
 
-Revise the report to follow this request. Keep the [N] citation markers on every claim you keep,
-and never invent a new source number. Do NOT add a Sources section. Return the full updated report.{notes}"""
+Revise the report to follow this request.
+Rules:
+- Keep the [N] citation markers on every claim you keep, and never invent a new source number.
+- If the user asks for a longer or more detailed report, expand the sections thoroughly (aim for 450-650 words) and provide a complete, well-formed conclusion without cutting off mid-sentence.
+- If the user asks for a shorter report, condense the text concisely while keeping the main findings.
+- Do NOT add a Sources or References section. Return the full updated report.{notes}"""
 
-    body = call_llm(prompt, system_prompt="You are a careful research report editor.")
+    body = call_llm(
+        prompt,
+        system_prompt="You are a careful research report editor who writes complete, well-structured monographs.",
+        max_tokens=900,
+    )
     return {
         "report": with_sources(body, results),
         "search_results": results,

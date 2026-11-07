@@ -28,11 +28,16 @@ ADMIN_USERS_TABLE = "admin_users"
 USER_USERS_TABLE = "app_users"
 AUDIT_LOGS_TABLE = "audit_logs"
 
-CREATE_TABLES_SQL = f"""
+# Table name constants
+ADMIN_USERS_TABLE = "admin_users"
+USER_USERS_TABLE = "app_users"
+AUDIT_LOGS_TABLE = "audit_logs"
+
+CREATE_TABLES_SQL = """
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Admin users table (for admin portal access)
-CREATE TABLE IF NOT EXISTS {ADMIN_USERS_TABLE} (
+CREATE TABLE IF NOT EXISTS {admin_users} (
     id UUID PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(255),
@@ -44,7 +49,7 @@ CREATE TABLE IF NOT EXISTS {ADMIN_USERS_TABLE} (
 );
 
 -- Application users table (for regular users)
-CREATE TABLE IF NOT EXISTS {USER_USERS_TABLE} (
+CREATE TABLE IF NOT EXISTS {user_users} (
     id UUID PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(255),
@@ -56,7 +61,7 @@ CREATE TABLE IF NOT EXISTS {USER_USERS_TABLE} (
 );
 
 -- Audit logs table
-CREATE TABLE IF NOT EXISTS {AUDIT_LOGS_TABLE} (
+CREATE TABLE IF NOT EXISTS {audit_logs} (
     id UUID PRIMARY KEY,
     timestamp TIMESTAMPTZ NOT NULL,
     actor_username VARCHAR(100) NOT NULL,
@@ -65,15 +70,19 @@ CREATE TABLE IF NOT EXISTS {AUDIT_LOGS_TABLE} (
     resource_type VARCHAR(100) NOT NULL,
     resource_id VARCHAR(255),
     status VARCHAR(20) NOT NULL DEFAULT 'success',
-    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    details JSONB NOT NULL DEFAULT '{{}}'::jsonb,
     client_ip VARCHAR(45)
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON {AUDIT_LOGS_TABLE} (timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON {AUDIT_LOGS_TABLE} (actor_username);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON {AUDIT_LOGS_TABLE} (action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON {AUDIT_LOGS_TABLE} (resource_type, resource_id);
-"""
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON {audit_logs} (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON {audit_logs} (actor_username);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON {audit_logs} (action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON {audit_logs} (resource_type, resource_id);
+""".format(
+    admin_users=ADMIN_USERS_TABLE,
+    user_users=USER_USERS_TABLE,
+    audit_logs=AUDIT_LOGS_TABLE,
+)
 
 
 class PostgresUserStorage(UserStorageInterface):

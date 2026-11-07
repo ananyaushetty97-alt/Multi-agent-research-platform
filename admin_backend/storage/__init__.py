@@ -15,6 +15,10 @@ from admin_backend.storage.in_memory import (
     InMemorySafetyStorage,
     InMemoryMetricStorage,
 )
+from admin_backend.storage.postgres import (
+    PostgresUserStorage,
+    PostgresAuditStorage,
+)
 
 __all__ = [
     "UserStorageInterface",
@@ -27,4 +31,6 @@ __all__ = [
     "InMemoryTraceStorage",
     "InMemorySafetyStorage",
     "InMemoryMetricStorage",
+    "PostgresUserStorage",
+    "PostgresAuditStorage",
 ]

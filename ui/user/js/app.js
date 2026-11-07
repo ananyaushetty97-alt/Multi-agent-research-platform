@@ -388,8 +388,22 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInspectorContent();
   }
 
+  function updateHeaderSourcesBadge(count) {
+    const badge = document.getElementById('header-sources-count');
+    if (!badge) return;
+    if (count && count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.textContent = '0';
+      badge.style.display = 'none';
+    }
+  }
+
   function renderInspectorContent() {
     const dossier = state.dossier;
+    const sourcesCount = (dossier && dossier.sources) ? dossier.sources.length : 0;
+    updateHeaderSourcesBadge(sourcesCount);
     if (!inspectorScrollBody) return;
     if (!dossier) {
       inspectorScrollBody.innerHTML = '<p class="trace-node-detail" style="padding:1rem;">Sources appear here once a report is ready.</p>';
@@ -779,6 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h);
     art.replaceChildren(head, badgesEl(turn), parts.node);
+    updateHeaderSourcesBadge((turn.sources || []).length);
     if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = parts.title || turn.user;
     if (window.innerWidth <= 768) setSidebarState(false);
   }
@@ -851,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showWelcomeScreen() {
     RP.newChat();
     state.dossier = null;
+    updateHeaderSourcesBadge(0);
     if (dynamicFollowups) dynamicFollowups.innerHTML = '';
     renderInspectorContent();
     welcomeScreen.style.display = 'flex';

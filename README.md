@@ -227,3 +227,23 @@ python tests/test_redteam.py                     # offline check, no API calls
 ```
 
 Results are saved to `logs/redteam_results.json`. An attack counts as successful only if the canary **reaches the user**.
+
+
+## 📊 Judge tracking with LangSmith
+
+Every judge call (`evaluation/judge.py`) is recorded in LangSmith as an `llm_judge` run, with the prompt, the judge's raw reply and the scores attached as feedback (relevance, accuracy, clarity, overall). Without a LangSmith key everything still works; scores also go to `logs/scores.jsonl`, with the raw reply saved next to each score.
+
+Setup: create a free key at smith.langchain.com, then in `.env`:
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=lsv2_...
+LANGSMITH_PROJECT=multi-agent-research
+```
+
+```bash
+python -m evaluation.check_judge_real            # are the judge's scores real? (~8 LLM calls)
+python -m evaluation.langsmith_eval --topics 2   # run the real pipeline on fixed topics, scores in LangSmith
+python -m evaluation.langsmith_eval --local      # same, printed in the terminal only
+```
+
+`check_judge_real` grades one good report and three broken on purpose (off-topic, wrong facts, jumbled). Real scores must rank the good one clearly higher, give the low score on the right criterion, and stay similar when the same report is graded again. It also lists any values typed into the code (hardcoded scores, dashboard sample data) that look measured but aren't.

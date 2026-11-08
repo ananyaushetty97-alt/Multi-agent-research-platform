@@ -198,9 +198,35 @@ def sanitize_search_results(results):
     return cleaned
 
 
+def _report_sanitized(results, session_id=None):
+    """Show real sanitizer actions on the admin Safety page (if the admin backend is present)."""
+    cleaned = [r for r in results if r.get("injection_removed")]
+    if not cleaned:
+        return
+    try:
+        from admin_backend.services.safety_service import safety_service
+        from admin_backend.models.safety import GuardCheckType, SafetyOutcome
+    except Exception:
+        return
+    for r in cleaned:
+        try:
+            safety_service.record_blocked_event(
+                check_type=GuardCheckType.SEARCH_XPIA,
+                reason=f"Removed {r['injection_removed']} injected sentence(s) from a search result before the agents read it.",
+                raw_text=str(r.get("url") or r.get("title") or "search result"),
+                session_id=session_id,
+                outcome=SafetyOutcome.SANITIZED,
+                details={"filter": "search_sanitizer", "url": r.get("url")},
+            )
+        except Exception as e:
+            log.warning(f"could not record sanitizer event: {e}")
+
+
 def guarded_search(search_fn):
     """Wraps a LangGraph search node so its results are sanitized before Summarize sees them."""
     def node(state):
         out = search_fn(state)
-        return {**out, "search_results": sanitize_search_results(out.get("search_results"))}
+        cleaned = sanitize_search_results(out.get("search_results"))
+        _report_sanitized(cleaned, session_id=state.get("session_id"))
+        return {**out, "search_results": cleaned}
     return node

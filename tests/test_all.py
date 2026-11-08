@@ -74,6 +74,30 @@ res = grade_report("x", good_report, llm=lambda p: "I refuse to answer in JSON")
 check("judge: bad output returns error instead of crashing", "error" in res, res)
 check("judge: results are logged", len(score_history()) == 3)
 
+# --- LangSmith: judge scores are sent as feedback (no internet needed)
+from unittest.mock import MagicMock
+from evaluation import judge as judge_mod
+
+try:
+    import langsmith
+    from langsmith.run_helpers import tracing_context
+    _old_env = {k: os.environ.get(k) for k in ("LANGSMITH_TRACING", "LANGSMITH_API_KEY")}
+    os.environ.update(LANGSMITH_TRACING="true", LANGSMITH_API_KEY="test-key")
+    judge_mod._client = MagicMock()
+    with tracing_context(enabled=True, client=MagicMock(spec=langsmith.Client)):
+        judge_mod.grade_report("Quantum computing", good_report, llm=lambda p: fenced)
+    sent = {c.kwargs["key"]: c.kwargs["value"] for c in judge_mod._client.create_feedback.call_args_list}
+    check("langsmith: all 4 scores sent as feedback",
+          sent == {"relevance": 8, "accuracy": 7, "clarity": 9, "overall": 8.0}, sent)
+    for k, v in _old_env.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+    judge_mod._client = None
+except ImportError:
+    print("  SKIP  langsmith not installed")
+
 # --- API with fake pipeline
 from fastapi.testclient import TestClient
 from api import main as api_main

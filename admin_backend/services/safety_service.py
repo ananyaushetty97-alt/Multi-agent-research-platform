@@ -168,4 +168,7 @@ def _seed_default_safety_events(svc: SafetyService):
 
 # No seeding - only real data from actual guardrail events and red-team runs
 safety_service = SafetyService()
+# Sample events are no longer loaded at startup: the Safety page now shows only
+# real guardrail blocks and real sanitizer actions (see guardrails.checks.guarded_search).
+# To fill it with demo data on purpose, call _seed_default_safety_events(safety_service).
 

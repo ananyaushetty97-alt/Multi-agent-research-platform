@@ -112,6 +112,23 @@ def _default_llm():
     return call_llm
 
 
+# --- PII (Personally Identifiable Information) Redaction -------------------
+PII_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
+PII_PHONE_PATTERN = re.compile(r"\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")
+PII_CC_PATTERN = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
+PII_SSN_PATTERN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+
+
+def mask_pii(text: str) -> tuple[str, int]:
+    """Anonymize sensitive personally identifiable information (PII) before LLM or DB storage."""
+    if not text:
+        return text, 0
+    text, n1 = PII_EMAIL_PATTERN.subn("[REDACTED_EMAIL]", text)
+    text, n2 = PII_CC_PATTERN.subn("[REDACTED_CARD]", text)
+    text, n3 = PII_SSN_PATTERN.subn("[REDACTED_SSN]", text)
+    text, n4 = PII_PHONE_PATTERN.subn("[REDACTED_PHONE]", text)
+    return text, (n1 + n2 + n3 + n4)
+
 # --- Public API ------------------------------------------------------------
 def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: bool = False) -> tuple[bool, str]:
     topic = (topic or "").strip()
@@ -198,9 +215,35 @@ def sanitize_search_results(results):
     return cleaned
 
 
+def _report_sanitized(results, session_id=None):
+    """Show real sanitizer actions on the admin Safety page (if the admin backend is present)."""
+    cleaned = [r for r in results if r.get("injection_removed")]
+    if not cleaned:
+        return
+    try:
+        from admin_backend.services.safety_service import safety_service
+        from admin_backend.models.safety import GuardCheckType, SafetyOutcome
+    except Exception:
+        return
+    for r in cleaned:
+        try:
+            safety_service.record_blocked_event(
+                check_type=GuardCheckType.SEARCH_XPIA,
+                reason=f"Removed {r['injection_removed']} injected sentence(s) from a search result before the agents read it.",
+                raw_text=str(r.get("url") or r.get("title") or "search result"),
+                session_id=session_id,
+                outcome=SafetyOutcome.SANITIZED,
+                details={"filter": "search_sanitizer", "url": r.get("url")},
+            )
+        except Exception as e:
+            log.warning(f"could not record sanitizer event: {e}")
+
+
 def guarded_search(search_fn):
     """Wraps a LangGraph search node so its results are sanitized before Summarize sees them."""
     def node(state):
         out = search_fn(state)
-        return {**out, "search_results": sanitize_search_results(out.get("search_results"))}
+        cleaned = sanitize_search_results(out.get("search_results"))
+        _report_sanitized(cleaned, session_id=state.get("session_id"))
+        return {**out, "search_results": cleaned}
     return node

@@ -388,8 +388,22 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInspectorContent();
   }
 
+  function updateHeaderSourcesBadge(count) {
+    const badge = document.getElementById('header-sources-count');
+    if (!badge) return;
+    if (count && count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.textContent = '0';
+      badge.style.display = 'none';
+    }
+  }
+
   function renderInspectorContent() {
     const dossier = state.dossier;
+    const sourcesCount = (dossier && dossier.sources) ? dossier.sources.length : 0;
+    updateHeaderSourcesBadge(sourcesCount);
     if (!inspectorScrollBody) return;
     if (!dossier) {
       inspectorScrollBody.innerHTML = '<p class="trace-node-detail" style="padding:1rem;">Sources appear here once a report is ready.</p>';
@@ -664,16 +678,92 @@ document.addEventListener('DOMContentLoaded', () => {
     p.textContent = e.name === 'AbortError' ? 'Request cancelled.' : e.message;
     d.append(p); return d;
   }
+  function createReportActionBar(articleEl) {
+    const bar = document.createElement('div');
+    bar.className = 'report-action-bar';
+    bar.style.marginTop = '1rem';
+    bar.innerHTML = `
+      <div class="action-buttons-group">
+        <button class="btn-report-tool btn-copy-turn" type="button" title="Copy text">
+          <span class="material-symbols-outlined text-[16px]">content_copy</span>
+          <span>Copy report</span>
+        </button>
+        <div class="download-dropdown-wrapper">
+          <button class="btn-report-tool btn-download-trigger" type="button" title="Download report">
+            <span class="material-symbols-outlined text-[16px]">download</span>
+            <span>Download</span>
+            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+          </button>
+          <div class="download-format-menu">
+            <button class="download-format-item dl-pdf" type="button">
+              <span class="material-symbols-outlined text-[17px] text-primary">picture_as_pdf</span>
+              <span class="dl-format-name">PDF (.pdf)</span>
+            </button>
+            <button class="download-format-item dl-doc" type="button">
+              <span class="material-symbols-outlined text-[17px] text-primary">description</span>
+              <span class="dl-format-name">Word (.doc)</span>
+            </button>
+            <button class="download-format-item dl-txt" type="button">
+              <span class="material-symbols-outlined text-[17px] text-primary">text_snippet</span>
+              <span class="dl-format-name">Plain Text (.txt)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const copyBtn = bar.querySelector('.btn-copy-turn');
+    const trigger = bar.querySelector('.btn-download-trigger');
+    const menu = bar.querySelector('.download-format-menu');
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(articleEl.innerText);
+      showToast('Monograph copied to clipboard', 'content_copy');
+    });
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.download-format-menu.show').forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+      });
+      menu.classList.toggle('show');
+    });
+
+    bar.querySelector('.dl-pdf').addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.remove('show');
+      downloadReportPDF(articleEl);
+    });
+
+    bar.querySelector('.dl-doc').addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.remove('show');
+      downloadReportDOC(articleEl);
+    });
+
+    bar.querySelector('.dl-txt').addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.remove('show');
+      downloadReportTXT(articleEl);
+    });
+
+    return bar;
+  }
+
   function buildAssistant(turn) {
     const parts = reportParts(turn);
     if (turn.intent === 'question') {
       const card = document.createElement('div'); card.className = 'definitional-response-card';
       card.append(badgesEl(turn), parts.node); return card;
     }
+    const container = document.createElement('div');
+    container.className = 'chat-turn-assistant-card';
     const art = document.createElement('article'); art.className = 'editorial-article';
     const head = document.createElement('header'); head.className = 'article-header';
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
-    head.append(h); art.append(head, badgesEl(turn), parts.node); return art;
+    head.append(h); art.append(head, badgesEl(turn), parts.node);
+    container.append(art, createReportActionBar(art));
+    return container;
   }
   function assistantHolder(turn) {
     const w = document.createElement('div'); w.className = 'chat-turn-assistant'; w.style.marginTop = '1rem';
@@ -703,6 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h);
     art.replaceChildren(head, badgesEl(turn), parts.node);
+    updateHeaderSourcesBadge((turn.sources || []).length);
     if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = parts.title || turn.user;
     if (window.innerWidth <= 768) setSidebarState(false);
   }
@@ -775,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showWelcomeScreen() {
     RP.newChat();
     state.dossier = null;
+    updateHeaderSourcesBadge(0);
     if (dynamicFollowups) dynamicFollowups.innerHTML = '';
     renderInspectorContent();
     welcomeScreen.style.display = 'flex';
@@ -1390,8 +1482,14 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   }
 
-  function downloadReportPDF() {
-    const article = document.querySelector('.editorial-article');
+  function getActiveArticle(target) {
+    if (target && target.nodeType) return target;
+    const articles = document.querySelectorAll('.editorial-article');
+    return articles.length ? articles[articles.length - 1] : null;
+  }
+
+  function downloadReportPDF(target) {
+    const article = getActiveArticle(target);
     if (!article) return;
     const printFrame = document.createElement('iframe');
     printFrame.style.position = 'fixed';
@@ -1441,8 +1539,8 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Preparing PDF download / print...', 'picture_as_pdf');
   }
 
-  function downloadReportDOC() {
-    const article = document.querySelector('.editorial-article');
+  function downloadReportDOC(target) {
+    const article = getActiveArticle(target);
     if (!article) return;
     const wordHtml = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' 
@@ -1467,8 +1565,8 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Downloaded Word document (.doc)', 'description');
   }
 
-  function downloadReportTXT() {
-    const article = document.querySelector('.editorial-article');
+  function downloadReportTXT(target) {
+    const article = getActiveArticle(target);
     if (!article) return;
     const content = `MULTI-AGENT RESEARCH MONOGRAPH\nGenerated by Autonomous Multi-Agent Research Platform\n======================================================\n\n${article.innerText}`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
@@ -1511,8 +1609,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Close download menu when clicking outside
   document.addEventListener('click', (e) => {
-    if (downloadDropdownWrapper && !downloadDropdownWrapper.contains(e.target)) {
-      downloadFormatMenu?.classList.remove('show');
+    if (!e.target.closest('.download-dropdown-wrapper')) {
+      document.querySelectorAll('.download-format-menu.show').forEach(m => m.classList.remove('show'));
     }
   });
 

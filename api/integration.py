@@ -9,10 +9,8 @@ log = logging.getLogger("integration")
 
 PIPELINE_PATHS = [("graph.pipeline", "run_pipeline"), ("graph", "run_pipeline"),
                   ("agents.pipeline", "run_pipeline"), ("agents", "run_pipeline")]
-CACHE_PATHS = [("memory.cache", "check_cache"), ("memory.semantic_cache", "check_cache"),
-               ("memory", "check_cache")]
-LTM_PATHS = [("memory.ltm", "save_to_ltm"), ("memory.long_term", "save_to_ltm"),
-             ("memory", "save_to_ltm")]
+CACHE_PATHS = [("memory", "check_cache")]
+LTM_PATHS = [("memory", "save_to_ltm")]
 HISTORY_PATHS = [("memory", "get_history")]
 APPEND_PATHS = [("memory", "append_turn")]
 

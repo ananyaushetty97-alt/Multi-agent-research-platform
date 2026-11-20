@@ -21,17 +21,13 @@
 </div>
 </div>
 <div class="flex flex-wrap items-center gap-space-xs font-label-sm">
-<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-on-primary font-medium hover:bg-primary-fixed transition-colors shadow-sm" id="probeTriggerBtn">
-<span class="material-symbols-outlined text-[16px]">bolt</span>
-<span>Trigger Synthetic Probe</span>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-on-primary font-medium hover:bg-primary-fixed transition-colors shadow-sm" id="exportHealthBtn">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Export Health Data</span>
 </button>
 <button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors">
 <span class="material-symbols-outlined text-[16px]">cleaning_services</span>
 <span>Flush Stale (48)</span>
-</button>
-<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-[16px]">terminal</span>
-<span>Dump Diagnostic (.tar.gz)</span>
 </button>
 <div class="hidden xl:flex items-center gap-1.5 pl-space-sm text-outline font-label-sm">
 <span>EPOCH:</span>
@@ -640,7 +636,7 @@
 <script>
   (function() {
     const consoleEl = document.getElementById('probeConsole');
-    const triggerBtn = document.getElementById('probeTriggerBtn');
+    const exportBtn = document.getElementById('exportHealthBtn');
     const clearBtn = document.getElementById('clearStreamBtn');
 
     if (clearBtn && consoleEl) {
@@ -653,18 +649,26 @@
       });
     }
 
-    if (triggerBtn && consoleEl) {
-      triggerBtn.addEventListener('click', () => {
-        const time = new Date().toISOString().substring(11, 23);
-        const probeHtml = `
-          <div class="flex items-start gap-2 animate-pulse">
-            <span class="text-outline shrink-0">${time}</span>
-            <span class="text-primary font-bold">[MANUAL:EXEC]</span>
-            <span class="text-primary-fixed">Synthetic pipeline handshake emitted to all 5 dependencies... OK (32ms)</span>
-          </div>
+    if (exportBtn && consoleEl) {
+      exportBtn.addEventListener('click', () => {
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[16px] animate-spin">rotate_right</span>
+          <span>Exporting...</span>
         `;
-        consoleEl.insertAdjacentHTML('beforeend', probeHtml);
-        consoleEl.scrollTop = consoleEl.scrollHeight;
+        exportBtn.classList.add('opacity-75');
+
+        setTimeout(() => {
+          exportBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">done</span>
+            <span>Exported</span>
+          `;
+          exportBtn.classList.remove('opacity-75');
+
+          setTimeout(() => {
+            exportBtn.innerHTML = originalText;
+          }, 2000);
+        }, 850);
       });
     }
   })();

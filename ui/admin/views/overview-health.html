@@ -40,13 +40,9 @@
 <span class="font-label-sm text-label-sm text-outline"> (14:38:02 UTC)</span>
 </div>
 <div class="flex items-center gap-space-xs">
-<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container font-title-sm text-title-sm hover:bg-primary transition-colors shadow-sm" id="triggerProbeBtn">
-<span class="material-symbols-outlined text-[18px]">satellite_alt</span>
-<span>Trigger Synthetic Probe</span>
-</button>
-<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-colors font-title-sm text-title-sm shadow-sm" title="Download Diagnostic Snapshot">
-<span class="material-symbols-outlined text-[18px]">file_download</span>
-<span>Dump (.tar.gz)</span>
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container font-title-sm text-title-sm hover:bg-primary transition-colors shadow-sm" id="exportHealthBtn">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Export Health Data</span>
 </button>
 </div>
 </div>
@@ -429,11 +425,10 @@
 </div>
 </div>
 <script>
-  // Micro-interactions and synthetic probe feedback
+  // Micro-interactions and health data export
   document.addEventListener('DOMContentLoaded', () => {
-    const probeBtn = document.getElementById('triggerProbeBtn');
+    const exportBtn = document.getElementById('exportHealthBtn');
     const retryBtn = document.getElementById('retryBackendBtn');
-    const mockBtn = document.getElementById('mockModeBtn');
     const lastCheckLabel = document.getElementById('lastCheckTime');
 
     let secondsAgo = 14;
@@ -446,26 +441,26 @@
       }
     }, 1000);
 
-    if (probeBtn) {
-      probeBtn.addEventListener('click', () => {
-        const originalText = probeBtn.innerHTML;
-        probeBtn.innerHTML = `
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = `
           <span class="material-symbols-outlined text-[18px] animate-spin">rotate_right</span>
-          <span>Probing Topology...</span>
+          <span>Exporting...</span>
         `;
-        probeBtn.classList.add('opacity-75');
+        exportBtn.classList.add('opacity-75');
 
         setTimeout(() => {
           secondsAgo = 0;
           if (lastCheckLabel) lastCheckLabel.textContent = '0s ago';
-          probeBtn.innerHTML = `
+          exportBtn.innerHTML = `
             <span class="material-symbols-outlined text-[18px]">done</span>
-            <span>Probed (5 nodes)</span>
+            <span>Exported</span>
           `;
-          probeBtn.classList.remove('opacity-75');
+          exportBtn.classList.remove('opacity-75');
 
           setTimeout(() => {
-            probeBtn.innerHTML = originalText;
+            exportBtn.innerHTML = originalText;
           }, 2000);
         }, 850);
       });

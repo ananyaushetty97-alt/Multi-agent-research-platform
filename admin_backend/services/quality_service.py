@@ -1,6 +1,7 @@
 """
 Quality assessment service reading evaluation logs, detecting suspected truncation heuristics,
 and separating automated LLM-as-a-judge scores from human reviews.
+Only returns REAL data from actual judge scores and human reviews - no seeded/fake data.
 """
 import json
 import logging
@@ -236,6 +237,6 @@ def _seed_default_human_reviews(svc: QualityService):
     )
 
 
+# No seeding - only real data from actual judge scores and human reviews
 quality_service = QualityService()
-_seed_default_human_reviews(quality_service)
 

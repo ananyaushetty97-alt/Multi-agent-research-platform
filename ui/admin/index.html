@@ -893,7 +893,7 @@
             </button>
           </div>
 
-          <!-- Audit Table -->
+          <!-- Audit Table - Admin Logs -->
           <div class="admin-table-container">
             <div class="admin-table-header">
               <span class="admin-card-title">Administrative Operations Journal</span>
@@ -912,6 +912,32 @@
                   </tr>
                 </thead>
                 <tbody id="auditLogsTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- User Activity Logs Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <span class="admin-card-title">User Activity Journal</span>
+              <span class="admin-nav-chip">READ-ONLY USER STREAM</span>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Time (IST)</th>
+                    <th>Session ID</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Topic</th>
+                    <th>Status</th>
+                    <th>IP & Origin</th>
+                  </tr>
+                </thead>
+                <tbody id="userActivityTableBody">
                   <!-- Injected via admin-app.js -->
                 </tbody>
               </table>

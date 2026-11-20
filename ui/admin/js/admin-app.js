@@ -314,12 +314,14 @@
 
   async function fetchAudit() {
     try {
-      const [auditRes, configRes] = await Promise.all([
+      const [auditRes, userActivityRes, configRes] = await Promise.all([
         apiRequest("/audit/logs?limit=200"),
+        apiRequest("/audit/user-activity?limit=200"),
         apiRequest("/config/draft")
       ]);
 
       if (auditRes.ok) state.audit.logs = await auditRes.json();
+      if (userActivityRes.ok) state.audit.user_activity = await userActivityRes.json();
       if (configRes.ok) state.audit.config_draft = await configRes.json();
       renderAuditView();
     } catch (e) {
@@ -1683,46 +1685,102 @@
     }
   }
 
-  // 7. Audit Logs View
+  // 7. Audit Logs View - Admin Logs & User Activity Logs
   function renderAuditView() {
-    const tableBody = document.getElementById("auditLogsTableBody");
-    if (!tableBody) return;
-    tableBody.innerHTML = "";
-
-    const logsList = state.audit.logs || [];
-    if (logsList.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
-            No administrative audit entries recorded. System events and modifications will appear here.
-          </td>
-        </tr>
-      `;
-    } else {
-      logsList.forEach((log) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
-
-        let actionBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-semibold">' + log.action + '</span>';
-        if (log.action.includes("clear") || log.action.includes("delete")) {
-          actionBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-semibold">' + log.action + '</span>';
-        } else if (log.action.includes("human_review")) {
-          actionBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">' + log.action + '</span>';
-        }
-
-        const timeDisplay = formatIST(log.timestamp);
-
-        tr.innerHTML = `
-          <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${timeDisplay}</td>
-          <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
-          <td class="px-space-md py-3">${actionBadge}</td>
-          <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
-          <td class="px-space-md py-3 text-primary uppercase font-bold">${log.status}</td>
-          <td class="px-space-md py-3 text-outline">${log.client_ip || "127.0.0.1"}</td>
+    // Render Admin Audit Logs
+    const adminTableBody = document.getElementById("auditLogsTableBody");
+    if (adminTableBody) {
+      adminTableBody.innerHTML = "";
+      const adminLogs = state.audit.logs || [];
+      if (adminLogs.length === 0) {
+        adminTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+              No administrative audit entries recorded. System events and modifications will appear here.
+            </td>
+          </tr>
         `;
+      } else {
+        adminLogs.forEach((log) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
 
-        tableBody.appendChild(tr);
-      });
+          let actionBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-semibold">' + log.action + '</span>';
+          if (log.action.includes("clear") || log.action.includes("delete")) {
+            actionBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-semibold">' + log.action + '</span>';
+          } else if (log.action.includes("human_review")) {
+            actionBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">' + log.action + '</span>';
+          }
+
+          const timeDisplay = formatIST(log.timestamp);
+
+          tr.innerHTML = `
+            <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${timeDisplay}</td>
+            <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
+            <td class="px-space-md py-3">${actionBadge}</td>
+            <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
+            <td class="px-space-md py-3 text-primary uppercase font-bold">${log.status}</td>
+            <td class="px-space-md py-3 text-outline">${log.client_ip || "127.0.0.1"}</td>
+          `;
+
+          adminTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // Render User Activity Logs
+    const userTableBody = document.getElementById("userActivityTableBody");
+    if (userTableBody) {
+      userTableBody.innerHTML = "";
+      const userLogs = state.audit.user_activity || [];
+      if (userLogs.length === 0) {
+        userTableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
+              No user activity recorded. User queries and actions will appear here.
+            </td>
+          </tr>
+        `;
+      } else {
+        userLogs.forEach((log) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
+
+          let statusBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm font-medium bg-primary/10 text-primary"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success</span>';
+          if (log.status === "blocked" || log.status === "Blocked (Guardrail)") {
+            statusBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm font-medium bg-error/15 text-error"><span class="w-1.5 h-1.5 rounded-full bg-error"></span> Blocked</span>';
+          } else if (log.status === "failed" || log.status.includes("Failed")) {
+            statusBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm font-medium bg-error/15 text-error"><span class="w-1.5 h-1.5 rounded-full bg-error"></span> Failed</span>';
+          }
+
+          const timeDisplay = formatIST(log.timestamp);
+
+          tr.innerHTML = `
+            <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${timeDisplay}</td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-on-surface-variant">${log.session_id || "—"}</td>
+            <td class="px-space-md py-3">
+              <div class="flex items-center gap-space-xs">
+                <div class="w-7 h-7 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center font-metric-md text-label-md">${(log.username || "U").charAt(0).toUpperCase()}</div>
+                <div class="flex flex-col">
+                  <span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">${log.username || "Unknown"}</span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">${log.email || "—"}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-space-md py-3">
+              <span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-primary">${log.action}</span>
+            </td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-on-surface-variant">${log.topic || "—"}</td>
+            <td class="px-space-md py-3">${statusBadge}</td>
+            <td class="px-space-md py-3 text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+              <span>${log.client_ip || "127.0.0.1"}</span>
+              <span class="text-primary/70 ml-1">(${log.user_agent ? "Browser" : "API"})</span>
+            </td>
+          `;
+
+          userTableBody.appendChild(tr);
+        });
+      }
     }
 
     const configContainer = document.getElementById("configBlueprintJson");

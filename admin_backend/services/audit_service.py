@@ -10,7 +10,10 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 from admin_backend.config import settings
-from admin_backend.models.audit import AuditAction, AuditLogEntry, AuditLogFilter
+from admin_backend.models.audit import (
+    AuditAction, AuditLogEntry, AuditLogFilter,
+    UserActivityAction, UserActivityLogEntry, UserActivityLogFilter
+)
 from admin_backend.storage.postgres import PostgresAuditStorage
 from admin_backend.storage.interfaces import AuditStorageInterface
 from uuid import UUID
@@ -91,6 +94,44 @@ class AuditService:
 
         return entry
 
+    def log_user_activity(
+        self,
+        session_id: str,
+        username: str,
+        action: UserActivityAction,
+        status: str = "success",
+        topic: Optional[str] = None,
+        email: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        client_ip: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> UserActivityLogEntry:
+        """
+        Record a user activity action (research query, login, etc.).
+        """
+        IST = timezone(timedelta(hours=5, minutes=30))
+        now_iso = datetime.now(IST).isoformat()
+        sanitized_details = _sanitize_dict(details or {})
+
+        entry = UserActivityLogEntry(
+            id=str(uuid.uuid4()),
+            timestamp=now_iso,
+            session_id=session_id,
+            username=username,
+            email=email,
+            action=action,
+            topic=topic,
+            status=status,
+            details=sanitized_details,
+            client_ip=client_ip,
+            user_agent=user_agent,
+        )
+
+        # Save to repository
+        self.storage.append_user_activity_entry(entry)
+
+        return entry
+
     def _load_persisted_entries(self) -> List[AuditLogEntry]:
         """Safely load existing audit records from logs/admin_audit.jsonl."""
         entries: List[AuditLogEntry] = []
@@ -109,7 +150,7 @@ class AuditService:
         return entries
 
     def query(self, filter_opts: AuditLogFilter) -> List[AuditLogEntry]:
-        """Query audit log records matching filter."""
+        """Query admin audit log records matching filter."""
         # Combine in-memory entries with persisted entries
         all_entries = self._load_persisted_entries()
         memory_entries = self.storage.query_audit_entries(AuditLogFilter(limit=200, offset=0))
@@ -137,6 +178,10 @@ class AuditService:
         # Sort newest first
         filtered.sort(key=lambda x: x.timestamp, reverse=True)
         return filtered[filter_opts.offset:filter_opts.offset + filter_opts.limit]
+
+    def query_user_activity(self, filter_opts: UserActivityLogFilter) -> List[UserActivityLogEntry]:
+        """Query user activity log records matching filter."""
+        return self.storage.query_user_activity_entries(filter_opts)
 
 
 audit_service = AuditService()

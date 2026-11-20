@@ -24,6 +24,7 @@ from admin_backend.router import admin_router
 from admin_backend.services.trace_service import trace_service
 from admin_backend.services.metrics_service import metrics_service
 from admin_backend.services.safety_service import safety_service
+from admin_backend.services.audit_service import audit_service
 from admin_backend.models.traces import (
     RequestOutcome,
     AgentStepRecord,
@@ -31,6 +32,7 @@ from admin_backend.models.traces import (
     AgentStepStatus,
 )
 from admin_backend.models.safety import GuardCheckType
+from admin_backend.models.audit import UserActivityAction
 from gateway.llm_gateway import start_llm_request_session, get_llm_request_telemetry
 
 log = logging.getLogger("api")
@@ -160,6 +162,20 @@ def generate(req: TopicRequest, request: Request):
             status_code=400,
             duration_ms=round((time.time() - start) * 1000, 2),
         )
+        # Log user activity for guardrail block
+        try:
+            user_agent = request.headers.get("user-agent")
+            audit_service.log_user_activity(
+                session_id=session_id,
+                username="user",
+                action=UserActivityAction.GUARDRAIL_BLOCK,
+                topic=req.topic,
+                status="blocked",
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            log.warning(f"Failed to log user activity: {e}")
         raise HTTPException(status_code=400, detail=reason)
 
     # 2. Semantic cache: first message of a conversation only
@@ -191,6 +207,21 @@ def generate(req: TopicRequest, request: Request):
                 duration_ms=round((time.time() - start) * 1000, 2),
                 cache_hit=True,
             )
+            # Log user activity for cache hit
+            try:
+                user_agent = request.headers.get("user-agent")
+                audit_service.log_user_activity(
+                    session_id=session_id,
+                    username="user",
+                    action=UserActivityAction.CACHE_HIT,
+                    topic=req.topic,
+                    status="success",
+                    client_ip=client_ip,
+                    user_agent=user_agent,
+                )
+            except Exception as e:
+                log.warning(f"Failed to log user activity: {e}")
+
             return ReportResponse(session_id=session_id, topic=req.topic, intent="new_research",
                                   report=c_report, sources=_sources_from(c_results), cached=True,
                                   score=c_score, seconds=round(time.time() - start, 2))
@@ -256,6 +287,20 @@ def generate(req: TopicRequest, request: Request):
             status_code=422,
             duration_ms=round((time.time() - start) * 1000, 2),
         )
+        # Log user activity for output guardrail block
+        try:
+            user_agent = request.headers.get("user-agent")
+            audit_service.log_user_activity(
+                session_id=session_id,
+                username="user",
+                action=UserActivityAction.GUARDRAIL_BLOCK,
+                topic=req.topic,
+                status="blocked",
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            log.warning(f"Failed to log user activity: {e}")
         raise HTTPException(status_code=422, detail=reason)
 
     # 5. Grading against the ORIGINAL topic; skipped for plain Q&A
@@ -434,6 +479,32 @@ def generate(req: TopicRequest, request: Request):
         completion_tokens=completion_tokens,
         total_tokens=total_tokens,
     )
+
+    # Log user activity
+    try:
+        user_agent = request.headers.get("user-agent")
+        if intent == "question":
+            audit_service.log_user_activity(
+                session_id=session_id,
+                username="user",
+                action=UserActivityAction.FOLLOWUP_QUESTION,
+                topic=req.topic,
+                status="success",
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+        else:
+            audit_service.log_user_activity(
+                session_id=session_id,
+                username="user",
+                action=UserActivityAction.RESEARCH_QUERY,
+                topic=req.topic,
+                status="success",
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+    except Exception as e:
+        log.warning(f"Failed to log user activity: {e}")
 
     return ReportResponse(session_id=session_id, topic=req.topic, intent=intent, report=report,
                           sources=_sources_from(search_results), cached=False, score=score,

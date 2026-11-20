@@ -14,7 +14,10 @@ from psycopg.rows import dict_row
 from pgvector.psycopg import register_vector
 
 from admin_backend.config import settings
-from admin_backend.models.audit import AuditLogEntry, AuditLogFilter, AuditAction
+from admin_backend.models.audit import (
+    AuditLogEntry, AuditLogFilter, AuditAction,
+    UserActivityLogEntry, UserActivityLogFilter, UserActivityAction
+)
 from admin_backend.models.auth import UserRecord, UserRole
 from admin_backend.storage.interfaces import (
     UserStorageInterface,
@@ -27,11 +30,13 @@ log = logging.getLogger("admin_backend.storage.postgres")
 ADMIN_USERS_TABLE = "admin_users"
 USER_USERS_TABLE = "app_users"
 AUDIT_LOGS_TABLE = "audit_logs"
+USER_ACTIVITY_LOGS_TABLE = "user_activity_logs"
 
 # Table name constants
 ADMIN_USERS_TABLE = "admin_users"
 USER_USERS_TABLE = "app_users"
 AUDIT_LOGS_TABLE = "audit_logs"
+USER_ACTIVITY_LOGS_TABLE = "user_activity_logs"
 
 CREATE_TABLES_SQL = """
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -60,7 +65,7 @@ CREATE TABLE IF NOT EXISTS {user_users} (
     last_login TIMESTAMPTZ
 );
 
--- Audit logs table
+-- Admin audit logs table (for administrative actions)
 CREATE TABLE IF NOT EXISTS {audit_logs} (
     id UUID PRIMARY KEY,
     timestamp TIMESTAMPTZ NOT NULL,
@@ -78,10 +83,32 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON {audit_logs} (timestamp D
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON {audit_logs} (actor_username);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON {audit_logs} (action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON {audit_logs} (resource_type, resource_id);
+
+-- User activity logs table (for user portal actions)
+CREATE TABLE IF NOT EXISTS {user_activity_logs} (
+    id UUID PRIMARY KEY,
+    timestamp TIMESTAMPTZ NOT NULL,
+    session_id VARCHAR(100) NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(255),
+    action VARCHAR(100) NOT NULL,
+    topic VARCHAR(500),
+    status VARCHAR(20) NOT NULL DEFAULT 'success',
+    details JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+    client_ip VARCHAR(45),
+    user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_activity_timestamp ON {user_activity_logs} (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_user_activity_session ON {user_activity_logs} (session_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_username ON {user_activity_logs} (username);
+CREATE INDEX IF NOT EXISTS idx_user_activity_action ON {user_activity_logs} (action);
+CREATE INDEX IF NOT EXISTS idx_user_activity_status ON {user_activity_logs} (status);
 """.format(
     admin_users=ADMIN_USERS_TABLE,
     user_users=USER_USERS_TABLE,
     audit_logs=AUDIT_LOGS_TABLE,
+    user_activity_logs=USER_ACTIVITY_LOGS_TABLE,
 )
 
 
@@ -287,4 +314,82 @@ class PostgresAuditStorage(AuditStorageInterface):
                 return entries
         except Exception as e:
             log.warning(f"Could not query audit logs from PostgreSQL: {e}")
+            return []
+
+    # User Activity Logs methods
+    def append_user_activity_entry(self, entry: UserActivityLogEntry) -> None:
+        try:
+            with self._connect() as conn:
+                conn.execute(
+                    f"""
+                    INSERT INTO {USER_ACTIVITY_LOGS_TABLE}
+                    (id, timestamp, session_id, username, email, action, topic, status, details, client_ip, user_agent)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        entry.id,
+                        entry.timestamp,
+                        entry.session_id,
+                        entry.username,
+                        entry.email,
+                        entry.action.value if hasattr(entry.action, 'value') else entry.action,
+                        entry.topic,
+                        entry.status,
+                        json.dumps(entry.details),
+                        entry.client_ip,
+                        entry.user_agent,
+                    )
+                )
+                conn.commit()
+        except Exception as e:
+            log.warning(f"Could not write user activity log to PostgreSQL: {e}")
+
+    def query_user_activity_entries(self, filter_opts: UserActivityLogFilter) -> List[UserActivityLogEntry]:
+        try:
+            with self._connect() as conn:
+                sql = f"SELECT * FROM {USER_ACTIVITY_LOGS_TABLE} WHERE 1=1"
+                params = []
+
+                if filter_opts.username:
+                    sql += " AND LOWER(username) = LOWER(%s)"
+                    params.append(filter_opts.username)
+                if filter_opts.action:
+                    sql += " AND action = %s"
+                    params.append(filter_opts.action.value if hasattr(filter_opts.action, 'value') else filter_opts.action)
+                if filter_opts.status:
+                    sql += " AND status = %s"
+                    params.append(filter_opts.status)
+                if filter_opts.session_id:
+                    sql += " AND session_id = %s"
+                    params.append(filter_opts.session_id)
+                if filter_opts.start_date:
+                    sql += " AND timestamp >= %s"
+                    params.append(filter_opts.start_date)
+                if filter_opts.end_date:
+                    sql += " AND timestamp <= %s"
+                    params.append(filter_opts.end_date)
+
+                sql += " ORDER BY timestamp DESC LIMIT %s OFFSET %s"
+                params.extend([filter_opts.limit, filter_opts.offset])
+
+                rows = conn.execute(sql, params).fetchall()
+
+                entries = []
+                for row in rows:
+                    entries.append(UserActivityLogEntry(
+                        id=str(row["id"]),
+                        timestamp=row["timestamp"].isoformat() if hasattr(row["timestamp"], 'isoformat') else str(row["timestamp"]),
+                        session_id=row["session_id"],
+                        username=row["username"],
+                        email=row["email"],
+                        action=UserActivityAction(row["action"]),
+                        topic=row["topic"],
+                        status=row["status"],
+                        details=row["details"] if isinstance(row["details"], dict) else json.loads(row["details"]),
+                        client_ip=row["client_ip"],
+                        user_agent=row["user_agent"],
+                    ))
+                return entries
+        except Exception as e:
+            log.warning(f"Could not query user activity logs from PostgreSQL: {e}")
             return []

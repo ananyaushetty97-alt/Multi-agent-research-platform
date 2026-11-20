@@ -86,14 +86,26 @@
 </div>
 <!-- Audit Logs Telemetry Matrix Section -->
 <div class="flex flex-col bg-surface-container-low rounded-xl shadow-xl overflow-hidden">
+<!-- Tab Navigation for Admin Logs vs User Logs -->
+<div class="flex border-b border-outline-variant/30 bg-surface-container/50">
+<button class="log-tab-btn px-space-lg py-space-sm font-title-sm text-title-sm text-primary border-b-2 border-primary -mb-px" data-tab="admin-logs" onclick="switchLogTab('admin-logs')">
+<span class="material-symbols-outlined text-[16px] align-middle mr-1">admin_panel_settings</span>Admin Logs
+</button>
+<button class="log-tab-btn px-space-lg py-space-sm font-title-sm text-title-sm text-on-surface-variant hover:text-on-surface" data-tab="user-logs" onclick="switchLogTab('user-logs')">
+<span class="material-symbols-outlined text-[16px] align-middle mr-1">person</span>User Logs
+</button>
+</div>
+
+<!-- Admin Logs Tab Content -->
+<div class="log-tab-content" id="admin-logs-tab">
 <!-- Section Sub-Header with Live Counter -->
 <div class="px-space-lg py-space-md bg-surface-container flex flex-wrap items-center justify-between gap-space-sm">
 <div class="flex items-center gap-space-sm">
-<span class="font-headline-sm text-headline-sm text-on-surface">Journal Sequence #8804-X</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Admin Audit Journal</span>
 <span class="font-label-sm text-label-sm text-primary px-space-xs py-0.5 bg-primary/10 rounded">READ-ONLY STREAM</span>
 </div>
 <div class="flex items-center gap-space-md">
-<span class="font-label-sm text-label-sm text-on-surface-variant" id="row-count-display">Showing 7 of 1,842 recorded audit events</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant" id="admin-row-count">Showing 7 of 1,842 admin audit events</span>
 <div class="flex items-center gap-1 bg-surface-container-high p-1 rounded-lg">
 <button class="w-6 h-6 flex items-center justify-center rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-bright" type="button"><span class="material-symbols-outlined text-[16px]">chevron_left</span></button>
 <span class="font-label-sm text-label-sm px-1.5 text-on-surface">1</span>
@@ -101,9 +113,9 @@
 </div>
 </div>
 </div>
-<!-- Table Container -->
+<!-- Admin Logs Table Container -->
 <div class="overflow-x-auto w-full">
-<table class="w-full text-left border-collapse" id="audit-table">
+<table class="w-full text-left border-collapse" id="admin-audit-table">
 <thead>
 <tr class="bg-surface-container-highest/60 text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
 <th class="py-space-sm px-space-md">Time (IST)</th>
@@ -112,10 +124,10 @@
 <th class="py-space-sm px-space-md">Action</th>
 <th class="py-space-sm px-space-md">Resource Type</th>
 <th class="py-space-sm px-space-md">Status</th>
-<th class="py-space-sm px-space-md text-right">Client IP &amp; Origin</th>
+<th class="py-space-sm px-space-md text-right">Client IP & Origin</th>
 </tr>
 </thead>
-<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-transparent" id="audit-rows">
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-transparent" id="admin-audit-rows">
 <!-- Row 1 -->
 <tr class="bg-surface-container-low hover:bg-surface-container transition-colors group">
 <td class="py-3 px-space-md font-metric-md text-metric-md text-primary font-mono text-[13px] whitespace-nowrap">2025-05-19 14:32:08.192</td>
@@ -337,6 +349,195 @@
 </div>
 </div>
 </div>
+</div>
+<!-- Admin Logs Tab ends -->
+
+<!-- User Logs Tab Content -->
+<div class="log-tab-content" id="user-logs-tab" style="display: none;">
+<!-- Section Sub-Header with Live Counter -->
+<div class="px-space-lg py-space-md bg-surface-container flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface">User Activity Journal</span>
+<span class="font-label-sm text-label-sm text-secondary px-space-xs py-0.5 bg-secondary-container/15 rounded">READ-ONLY STREAM</span>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-sm text-label-sm text-on-surface-variant" id="user-row-count">Showing 0 of 2,156 user activity events</span>
+<div class="flex items-center gap-1 bg-surface-container-high p-1 rounded-lg">
+<button class="w-6 h-6 flex items-center justify-center rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-bright" type="button"><span class="material-symbols-outlined text-[16px]">chevron_left</span></button>
+<span class="font-label-sm text-label-sm px-1.5 text-on-surface">1</span>
+<button class="w-6 h-6 flex items-center justify-center rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-bright" type="button"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- User Logs Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse" id="user-audit-table">
+<thead>
+<tr class="bg-surface-container-highest/60 text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-space-sm px-space-md">Time (IST)</th>
+<th class="py-space-sm px-space-md">Session ID</th>
+<th class="py-space-sm px-space-md">User</th>
+<th class="py-space-sm px-space-md">Action</th>
+<th class="py-space-sm px-space-md">Topic</th>
+<th class="py-space-sm px-space-md">Status</th>
+<th class="py-space-sm px-space-md text-right">Client IP & Origin</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-transparent" id="user-audit-rows">
+<!-- Row 1 -->
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-md font-metric-md text-metric-md text-primary font-mono text-[13px] whitespace-nowrap">2025-05-19 14:25:12.341</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">sess-881c</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center font-metric-md text-label-md">U1</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">Researcher Alpha</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">alpha@university.edu</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-primary">research.query</span>
+</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">Quantum Error Mitigation</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-primary/10 text-primary font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+</span>
+</td>
+<td class="py-3 px-space-md text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+<span>10.0.1.45</span>
+<span class="text-primary/70 ml-1">(Campus VPN)</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container/30 hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-md font-metric-md text-metric-md text-on-surface-variant font-mono text-[13px] whitespace-nowrap">2025-05-19 14:18:05.920</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">sess-772b</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-metric-md text-label-md">U2</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">Researcher Beta</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">beta@lab.gov</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-primary">research.query</span>
+</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">Microplastics Marine Impact</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-primary/10 text-primary font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+</span>
+</td>
+<td class="py-3 px-space-md text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+<span>10.0.2.11</span>
+<span class="text-primary/70 ml-1">(Institutional)</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-md font-metric-md text-metric-md text-error font-mono text-[13px] whitespace-nowrap">2025-05-19 14:10:22.115</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">sess-994d</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-error/20 text-error flex items-center justify-center font-metric-md text-label-md">U3</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">Researcher Gamma</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">gamma@institute.org</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-error">research.query</span>
+</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">CRISPR Ethics Agriculture</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-error/15 text-error font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Blocked (Guardrail)
+</span>
+</td>
+<td class="py-3 px-space-md text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+<span>192.168.1.100</span>
+<span class="text-error/80 ml-1">(Local Network)</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container/30 hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-md font-metric-md text-metric-md text-primary font-mono text-[13px] whitespace-nowrap">2025-05-19 13:55:40.002</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">sess-115a</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center font-metric-md text-label-md">U4</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">Researcher Delta</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">delta@college.edu</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-primary">followup.question</span>
+</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">Solid-State Battery Follow-up</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-primary/10 text-primary font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Success
+</span>
+</td>
+<td class="py-3 px-space-md text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+<span>10.0.3.22</span>
+<span class="text-primary/70 ml-1">(Campus VPN)</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-md font-metric-md text-metric-md text-tertiary-container font-mono text-[13px] whitespace-nowrap">2025-05-19 13:42:18.550</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">sess-663f</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-7 h-7 rounded-full bg-tertiary-container/20 text-tertiary-container flex items-center justify-center font-metric-md text-label-md">U5</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-medium leading-tight">Researcher Epsilon</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-[10px]">epsilon@research.net</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-mono text-label-sm text-tertiary">research.query</span>
+</td>
+<td class="py-3 px-space-md font-mono text-label-sm text-on-surface-variant">Synthetic Microfiber Filtration</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/15 text-tertiary-container font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span> Failed (Verify)
+</span>
+</td>
+<td class="py-3 px-space-md text-right font-mono text-label-sm text-on-surface-variant whitespace-nowrap">
+<span>10.0.5.8</span>
+<span class="text-tertiary/80 ml-1">(Lab Network)</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Sliding Buffer Info Footer -->
+<div class="p-space-md bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">lock_clock</span>
+<span>SHA256 Merkle Node: a1b2c3d4e5f678901234567890123456</span>
+</div>
+<div class="flex items-center gap-space-md text-on-surface-variant font-label-sm text-label-sm">
+<span>Sliding buffer window: 10,000 slots</span>
+<button class="hover:text-secondary transition-colors flex items-center gap-1" type="button">
+<span>Jump to earliest</span>
+<span class="material-symbols-outlined text-[14px]">first_page</span>
+</button>
+</div>
+</div>
+</div>
+<!-- User Logs Tab ends --></div>
 <!-- Bottom Section: Read-Only System Configuration Matrix -->
 <div class="flex flex-col gap-space-lg bg-surface-container-low p-space-xl rounded-xl shadow-xl">
 <!-- Header of Config Panel -->
@@ -636,4 +837,26 @@
       if (searchBox) searchBox.focus();
     }
   });
+
+  // Log tab switching
+  function switchLogTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.log-tab-content').forEach(el => {
+      el.style.display = 'none';
+    });
+    // Show selected tab content
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) targetTab.style.display = '';
+
+    // Update tab button styles
+    document.querySelectorAll('.log-tab-btn').forEach(btn => {
+      btn.classList.remove('text-primary', 'border-b-2', 'border-primary', '-mb-px');
+      btn.classList.add('text-on-surface-variant');
+    });
+    const activeBtn = document.querySelector('.log-tab-btn[data-tab="' + tabName + '"]');
+    if (activeBtn) {
+      activeBtn.classList.remove('text-on-surface-variant');
+      activeBtn.classList.add('text-primary', 'border-b-2', 'border-primary', '-mb-px');
+    }
+  }
 </script></main></div></body></html>

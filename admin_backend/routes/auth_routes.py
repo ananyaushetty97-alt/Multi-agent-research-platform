@@ -135,7 +135,7 @@ def login(login_req: LoginRequest, request: Request):
         actor_role=role,
         action=AuditAction.AUTH_LOGIN,
         resource_type="auth_token",
-        resource_id=user_record["id"],
+        resource_id=str(user_record["id"]),
         status="success",
         client_ip=client_ip,
     )
@@ -224,7 +224,7 @@ def provision_initial_admin(req: InitialAdminProvisionRequest, request: Request)
         actor_role="admin",
         action=AuditAction.USER_PROVISION,
         resource_type="admin_user",
-        resource_id=user_id,
+        resource_id=str(user_id),
         status="success",
         details={"username": req.username, "email": req.email},
         client_ip=client_ip,

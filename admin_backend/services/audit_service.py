@@ -13,6 +13,7 @@ from admin_backend.config import settings
 from admin_backend.models.audit import AuditAction, AuditLogEntry, AuditLogFilter
 from admin_backend.storage.postgres import PostgresAuditStorage
 from admin_backend.storage.interfaces import AuditStorageInterface
+from uuid import UUID
 
 log = logging.getLogger("admin_backend.audit")
 
@@ -59,6 +60,10 @@ class AuditService:
         IST = timezone(timedelta(hours=5, minutes=30))
         now_iso = datetime.now(IST).isoformat()
         sanitized_details = _sanitize_dict(details or {})
+
+        # Convert UUID to string if needed
+        if isinstance(resource_id, UUID):
+            resource_id = str(resource_id)
 
         entry = AuditLogEntry(
             id=str(uuid.uuid4()),

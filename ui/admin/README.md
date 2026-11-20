@@ -54,7 +54,6 @@ This UI is **100% self-contained and decoupled from the backend**. It requires n
 ## 🛡️ Interactive Safeguards & Features
 
 - **Master SPA Navigation:** Instant client-side tab switching without full page reloads.
-- **Synthetic Probes:** Click `"Trigger Synthetic Probe"` to simulate real-time socket pings and micro-jitter across all 5 substrates (Redis, Postgres, Groq, Ollama, Tavily).
 - **Trace Waterfall:** Click any row in the Traces table to open the slide-out waterfall inspector showing step-by-step agent timings.
 - **Double-Confirmation Modal:** Destructive actions (cache wipe, LTM report deletion) strictly require typing `"CONFIRM"` before execution, logging immutable audit events.
 - **Human Expert Reviews:** Submit ground-truth ratings (1-10) with notes to compare against automated judge scores.

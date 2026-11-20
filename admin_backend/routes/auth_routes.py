@@ -21,12 +21,12 @@ from admin_backend.security.passwords import hash_password, verify_password
 from admin_backend.security.rate_limiter import rate_limit_guard
 from admin_backend.security.tokens import create_access_token
 from admin_backend.services.audit_service import audit_service
-from admin_backend.storage.in_memory import InMemoryUserStorage
+from admin_backend.storage.postgres import PostgresUserStorage
 
 router = APIRouter(prefix="/auth", tags=["Admin Auth"])
 
-# Package user storage instance
-user_storage = InMemoryUserStorage()
+# Package user storage instance - using PostgreSQL for persistence
+user_storage = PostgresUserStorage()
 
 
 def seed_default_users_if_empty():
@@ -36,7 +36,7 @@ def seed_default_users_if_empty():
         now = datetime.now(timezone.utc)
         hashed_admin = hash_password(admin_pass, iterations=50_000)
         user_storage.create_user({
-            "id": "admin-1",
+            "id": str(uuid.uuid4()),
             "username": "admin",
             "email": "admin@platform.ai",
             "hashed_password": hashed_admin,
@@ -45,7 +45,7 @@ def seed_default_users_if_empty():
             "created_at": now,
         })
         user_storage.create_user({
-            "id": "admin-alias",
+            "id": str(uuid.uuid4()),
             "username": "admin@platform.ai",
             "email": "admin@platform.ai",
             "hashed_password": hashed_admin,
@@ -59,7 +59,7 @@ def seed_default_users_if_empty():
         now = datetime.now(timezone.utc)
         hashed_user = hash_password(user_pass, iterations=50_000)
         user_storage.create_user({
-            "id": "user-1",
+            "id": str(uuid.uuid4()),
             "username": "user",
             "email": "user@platform.ai",
             "hashed_password": hashed_user,
@@ -68,7 +68,7 @@ def seed_default_users_if_empty():
             "created_at": now,
         })
         user_storage.create_user({
-            "id": "user-alias",
+            "id": str(uuid.uuid4()),
             "username": "user@platform.ai",
             "email": "user@platform.ai",
             "hashed_password": hashed_user,

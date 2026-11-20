@@ -90,12 +90,14 @@ def get_llm_request_telemetry() -> Dict[str, Any]:
     }
 
 
-def _call_groq(prompt: str, system_prompt: str) -> str:
+def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None) -> str:
     start_time = time.perf_counter()
     lower_p = prompt.lower()
     lower_s = system_prompt.lower()
     # Dynamic token budgeting to respect Groq OTPM limits (1000 OTPM on free tier)
-    if "one word" in lower_p or "exactly the word" in lower_p or "classifier" in lower_s:
+    if max_tokens is not None:
+        actual_max = max_tokens
+    elif "one word" in lower_p or "exactly the word" in lower_p or "classifier" in lower_s:
         actual_max = 30
     elif "fact-checker" in lower_s or "verified" in lower_p:
         actual_max = 150
@@ -103,8 +105,10 @@ def _call_groq(prompt: str, system_prompt: str) -> str:
         actual_max = 350
     elif "judge" in lower_s or "grade" in lower_s:
         actual_max = 200
+    elif "editor" in lower_s or "modify" in lower_s or "writer" in lower_s:
+        actual_max = 900
     else:
-        actual_max = 500
+        actual_max = 600
 
     response = groq_client.chat.completions.create(
         model=GROQ_MODEL,
@@ -138,14 +142,16 @@ def _call_groq(prompt: str, system_prompt: str) -> str:
     return content
 
 
-def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str] = None) -> str:
+def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
     start_time = time.perf_counter()
+    opts = {"num_predict": max_tokens} if max_tokens else None
     response = ollama_client.chat(
         model=OLLAMA_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
-        ]
+        ],
+        options=opts
     )
     content = response.get("message", {}).get("content", "")
     duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
@@ -168,18 +174,18 @@ def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str]
     return content
 
 
-def call_llm(prompt: str, system_prompt: str = "You are a helpful research assistant.") -> str:
+def call_llm(prompt: str, system_prompt: str = "You are a helpful research assistant.", max_tokens: Optional[int] = None) -> str:
     """
     Every agent calls this. Tries Groq (Qwen, cloud, fast) first.
     Falls back to Ollama (Qwen, local) if Groq fails for any reason
     (rate limit, network issue, outage, bad API key, etc).
     """
     try:
-        return _call_groq(prompt, system_prompt)
+        return _call_groq(prompt, system_prompt, max_tokens=max_tokens)
     except Exception as e:
         err_msg = str(e)
         print(f"[gateway] Groq call failed ({err_msg}), falling back to Ollama...")
         try:
-            return _call_ollama(prompt, system_prompt, fallback_reason=err_msg)
+            return _call_ollama(prompt, system_prompt, fallback_reason=err_msg, max_tokens=max_tokens)
         except Exception as e2:
             raise RuntimeError(f"Both Groq and Ollama failed. Groq error: {e}. Ollama error: {e2}")

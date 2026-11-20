@@ -2534,6 +2534,50 @@ input, textarea, kbd {
   gap: 0.125rem;
 }
 
+/* Source Domain Hierarchy Groups */
+.source-domain-group {
+  margin-bottom: 1rem;
+}
+
+.source-domain-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: var(--surface-container-low);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.source-domain-header .material-symbols-outlined {
+  color: var(--primary-container);
+}
+
+.source-domain-name {
+  flex: 1;
+  text-transform: capitalize;
+}
+
+.source-domain-count {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  background-color: var(--surface-container-high);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.source-domain-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 1.5rem;
+}
+
 /* Agent Trace in Inspector (Admin Only) */
 .trace-node-card {
   padding: 0.75rem 0.875rem;

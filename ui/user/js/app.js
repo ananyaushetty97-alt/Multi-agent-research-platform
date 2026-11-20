@@ -413,30 +413,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // In USER MODE: Always render ONLY sources!
     if (state.role === 'user' || state.inspectorTab === 'sources') {
       tabBtnSources?.classList.add('active');
-      inspectorScrollBody.innerHTML = dossier.sources.map(s => `
-        <article class="source-card ${state.activeCitationId === s.id ? 'highlighted' : ''}" id="inspector-source-${s.id}">
-          <div class="source-top-row">
-            <div class="source-badge-row">
-              <span class="source-citation-num">[${s.id}]</span>
-              <span class="source-domain-name">${escapeHTML(String(s.domain))}</span>
-            </div>
-            <span style="font-size: 0.625rem; font-weight: 600; padding: 1px 6px; border-radius: var(--radius-full); background: var(--surface-container-high);">
-              Cited ${s.citationsCount} ${s.citationsCount > 1 ? 'times' : 'time'}
-            </span>
+
+      // Group sources by domain for hierarchy
+      const sourcesByDomain = {};
+      dossier.sources.forEach(s => {
+        const domain = s.domain || 'Unknown';
+        if (!sourcesByDomain[domain]) sourcesByDomain[domain] = [];
+        sourcesByDomain[domain].push(s);
+      });
+
+      // Render grouped by domain
+      inspectorScrollBody.innerHTML = Object.entries(sourcesByDomain).map(([domain, sources]) => `
+        <div class="source-domain-group">
+          <div class="source-domain-header">
+            <span class="material-symbols-outlined text-[16px]">folder</span>
+            <span class="source-domain-name">${escapeHTML(String(domain))}</span>
+            <span class="source-domain-count">${sources.length} source${sources.length > 1 ? 's' : ''}</span>
           </div>
-          <h4 class="source-card-title">${escapeHTML(String(s.title))}</h4>
-          ${s.snippet ? `<p class="source-quote-snippet">"${escapeHTML(s.snippet)}"</p>` : ''}
-          <div class="source-card-bottom">
-            <span style="color: var(--on-surface-variant); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
-              <span class="material-symbols-outlined text-[13px]">link</span>
-              <span>Web source</span>
-            </span>
-            <a class="source-outbound-link" href="${escapeHTML(s.url)}" target="_blank" rel="noopener noreferrer">
-              <span>Open</span>
-              <span class="material-symbols-outlined text-[12px]">arrow_outward</span>
-            </a>
+          <div class="source-domain-sources">
+            ${sources.map(s => `
+              <article class="source-card ${state.activeCitationId === s.id ? 'highlighted' : ''}" id="inspector-source-${s.id}">
+                <div class="source-top-row">
+                  <div class="source-badge-row">
+                    <span class="source-citation-num">[${s.id}]</span>
+                  </div>
+                  <span style="font-size: 0.625rem; font-weight: 600; padding: 1px 6px; border-radius: var(--radius-full); background: var(--surface-container-high);">
+                    Cited ${s.citationsCount} ${s.citationsCount > 1 ? 'times' : 'time'}
+                  </span>
+                </div>
+                <h4 class="source-card-title">${escapeHTML(String(s.title))}</h4>
+                ${s.snippet ? `<p class="source-quote-snippet">"${escapeHTML(s.snippet)}"</p>` : ''}
+                <div class="source-card-bottom">
+                  <span style="color: var(--on-surface-variant); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <span class="material-symbols-outlined text-[13px]">link</span>
+                    <span>Web source</span>
+                  </span>
+                  <a class="source-outbound-link" href="${escapeHTML(s.url)}" target="_blank" rel="noopener noreferrer">
+                    <span>Open</span>
+                    <span class="material-symbols-outlined text-[12px]">arrow_outward</span>
+                  </a>
+                </div>
+              </article>
+            `).join('')}
           </div>
-        </article>
+        </div>
       `).join('');
     } else if (state.role === 'admin' && state.inspectorTab === 'trace') {
       tabBtnTrace?.classList.add('active');
@@ -1996,27 +2016,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => {});
 
   // Restore previous active conversation on page refresh / load
-  const lastActiveChatId = localStorage.getItem('rp_last_active_chat_id');
-  const allChats = RP.listChats();
-
-  if (lastActiveChatId === 'new') {
-    showWelcomeScreen();
-  } else if (lastActiveChatId) {
-    const chat = RP.getChat(lastActiveChatId);
-    if (chat && chat.turns && chat.turns.length) {
-      showSavedChat(chat);
-    } else if (allChats.length) {
-      showSavedChat(allChats[0]);
-    } else {
-      showWelcomeScreen();
-    }
-  } else {
-    // If user has previous chats, open the most recent one; otherwise open welcome screen
-    if (allChats.length) {
-      showSavedChat(allChats[0]);
-    } else {
-      showWelcomeScreen();
-    }
-  }
+  // Always start with New Inquiry (welcome screen) by default
+  showWelcomeScreen();
   composerInput.blur();
 });

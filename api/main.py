@@ -8,7 +8,7 @@ import uuid
 import logging
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 import collections
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -19,6 +19,11 @@ import llm_link
 from guardrails.checks import check_input, check_output, mask_pii, MIN_REPORT_LEN
 from evaluation.judge import grade_report, score_history
 from api import integration as parts
+
+from user_auth.routes import router as user_auth_router
+from user_auth.dependencies import get_optional_user
+from user_auth.models import UserResponse
+from user_auth.config import settings as user_auth_settings
 
 from admin_backend.router import admin_router
 from admin_backend.services.trace_service import trace_service
@@ -121,7 +126,19 @@ def check_rate_limit(client_ip: str) -> bool:
     return True
 
 @app.post("/generate", response_model=ReportResponse)
-def generate(req: TopicRequest, request: Request):
+def generate(
+    req: TopicRequest,
+    request: Request,
+    current_user: UserResponse | None = Depends(get_optional_user),
+):
+    if user_auth_settings.require_login and current_user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required to generate research reports.",
+        )
+    caller_username = current_user.username if current_user else "user"
+    caller_email = current_user.email if current_user else None
+
     client_ip = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_ip):
         raise HTTPException(
@@ -167,7 +184,8 @@ def generate(req: TopicRequest, request: Request):
             user_agent = request.headers.get("user-agent")
             audit_service.log_user_activity(
                 session_id=session_id,
-                username="user",
+                username=caller_username,
+                email=caller_email,
                 action=UserActivityAction.GUARDRAIL_BLOCK,
                 topic=req.topic,
                 status="blocked",
@@ -212,7 +230,8 @@ def generate(req: TopicRequest, request: Request):
                 user_agent = request.headers.get("user-agent")
                 audit_service.log_user_activity(
                     session_id=session_id,
-                    username="user",
+                    username=caller_username,
+                    email=caller_email,
                     action=UserActivityAction.CACHE_HIT,
                     topic=req.topic,
                     status="success",
@@ -292,7 +311,8 @@ def generate(req: TopicRequest, request: Request):
             user_agent = request.headers.get("user-agent")
             audit_service.log_user_activity(
                 session_id=session_id,
-                username="user",
+                username=caller_username,
+                email=caller_email,
                 action=UserActivityAction.GUARDRAIL_BLOCK,
                 topic=req.topic,
                 status="blocked",
@@ -486,7 +506,8 @@ def generate(req: TopicRequest, request: Request):
         if intent == "question":
             audit_service.log_user_activity(
                 session_id=session_id,
-                username="user",
+                username=caller_username,
+                email=caller_email,
                 action=UserActivityAction.FOLLOWUP_QUESTION,
                 topic=req.topic,
                 status="success",
@@ -496,7 +517,8 @@ def generate(req: TopicRequest, request: Request):
         else:
             audit_service.log_user_activity(
                 session_id=session_id,
-                username="user",
+                username=caller_username,
+                email=caller_email,
                 action=UserActivityAction.RESEARCH_QUERY,
                 topic=req.topic,
                 status="success",
@@ -516,6 +538,11 @@ def scores(limit: int = 20):
     """Recent grading results."""
     return score_history(limit)
 
+
+# ---------------------------------------------------------------------------
+# Mount the Regular User Auth router under /api/auth
+# ---------------------------------------------------------------------------
+app.include_router(user_auth_router, prefix="/api/auth")
 
 # ---------------------------------------------------------------------------
 # Mount the Admin Backend router (accessible at both /api/admin and /admin)

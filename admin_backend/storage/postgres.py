@@ -300,7 +300,7 @@ class PostgresAuditStorage(AuditStorageInterface):
                 entries = []
                 for row in rows:
                     entries.append(AuditLogEntry(
-                        id=row["id"],
+                        id=str(row["id"]),
                         timestamp=row["timestamp"].isoformat() if hasattr(row["timestamp"], 'isoformat') else str(row["timestamp"]),
                         actor_username=row["actor_username"],
                         actor_role=row["actor_role"],

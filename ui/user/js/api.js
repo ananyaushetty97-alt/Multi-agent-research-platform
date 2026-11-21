@@ -7,8 +7,48 @@ const RP = (() => {
   const API_BASE = (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http"))
     ? window.location.origin
     : "http://127.0.0.1:8000";
-  const KEY = "rp_history_v1";
+
   let sessionId = null;
+  let currentUser = null; // null if guest/unauthenticated, or user object { id, email, full_name, ... }
+
+  // ---------- namespaced chat storage keys ----------
+  function getChatsKey() {
+    const id = (currentUser && currentUser.id) ? currentUser.id : "guest";
+    return `research_platform_chats_v1_${id}`;
+  }
+
+  function getLastActiveKey() {
+    const id = (currentUser && currentUser.id) ? currentUser.id : "guest";
+    return `rp_last_active_chat_id_${id}`;
+  }
+
+  // Gracefully migrate legacy un-namespaced chats to guest namespace once
+  (function migrateLegacyStorage() {
+    try {
+      if (typeof localStorage === "undefined") return;
+      const legacyKey1 = "research_platform_chats_v1";
+      const legacyKey2 = "rp_history_v1";
+      const legacyActiveKey = "rp_last_active_chat_id";
+      const guestKey = "research_platform_chats_v1_guest";
+      const guestActiveKey = "rp_last_active_chat_id_guest";
+
+      if (!localStorage.getItem(guestKey)) {
+        const legacyData = localStorage.getItem(legacyKey1) || localStorage.getItem(legacyKey2);
+        if (legacyData) {
+          localStorage.setItem(guestKey, legacyData);
+        }
+      }
+      if (!localStorage.getItem(guestActiveKey)) {
+        const legacyActive = localStorage.getItem(legacyActiveKey);
+        if (legacyActive) {
+          localStorage.setItem(guestActiveKey, legacyActive);
+        }
+      }
+      localStorage.removeItem(legacyKey1);
+      localStorage.removeItem(legacyKey2);
+      localStorage.removeItem(legacyActiveKey);
+    } catch (e) { }
+  })();
 
   // ---------- backend call ----------
   async function generate(text, signal) {
@@ -16,7 +56,11 @@ const RP = (() => {
     try {
       res = await fetch(API_BASE + "/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
         body: JSON.stringify({ topic: text, session_id: sessionId }),
         signal,
       });
@@ -42,19 +86,21 @@ const RP = (() => {
 
   // ---------- chats ----------
   function newChat() { sessionId = null; }
-  function openChat(id) { sessionId = id; } // follow-ups only work while the server session is alive (about 1 hour)
+  function openChat(id) { sessionId = id; }
 
-  // ---------- history, kept in this browser (from live user research) ----------
+  // ---------- history, kept in this browser namespaced by user ----------
   function load() {
     try {
-      const saved = localStorage.getItem(KEY);
+      const saved = localStorage.getItem(getChatsKey());
       if (saved !== null) return JSON.parse(saved) || [];
       return [];
     } catch (e) { return []; }
   }
+
   function persist(chats) {
-    try { localStorage.setItem(KEY, JSON.stringify(chats)); } catch (e) {}
+    try { localStorage.setItem(getChatsKey(), JSON.stringify(chats)); } catch (e) { }
   }
+
   function saveTurn(userText, data) {
     const chats = load();
     let chat = chats.find(c => c.id === data.session_id);
@@ -66,6 +112,7 @@ const RP = (() => {
     chat.turns.push({ user: userText, intent: data.intent, report: data.report, sources: data.sources || [], cached: !!data.cached, score: data.score || null, seconds: data.seconds });
     persist(chats);
   }
+
   function listChats() { return load().sort((a, b) => b.updated - a.updated); }
   function getChat(id) { return load().find(c => c.id === id) || null; }
   function renameChat(id, title) {
@@ -79,9 +126,34 @@ const RP = (() => {
       persist(c);
     }
   }
+
   function deleteChat(id) {
     persist(load().filter(c => c.id !== id));
     if (sessionId === id) sessionId = null;
+  }
+
+  // Active chat id helpers (namespaced)
+  function getLastActiveChatId() {
+    try { return localStorage.getItem(getLastActiveKey()); } catch (e) { return null; }
+  }
+
+  function setLastActiveChatId(id) {
+    try { localStorage.setItem(getLastActiveKey(), id); } catch (e) { }
+  }
+
+  function removeLastActiveChatId() {
+    try { localStorage.removeItem(getLastActiveKey()); } catch (e) { }
+  }
+
+  // Switch active user & reset in-memory state
+  function switchUser(user) {
+    currentUser = user || null;
+    sessionId = null;
+    return listChats();
+  }
+
+  function getCurrentUser() {
+    return currentUser;
   }
 
   // searches titles and report text; returns [{chat, snippet}]
@@ -105,12 +177,142 @@ const RP = (() => {
   // ---------- helpers for the Sources panel ----------
   function sourceInfo(s) {
     let domain = "";
-    try { domain = new URL(s.url).hostname.replace(/^www\./, ""); } catch (e) {}
+    try { domain = new URL(s.url).hostname.replace(/^www\./, ""); } catch (e) { }
     return { ...s, domain, favicon: domain ? "https://www.google.com/s2/favicons?domain=" + domain + "&sz=32" : "" };
   }
+
   function citationCount(report, n) {
     return (String(report).split("\n## Sources")[0].match(new RegExp("\\[" + n + "\\]", "g")) || []).length;
   }
 
-  return { baseUrl: API_BASE, currentId: () => sessionId, generate, health, newChat, openChat, listChats, getChat, renameChat, deleteChat, search, sourceInfo, citationCount };
+  // ---------- RP.auth: User Authentication APIs ----------
+  async function _fetchAuth(endpoint, method, body = null) {
+    const opts = {
+      method,
+      credentials: "same-origin",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+      }
+    };
+    if (body) {
+      opts.headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(body);
+    }
+
+    let resp;
+    try {
+      resp = await fetch(API_BASE + endpoint, opts);
+    } catch (e) {
+      throw Object.assign(new Error("Cannot reach authentication server. Please check your network connection."), { status: 0 });
+    }
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      let msg = "Authentication failed. Please try again.";
+      if (resp.status === 400) {
+        msg = (typeof data.detail === "string") ? data.detail : "Invalid request parameters.";
+      } else if (resp.status === 401) {
+        msg = (typeof data.detail === "string") ? data.detail : "Invalid email or password.";
+      } else if (resp.status === 403) {
+        msg = (typeof data.detail === "string") ? data.detail : "Account is deactivated or access is denied.";
+      } else if (resp.status === 409) {
+        msg = "An account with this email already exists. Try signing in.";
+      } else if (resp.status === 422) {
+        if (Array.isArray(data.detail)) {
+          msg = data.detail.map(d => d.msg || (typeof d === "string" ? d : JSON.stringify(d))).join("; ");
+        } else if (typeof data.detail === "string") {
+          msg = data.detail;
+        } else {
+          msg = "Validation failed. Please verify your inputs.";
+        }
+      } else if (resp.status === 429) {
+        msg = (typeof data.detail === "string") ? data.detail : "Too many requests. Please wait a minute and try again.";
+      } else if (resp.status === 503) {
+        msg = "Authentication service is temporarily unavailable. Please try again later.";
+      } else if (typeof data.detail === "string") {
+        msg = data.detail;
+      }
+      throw Object.assign(new Error(msg), { status: resp.status, detail: data.detail });
+    }
+    return data;
+  }
+
+  const auth = {
+    async config() {
+      try {
+        const res = await _fetchAuth("/api/auth/config", "GET");
+        return res;
+      } catch (e) {
+        return { google_client_id: null };
+      }
+    },
+    async register({ name, email, password, confirm_password }) {
+      const res = await _fetchAuth("/api/auth/register", "POST", { name, email, password, confirm_password });
+      currentUser = res;
+      sessionId = null;
+      return res;
+    },
+    async login({ email, password }) {
+      const res = await _fetchAuth("/api/auth/login", "POST", { email, password });
+      currentUser = res;
+      sessionId = null;
+      return res;
+    },
+    async logout() {
+      try {
+        await _fetchAuth("/api/auth/logout", "POST");
+      } catch (e) {
+        // Local logout proceeds even if network error
+      }
+      currentUser = null;
+      sessionId = null;
+      try {
+        sessionStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_access_token");
+      } catch (e) { }
+      return { status: "ok" };
+    },
+    async me() {
+      try {
+        const res = await _fetchAuth("/api/auth/me", "GET");
+        currentUser = res;
+        return res;
+      } catch (e) {
+        if (e.status === 401 || e.status === 403) {
+          currentUser = null;
+          return null;
+        }
+        throw e;
+      }
+    },
+    async google(credential) {
+      const res = await _fetchAuth("/api/auth/google", "POST", { credential });
+      currentUser = res;
+      sessionId = null;
+      return res;
+    }
+  };
+
+  return {
+    baseUrl: API_BASE,
+    currentId: () => sessionId,
+    generate,
+    health,
+    newChat,
+    openChat,
+    listChats,
+    getChat,
+    renameChat,
+    deleteChat,
+    search,
+    sourceInfo,
+    citationCount,
+    auth,
+    switchUser,
+    getCurrentUser,
+    getLastActiveChatId,
+    setLastActiveChatId,
+    removeLastActiveChatId
+  };
 })();

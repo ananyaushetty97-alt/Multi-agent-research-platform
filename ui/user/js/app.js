@@ -50,6 +50,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const quickSwitchIcon = document.getElementById('quick-switch-icon');
   const btnSwitchAccountText = document.getElementById('btn-switch-account-text');
 
+  // Header & Profile Auth Actions
+  const btnHeaderSignin = document.getElementById('btn-header-signin');
+  const btnHeaderSignout = document.getElementById('btn-header-signout');
+  const btnProfileLogout = document.getElementById('btn-profile-logout');
+
+  // User Auth Mode & Registration Elements
+  const userAuthModeToggle = document.getElementById('user-auth-mode-toggle');
+  const userModeSigninBtn = document.getElementById('user-mode-signin');
+  const userModeRegisterBtn = document.getElementById('user-mode-register');
+  const registerForm = document.getElementById('register-form');
+  const registerName = document.getElementById('register-name');
+  const registerEmail = document.getElementById('register-email');
+  const registerPassword = document.getElementById('register-password');
+  const registerConfirmPassword = document.getElementById('register-confirm-password');
+  const registerNameError = document.getElementById('register-name-error');
+  const registerEmailError = document.getElementById('register-email-error');
+  const registerPasswordError = document.getElementById('register-password-error');
+  const registerConfirmError = document.getElementById('register-confirm-error');
+  const btnSubmitRegister = document.getElementById('btn-submit-register');
+  const btnToggleRegPassword = document.getElementById('btn-toggle-reg-password');
+  const iconToggleRegPassword = document.getElementById('icon-toggle-reg-password');
+  const loginAdminHint = document.getElementById('login-admin-hint');
+  const loginEmailLabel = document.getElementById('login-email-label');
+  const googleAuthContainer = document.getElementById('google-auth-container');
+  const googleSigninBtnWrapper = document.getElementById('google-signin-btn-wrapper');
+  const googleAuthUnavailable = document.getElementById('google-auth-unavailable');
+
   const adminEvalScorecard = document.getElementById('admin-eval-scorecard');
   const adminInspectorTabs = document.getElementById('admin-inspector-tabs');
   const inspectorHeaderTitle = document.getElementById('inspector-header-title');
@@ -100,6 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Login Modal Elements
   const loginModalBackdrop = document.getElementById('login-modal-backdrop');
+  const loginModalTitle = document.getElementById('login-modal-title');
+  const loginModalSubtitle = document.getElementById('login-modal-subtitle');
   const btnCloseLoginModal = document.getElementById('btn-close-login-modal');
   const loginTabUser = document.getElementById('login-tab-user');
   const loginTabAdmin = document.getElementById('login-tab-admin');
@@ -107,6 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginScopeList = document.getElementById('login-scope-list');
   const loginEmail = document.getElementById('login-email');
   const loginPassword = document.getElementById('login-password');
+  const btnTogglePassword = document.getElementById('btn-toggle-password');
+  const iconTogglePassword = document.getElementById('icon-toggle-password');
+  const btnSubmitLogin = document.getElementById('btn-submit-login');
   const btnLoginText = document.getElementById('btn-login-text');
   const btnLoginIcon = document.getElementById('btn-login-icon');
   const loginForm = document.getElementById('login-form');
@@ -187,12 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
     state.role = role;
     if (role === 'admin') {
       appRoot?.classList.add('admin-mode');
-      
+
       // Update Header Profile Component
       if (profileAvatarIcon) profileAvatarIcon.textContent = 'admin_panel_settings';
       if (profileUserName) profileUserName.textContent = 'Admin Evaluator';
       if (profileRoleTag) profileRoleTag.textContent = 'Admin';
-      
+
       // Update Profile Dropdown
       if (dropdownAvatarIcon) dropdownAvatarIcon.textContent = 'admin_panel_settings';
       if (dropdownProfileName) dropdownProfileName.textContent = 'Admin Evaluator';
@@ -211,14 +243,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update Header Profile Component
       if (profileAvatarIcon) profileAvatarIcon.textContent = 'person';
-      if (profileUserName) profileUserName.textContent = 'User';
+      const curUser = RP.getCurrentUser();
+      const displayName = curUser ? (curUser.full_name || curUser.email.split('@')[0]) : 'Guest';
+      if (profileUserName) profileUserName.textContent = displayName;
       if (profileRoleTag) profileRoleTag.textContent = 'User';
 
       // Update Profile Dropdown
       if (dropdownAvatarIcon) dropdownAvatarIcon.textContent = 'person';
-      if (dropdownProfileName) dropdownProfileName.textContent = 'User';
-      if (dropdownProfileEmail) dropdownProfileEmail.textContent = 'user@platform.ai';
-      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'User Account';
+      if (dropdownProfileName) dropdownProfileName.textContent = displayName;
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = curUser ? curUser.email : 'Not signed in';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = curUser ? 'User Account' : 'Guest Visitor';
       profileSwitchUser?.classList.add('active');
       profileSwitchAdmin?.classList.remove('active');
       if (profileRoleDesc) profileRoleDesc.textContent = 'Viewing clean reading mode with monographs and verified sources. Model diagnostic scores are hidden.';
@@ -231,21 +265,211 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInspectorContent();
   }
 
-  // Login Modal Role Controller
+  // Login Modal Role & Mode Controllers
   let selectedLoginRole = 'user';
+  let userAuthMode = 'signin'; // 'signin' or 'register'
+  let googleClientId = null;
+  let gisInitialized = false;
+  let gisScriptFailed = false;
+  let googleButtonRendered = false;
+
+  function clearFormErrors() {
+    const errorBanner = document.getElementById('login-error-banner');
+    if (errorBanner) {
+      errorBanner.style.display = 'none';
+    }
+    const errorText = document.getElementById('login-error-text');
+    if (errorText) {
+      errorText.textContent = '';
+    }
+    [loginEmail, loginPassword, registerPassword, registerConfirmPassword, registerName, registerEmail].forEach(el => {
+      el?.classList.remove('input-error');
+    });
+    [registerNameError, registerEmailError, registerPasswordError, registerConfirmError].forEach(el => {
+      if (el) {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
+    });
+  }
+
+  async function onGoogleCredentialResponse(response) {
+    if (!response || !response.credential) {
+      showAuthError('No credential received from Google.');
+      return;
+    }
+    clearFormErrors();
+    try {
+      const user = await RP.auth.google(response.credential);
+      updateAuthState(user);
+      closeLoginModal();
+      showToast(`Signed in with Google as ${user.full_name || user.email}`, 'verified_user', 3000);
+    } catch (err) {
+      showAuthError(err.message || 'Google sign-in failed.');
+    }
+  }
+
+  function showGoogleUnavailable(msg) {
+    if (googleAuthUnavailable) {
+      if (msg) googleAuthUnavailable.textContent = msg;
+      googleAuthUnavailable.style.display = 'block';
+    }
+    const gisTarget = document.getElementById('google-gis-button-target');
+    if (gisTarget) {
+      gisTarget.style.display = 'none';
+    }
+  }
+
+  function hideGoogleUnavailable() {
+    if (googleAuthUnavailable) {
+      googleAuthUnavailable.style.display = 'none';
+    }
+    const gisTarget = document.getElementById('google-gis-button-target');
+    if (gisTarget) {
+      gisTarget.style.display = 'flex';
+    }
+  }
+
+  function updateGoogleVisibility() {
+    if (!googleAuthContainer) return;
+    if (selectedLoginRole === 'user' && googleClientId) {
+      googleAuthContainer.style.display = 'flex';
+      setupGoogleButton();
+    } else {
+      googleAuthContainer.style.display = 'none';
+    }
+  }
+
+  function setupGoogleButton() {
+    if (!googleClientId) {
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      return;
+    }
+    if (gisScriptFailed) {
+      showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      return;
+    }
+    if (!gisInitialized) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: onGoogleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+        gisInitialized = true;
+      } catch (err) {
+        console.warn('Google Identity Services initialization failed:', err);
+        showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+        return;
+      }
+    }
+    if (googleSigninBtnWrapper && selectedLoginRole === 'user') {
+      let gisTarget = document.getElementById('google-gis-button-target');
+      if (!gisTarget) {
+        gisTarget = document.createElement('div');
+        gisTarget.id = 'google-gis-button-target';
+        gisTarget.style.display = 'flex';
+        gisTarget.style.justifyContent = 'center';
+        gisTarget.style.width = '100%';
+        googleSigninBtnWrapper.appendChild(gisTarget);
+      }
+      hideGoogleUnavailable();
+
+      const hasRenderedIframe = gisTarget.querySelector('iframe') !== null;
+      if (!hasRenderedIframe) {
+        try {
+          window.google.accounts.id.renderButton(gisTarget, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 320
+          });
+          googleButtonRendered = true;
+        } catch (err) {
+          console.warn('Google Identity Services renderButton failed:', err);
+          showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+        }
+      }
+    }
+  }
+
+  async function initGoogleAuth() {
+    try {
+      const cfg = await RP.auth.config();
+      googleClientId = (cfg && cfg.google_client_id && typeof cfg.google_client_id === 'string')
+        ? cfg.google_client_id.trim()
+        : null;
+    } catch (e) {
+      console.warn('Failed to load auth configuration:', e);
+      googleClientId = null;
+    }
+
+    if (!googleClientId) {
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      console.info('Google sign-in disabled: no client ID configured');
+      return;
+    }
+
+    const onScriptSuccess = () => {
+      gisScriptFailed = false;
+      setupGoogleButton();
+    };
+
+    const onScriptFailure = () => {
+      console.warn('Google Identity Services script failed to load (blocked or unreachable).');
+      gisScriptFailed = true;
+      showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+    };
+
+    if (window.google?.accounts?.id) {
+      onScriptSuccess();
+    } else {
+      let script = document.getElementById('google-gsi-client-script');
+      if (script) {
+        script.addEventListener('load', onScriptSuccess);
+        script.addEventListener('error', onScriptFailure);
+      } else {
+        script = document.createElement('script');
+        script.id = 'google-gsi-client-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = onScriptSuccess;
+        script.onerror = onScriptFailure;
+        document.head.appendChild(script);
+      }
+    }
+
+    updateGoogleVisibility();
+  }
+
+  function setUserAuthMode(mode) {
+    userAuthMode = mode;
+    clearFormErrors();
+    updateLoginModalUI('user');
+  }
 
   function updateLoginModalUI(role) {
     selectedLoginRole = role;
-    const errorBanner = document.getElementById('login-error-banner');
-    if (errorBanner) errorBanner.style.display = 'none';
-    if (loginPassword) {
-      loginPassword.value = '';
-      loginPassword.classList.remove('input-error');
-    }
+    clearFormErrors();
+    if (loginPassword) loginPassword.value = '';
 
     if (role === 'admin') {
       loginTabAdmin?.classList.add('active');
       loginTabUser?.classList.remove('active');
+      if (userAuthModeToggle) userAuthModeToggle.style.display = 'none';
+      if (loginForm) loginForm.style.display = 'flex';
+      if (registerForm) registerForm.style.display = 'none';
+      if (loginAdminHint) loginAdminHint.style.display = 'flex';
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      if (loginEmailLabel) loginEmailLabel.textContent = 'Admin Username or Email';
       if (loginEmail) {
         loginEmail.value = 'admin@platform.ai';
         loginEmail.placeholder = 'admin@platform.ai or admin';
@@ -253,106 +477,152 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loginPassword) loginPassword.placeholder = 'Enter password (admin123)';
       if (btnLoginText) btnLoginText.textContent = 'Sign In as Admin';
       if (btnLoginIcon) btnLoginIcon.textContent = 'admin_panel_settings';
+      if (loginModalTitle) loginModalTitle.textContent = 'Admin Sign In';
+      if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in with administrator credentials';
     } else {
       loginTabUser?.classList.add('active');
       loginTabAdmin?.classList.remove('active');
+      if (userAuthModeToggle) userAuthModeToggle.style.display = 'grid';
+      if (loginAdminHint) loginAdminHint.style.display = 'none';
+      updateGoogleVisibility();
+      if (loginEmailLabel) loginEmailLabel.textContent = 'Email Address';
       if (loginEmail) {
-        loginEmail.value = 'user@platform.ai';
-        loginEmail.placeholder = 'user@platform.ai or user';
+        if (loginEmail.value === 'admin@platform.ai' || loginEmail.value === 'user@platform.ai') {
+          loginEmail.value = '';
+        }
+        loginEmail.placeholder = 'name@example.com';
       }
-      if (loginPassword) loginPassword.placeholder = 'Enter password (user123)';
-      if (btnLoginText) btnLoginText.textContent = 'Sign In as User';
-      if (btnLoginIcon) btnLoginIcon.textContent = 'login';
+      if (loginPassword) loginPassword.placeholder = 'Enter password';
+
+      if (userAuthMode === 'signin') {
+        userModeSigninBtn?.classList.add('active');
+        userModeRegisterBtn?.classList.remove('active');
+        if (loginForm) loginForm.style.display = 'flex';
+        if (registerForm) registerForm.style.display = 'none';
+        if (btnLoginText) btnLoginText.textContent = 'Sign In';
+        if (btnLoginIcon) btnLoginIcon.textContent = 'login';
+        if (loginModalTitle) loginModalTitle.textContent = 'Sign In';
+        if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in to access your saved research';
+      } else {
+        userModeRegisterBtn?.classList.add('active');
+        userModeSigninBtn?.classList.remove('active');
+        if (loginForm) loginForm.style.display = 'none';
+        if (registerForm) registerForm.style.display = 'flex';
+        if (loginModalTitle) loginModalTitle.textContent = 'Create Account';
+        if (loginModalSubtitle) loginModalSubtitle.textContent = 'Register an account to keep your research on this device.';
+      }
     }
   }
 
   function openLoginModal(role = (state.role === 'admin' ? 'user' : 'admin')) {
+    clearFormErrors();
     updateLoginModalUI(role);
     loginModalBackdrop?.classList.add('active');
-    setTimeout(() => loginPassword?.focus(), 150);
+    if (role === 'user' && googleClientId) {
+      setTimeout(() => {
+        setupGoogleButton();
+      }, 50);
+    }
+    setTimeout(() => {
+      if (role === 'admin' || userAuthMode === 'signin') {
+        if (!loginEmail?.value) loginEmail?.focus();
+        else loginPassword?.focus();
+      } else {
+        registerName?.focus();
+      }
+    }, 150);
   }
 
   function closeLoginModal() {
     loginModalBackdrop?.classList.remove('active');
+    clearFormErrors();
+  }
+
+  function showAuthError(message) {
     const errorBanner = document.getElementById('login-error-banner');
-    if (errorBanner) errorBanner.style.display = 'none';
+    const errorText = document.getElementById('login-error-text');
+    if (errorBanner && errorText) {
+      errorText.textContent = message;
+      errorBanner.style.display = 'flex';
+    }
+    showToast(message, 'error', 4000);
   }
 
   async function verifyAndAuthenticate() {
-    const email = loginEmail?.value.trim().toLowerCase();
-    const pass = loginPassword?.value.trim();
-    const errorBanner = document.getElementById('login-error-banner');
-    const errorText = document.getElementById('login-error-text');
+    clearFormErrors();
 
-    if (!email || !pass) {
-      if (errorBanner && errorText) {
-        errorText.textContent = 'Please enter both username/email and password.';
-        errorBanner.style.display = 'flex';
+    // ========================================================================
+    // PATH 1: ADMIN LOGIN (COMPLETELY UNTOUCHED, INCLUDING HARDCODED FALLBACK)
+    // ========================================================================
+    if (selectedLoginRole === 'admin') {
+      const email = loginEmail?.value.trim().toLowerCase();
+      const pass = loginPassword?.value.trim();
+      const errorBanner = document.getElementById('login-error-banner');
+      const errorText = document.getElementById('login-error-text');
+
+      if (!email || !pass) {
+        if (errorBanner && errorText) {
+          errorText.textContent = 'Please enter both username/email and password.';
+          errorBanner.style.display = 'flex';
+        }
+        return false;
       }
-      return false;
-    }
 
-    const origins = [];
-    if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
-      origins.push(window.location.origin);
-    }
-    origins.push('http://localhost:8000', 'http://127.0.0.1:8000');
+      const origins = [];
+      if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
+        origins.push(window.location.origin);
+      }
+      origins.push('http://localhost:8000', 'http://127.0.0.1:8000');
 
-    let loginSucceeded = false;
-    let authData = null;
-    let authErrorDetail = null;
+      let loginSucceeded = false;
+      let authData = null;
+      let authErrorDetail = null;
 
-    for (const base of origins) {
-      const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
-      for (const ep of endpoints) {
-        try {
-          const resp = await fetch(ep, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ username: email, password: pass })
-          });
-          if (resp.ok) {
-            authData = await resp.json().catch(() => ({}));
-            loginSucceeded = true;
-            break;
-          } else if (resp.status === 401 || resp.status === 422) {
-            const errData = await resp.json().catch(() => ({}));
-            // If the server process is still running with the old min_length=8 schema before restart:
-            if (resp.status === 422 && (pass === 'user123' || pass === 'user1234' || pass === 'admin123')) {
+      for (const base of origins) {
+        const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
+        for (const ep of endpoints) {
+          try {
+            const resp = await fetch(ep, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ username: email, password: pass })
+            });
+            if (resp.ok) {
+              authData = await resp.json().catch(() => ({}));
               loginSucceeded = true;
-              authData = { role: selectedLoginRole || (pass === 'admin123' ? 'admin' : 'user') };
-              authErrorDetail = null;
               break;
+            } else if (resp.status === 401 || resp.status === 422) {
+              const errData = await resp.json().catch(() => ({}));
+              if (resp.status === 422 && pass === 'admin123') {
+                loginSucceeded = true;
+                authData = { role: 'admin' };
+                authErrorDetail = null;
+                break;
+              }
+              authErrorDetail = Array.isArray(errData.detail)
+                ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
+                : (errData.detail || 'Incorrect username or password');
             }
-            authErrorDetail = Array.isArray(errData.detail)
-              ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
-              : (errData.detail || 'Incorrect username or password');
+          } catch (e) {
+            // Next candidate endpoint
           }
-        } catch (e) {
-          // Next candidate endpoint
+        }
+        if (loginSucceeded) break;
+      }
+
+      // Graceful offline fallback if server is unreachable
+      if (!loginSucceeded && !authErrorDetail) {
+        if (selectedLoginRole === 'admin' && (pass === 'admin123') && (email === 'admin@platform.ai' || email === 'admin')) {
+          loginSucceeded = true;
+          authData = { role: 'admin' };
         }
       }
-      if (loginSucceeded) break;
-    }
 
-    // Graceful offline fallback if server is unreachable
-    if (!loginSucceeded && !authErrorDetail) {
-      if (selectedLoginRole === 'admin' && (pass === 'admin123') && (email === 'admin@platform.ai' || email === 'admin')) {
-        loginSucceeded = true;
-        authData = { role: 'admin' };
-      } else if (selectedLoginRole === 'user' && (pass === 'user123') && (email === 'user@platform.ai' || email === 'user')) {
-        loginSucceeded = true;
-        authData = { role: 'user' };
-      }
-    }
-
-    if (loginSucceeded) {
-      if (authData && authData.access_token) {
-        sessionStorage.setItem('admin_access_token', authData.access_token);
-        localStorage.setItem('admin_access_token', authData.access_token);
-      }
-      const userRole = authData?.role || (authData?.user?.role) || selectedLoginRole;
-      if (userRole === 'admin') {
+      if (loginSucceeded) {
+        if (authData && authData.access_token) {
+          sessionStorage.setItem('admin_access_token', authData.access_token);
+          localStorage.setItem('admin_access_token', authData.access_token);
+        }
         setRole('admin');
         closeLoginModal();
         showToast('Admin verified! Opening Admin Observability Dashboard...', 'admin_panel_settings', 2000);
@@ -361,24 +631,186 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 350);
         return true;
       } else {
-        setRole('user');
-        closeLoginModal();
-        showToast('Signed in successfully as User', 'verified_user', 3000);
-        return true;
+        const detailMsg = authErrorDetail || 'Verification failed: Access denied. Admin page is restricted to verified administrators.';
+        if (errorBanner && errorText) {
+          errorText.textContent = detailMsg;
+          errorBanner.style.display = 'flex';
+        }
+        loginPassword?.classList.add('input-error');
+        setTimeout(() => loginPassword?.classList.remove('input-error'), 1000);
+        showToast('Verification failed: Access denied', 'lock');
+        return false;
       }
-    } else {
-      const detailMsg = authErrorDetail || (selectedLoginRole === 'admin'
-        ? 'Verification failed: Access denied. Admin page is restricted to verified administrators.'
-        : 'Verification failed: Invalid user email or password. Access denied.');
-      if (errorBanner && errorText) {
-        errorText.textContent = detailMsg;
-        errorBanner.style.display = 'flex';
-      }
-      loginPassword?.classList.add('input-error');
-      setTimeout(() => loginPassword?.classList.remove('input-error'), 1000);
-      showToast('Verification failed: Access denied', 'lock');
-      return false;
     }
+
+    // ========================================================================
+    // PATH 2: REGULAR USER AUTH (REAL COOKIE SESSIONS, ZERO CLIENT BYPASSES)
+    // ========================================================================
+    if (selectedLoginRole === 'user') {
+      if (userAuthMode === 'register') {
+        const name = registerName?.value.trim() || '';
+        const email = registerEmail?.value.trim().toLowerCase() || '';
+        const password = registerPassword?.value || '';
+        const confirm_password = registerConfirmPassword?.value || '';
+
+        let hasClientError = false;
+
+        if (!name) {
+          if (registerNameError) {
+            registerNameError.textContent = 'Please enter your name.';
+            registerNameError.style.display = 'block';
+          }
+          registerName?.classList.add('input-error');
+          hasClientError = true;
+        } else if (name.length > 80) {
+          if (registerNameError) {
+            registerNameError.textContent = 'Name must be 80 characters or fewer.';
+            registerNameError.style.display = 'block';
+          }
+          registerName?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        const emailRegex = /^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$/;
+        if (!email) {
+          if (registerEmailError) {
+            registerEmailError.textContent = 'Please enter your email.';
+            registerEmailError.style.display = 'block';
+          }
+          registerEmail?.classList.add('input-error');
+          hasClientError = true;
+        } else if (!emailRegex.test(email)) {
+          if (registerEmailError) {
+            registerEmailError.textContent = 'Please enter a valid email address.';
+            registerEmailError.style.display = 'block';
+          }
+          registerEmail?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        const hasLetter = /[A-Za-z]/.test(password);
+        const hasDigit = /\d/.test(password);
+        if (password.length < 8) {
+          if (registerPasswordError) {
+            registerPasswordError.textContent = 'Password must be at least 8 characters.';
+            registerPasswordError.style.display = 'block';
+          }
+          registerPassword?.classList.add('input-error');
+          hasClientError = true;
+        } else if (!hasLetter || !hasDigit) {
+          if (registerPasswordError) {
+            registerPasswordError.textContent = 'Password must contain at least one letter and one number.';
+            registerPasswordError.style.display = 'block';
+          }
+          registerPassword?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        if (confirm_password !== password) {
+          if (registerConfirmError) {
+            registerConfirmError.textContent = 'Passwords do not match.';
+            registerConfirmError.style.display = 'block';
+          }
+          registerConfirmPassword?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        if (hasClientError) return false;
+
+        try {
+          const user = await RP.auth.register({ name, email, password, confirm_password });
+          updateAuthState(user);
+          closeLoginModal();
+          showToast(`Account created! Welcome, ${user.full_name || user.email}`, 'person_add', 3000);
+          return true;
+        } catch (err) {
+          const msg = (err.status === 409 || err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered'))
+            ? "An account with this email already exists. Try signing in."
+            : (err.message || 'Registration failed.');
+          showAuthError(msg);
+          registerEmail?.classList.add('input-error');
+          registerPassword?.classList.add('input-error');
+          return false;
+        }
+      } else {
+        // User Sign In
+        const email = loginEmail?.value.trim().toLowerCase() || '';
+        const password = loginPassword?.value || '';
+
+        if (!email || !password) {
+          showAuthError('Please enter both email and password.');
+          if (!email) loginEmail?.classList.add('input-error');
+          if (!password) loginPassword?.classList.add('input-error');
+          return false;
+        }
+
+        try {
+          const user = await RP.auth.login({ email, password });
+          updateAuthState(user);
+          closeLoginModal();
+          showToast(`Signed in as ${user.full_name || user.email}`, 'verified_user', 3000);
+          return true;
+        } catch (err) {
+          showAuthError(err.message || 'Invalid email or password.');
+          loginPassword?.classList.add('input-error');
+          return false;
+        }
+      }
+    }
+  }
+
+  function updateAuthState(user) {
+    if (user) {
+      state.currentUser = user;
+      if (btnHeaderSignin) btnHeaderSignin.style.display = 'none';
+      if (btnHeaderSignout) btnHeaderSignout.style.display = 'inline-flex';
+      if (btnProfileLogout) btnProfileLogout.style.display = 'flex';
+
+      const displayName = user.full_name || (user.email ? user.email.split('@')[0] : 'User');
+      if (profileUserName) profileUserName.textContent = displayName;
+      if (dropdownProfileName) dropdownProfileName.textContent = displayName;
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = user.email || '';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'User Account';
+      if (profileRoleTag) profileRoleTag.textContent = 'User';
+
+      RP.switchUser(user);
+    } else {
+      state.currentUser = null;
+      if (btnHeaderSignin) btnHeaderSignin.style.display = 'inline-flex';
+      if (btnHeaderSignout) btnHeaderSignout.style.display = 'none';
+      if (btnProfileLogout) btnProfileLogout.style.display = 'none';
+
+      if (profileUserName) profileUserName.textContent = 'Guest';
+      if (dropdownProfileName) dropdownProfileName.textContent = 'Guest';
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = 'Not signed in';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'Guest Visitor';
+      if (profileRoleTag) profileRoleTag.textContent = 'User';
+
+      RP.switchUser(null);
+    }
+
+    // Refresh history and reset conversation stream to prevent cross-account chat leaks
+    state.dossier = null;
+    if (dynamicFollowups) dynamicFollowups.innerHTML = '';
+    renderHistory();
+    const lastActiveId = RP.getLastActiveChatId();
+    if (lastActiveId && lastActiveId !== 'new' && RP.getChat(lastActiveId)) {
+      showSavedChat(RP.getChat(lastActiveId));
+    } else {
+      showWelcomeScreen();
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await RP.auth.logout();
+    } catch (e) { }
+    try {
+      sessionStorage.removeItem('admin_access_token');
+      localStorage.removeItem('admin_access_token');
+    } catch (e) { }
+    updateAuthState(null);
+    showToast('Signed out successfully', 'logout', 2500);
   }
 
   // --- Inspector Panel Rendering ---
@@ -820,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showSavedChat(chat) {
     RP.openChat(chat.id);
-    localStorage.setItem('rp_last_active_chat_id', chat.id);
+    RP.setLastActiveChatId(chat.id);
     const first = chat.turns[0];
     state.lastTopic = first.user;
     state.dossier = null;
@@ -974,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.lastTopic = topicText;
       state.dossier = null;
       if (data && data.session_id) {
-        localStorage.setItem('rp_last_active_chat_id', data.session_id);
+        RP.setLastActiveChatId(data.session_id);
       }
       showTurnInSlot(turn, Date.now());
       afterTurn(turn);
@@ -1116,7 +1548,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navigation
   btnNewInquiry?.addEventListener('click', () => {
-    localStorage.setItem('rp_last_active_chat_id', 'new');
+    RP.setLastActiveChatId('new');
     showWelcomeScreen();
   });
 
@@ -1365,59 +1797,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Safe event binding helper (Task 4)
+  function safeBindListener(element, eventType, handler, elementId) {
+    if (element) {
+      element.addEventListener(eventType, handler);
+    } else {
+      console.warn(`[SafeEventBinding] Element #${elementId} not found in DOM; listener skipped.`);
+    }
+  }
+
   // Profile Dropdown Event Handlers (Single place to login as User or Admin!)
-  btnProfileTrigger?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileTrigger, 'click', (e) => {
     e.stopPropagation();
     const isOpen = profileDropdown?.classList.toggle('show');
     btnProfileTrigger?.classList.toggle('active', isOpen);
-  });
+  }, 'btn-profile-trigger');
 
-  profileSwitchUser?.addEventListener('click', (e) => {
+  safeBindListener(profileSwitchUser, 'click', (e) => {
     e.stopPropagation();
-    if (state.role === 'user') {
-      showToast('Already logged in as User', 'person');
-      profileDropdown?.classList.remove('show');
-      btnProfileTrigger?.classList.remove('active');
-      return;
-    }
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
-    if (state.role === 'admin') {
-      openLoginModal('user');
+    if (state.currentUser) {
+      showToast(`Logged in as ${state.currentUser.full_name || state.currentUser.email}`, 'person');
     } else {
-      showToast('Already in User Mode', 'person');
+      openLoginModal('user');
     }
-  });
+  }, 'profile-switch-user');
 
-  profileSwitchAdmin?.addEventListener('click', (e) => {
+  safeBindListener(profileSwitchAdmin, 'click', (e) => {
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal('admin');
-  });
+  }, 'profile-switch-admin');
 
-  document.getElementById('btn-open-admin-dashboard')?.addEventListener('click', (e) => {
+  const btnOpenAdminDashboard = document.getElementById('btn-open-admin-dashboard');
+  safeBindListener(btnOpenAdminDashboard, 'click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal('admin');
-  });
+  }, 'btn-open-admin-dashboard');
 
-  btnProfileQuickSwitch?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileQuickSwitch, 'click', (e) => {
     e.stopPropagation();
     const targetRole = state.role === 'admin' ? 'user' : 'admin';
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal(targetRole);
-  });
+  }, 'btn-profile-quick-switch');
 
-  btnProfileDetails?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileDetails, 'click', (e) => {
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal(state.role);
-  });
+  }, 'btn-profile-details');
 
   // Close profile dropdown when clicking outside
   document.addEventListener('click', (e) => {
@@ -1427,24 +1863,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Header and Profile Auth Event Listeners
+  safeBindListener(btnHeaderSignin, 'click', () => openLoginModal('user'), 'btn-header-signin');
+  safeBindListener(btnHeaderSignout, 'click', handleLogout, 'btn-header-signout');
+  safeBindListener(btnProfileLogout, 'click', handleLogout, 'btn-profile-logout');
+
+  // User Auth Mode (Sign In vs Register) Listeners
+  safeBindListener(userModeSigninBtn, 'click', () => setUserAuthMode('signin'), 'user-mode-signin');
+  safeBindListener(userModeRegisterBtn, 'click', () => setUserAuthMode('register'), 'user-mode-register');
+
+  safeBindListener(btnSubmitRegister, 'click', (e) => {
+    e.preventDefault();
+    verifyAndAuthenticate();
+  }, 'btn-submit-register');
+
+  safeBindListener(registerForm, 'submit', (e) => {
+    e.preventDefault();
+    verifyAndAuthenticate();
+  }, 'register-form');
+
+  safeBindListener(btnToggleRegPassword, 'click', () => {
+    if (registerPassword) {
+      const isPass = registerPassword.type === 'password';
+      registerPassword.type = isPass ? 'text' : 'password';
+      if (registerConfirmPassword) {
+        registerConfirmPassword.type = isPass ? 'text' : 'password';
+      }
+      if (iconToggleRegPassword) {
+        iconToggleRegPassword.textContent = isPass ? 'visibility_off' : 'visibility';
+      }
+    }
+  }, 'btn-toggle-reg-password');
+
   // Login Modal Event Listeners
-  btnCloseLoginModal?.addEventListener('click', closeLoginModal);
-  loginModalBackdrop?.addEventListener('click', (e) => {
+  safeBindListener(btnCloseLoginModal, 'click', closeLoginModal, 'btn-close-login-modal');
+  safeBindListener(loginModalBackdrop, 'click', (e) => {
     if (e.target === loginModalBackdrop) closeLoginModal();
-  });
+  }, 'login-modal-backdrop');
 
-  loginTabUser?.addEventListener('click', () => updateLoginModalUI('user'));
-  loginTabAdmin?.addEventListener('click', () => updateLoginModalUI('admin'));
+  safeBindListener(loginTabUser, 'click', () => updateLoginModalUI('user'), 'login-tab-user');
+  safeBindListener(loginTabAdmin, 'click', () => updateLoginModalUI('admin'), 'login-tab-admin');
 
-  document.getElementById('btn-submit-login')?.addEventListener('click', (e) => {
+  safeBindListener(btnSubmitLogin, 'click', (e) => {
     e.preventDefault();
     verifyAndAuthenticate();
-  });
+  }, 'btn-submit-login');
 
-  loginForm?.addEventListener('submit', (e) => {
+  safeBindListener(loginForm, 'submit', (e) => {
     e.preventDefault();
     verifyAndAuthenticate();
-  });
+  }, 'login-form');
+
+  safeBindListener(btnTogglePassword, 'click', () => {
+    if (!loginPassword) return;
+    const isPass = loginPassword.type === 'password';
+    loginPassword.type = isPass ? 'text' : 'password';
+    if (iconTogglePassword) {
+      iconTogglePassword.textContent = isPass ? 'visibility_off' : 'visibility';
+    }
+  }, 'btn-toggle-password');
 
   // Global Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
@@ -1632,15 +2109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!e.target.closest('.download-dropdown-wrapper')) {
       document.querySelectorAll('.download-format-menu.show').forEach(m => m.classList.remove('show'));
     }
-  });
-
-  // Password Visibility Toggle in Login Modal
-  document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
-    if (!loginPassword) return;
-    const isPass = loginPassword.type === 'password';
-    loginPassword.type = isPass ? 'text' : 'password';
-    const toggleIcon = document.getElementById('icon-toggle-password');
-    if (toggleIcon) toggleIcon.textContent = isPass ? 'visibility_off' : 'visibility';
   });
 
   // --- Share Modal Logic ---
@@ -1962,12 +2430,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const idToDelete = pendingDeleteChatId;
     const currentActiveId = RP.currentId();
     const isActiveChat = (idToDelete && idToDelete === currentActiveId) ||
-                         (!idToDelete && conversationStream.style.display !== 'none');
+      (!idToDelete && conversationStream.style.display !== 'none');
 
     if (idToDelete) {
       RP.deleteChat(idToDelete);
-      if (localStorage.getItem('rp_last_active_chat_id') === idToDelete) {
-        localStorage.removeItem('rp_last_active_chat_id');
+      if (RP.getLastActiveChatId() === idToDelete) {
+        RP.removeLastActiveChatId();
       }
     }
 
@@ -2013,10 +2481,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setSidebarState(true);
   }
   setRole('user');
-  fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => {});
+  fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => { });
 
-  // Restore previous active conversation on page refresh / load
-  // Always start with New Inquiry (welcome screen) by default
-  showWelcomeScreen();
+  // Call /api/auth/me on startup to restore session and load user chats
+  RP.auth.me().then(user => {
+    updateAuthState(user);
+  }).catch(() => {
+    updateAuthState(null);
+  });
+
+  // Fetch auth config exactly once on page load to initialize Google Sign-in
+  initGoogleAuth();
+
   composerInput.blur();
 });

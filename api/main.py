@@ -21,6 +21,8 @@ from evaluation.judge import grade_report, score_history
 from api import integration as parts
 
 from user_auth.routes import router as user_auth_router
+from user_auth.chat_routes import router as chat_review_router
+from user_auth.chat_storage import get_chat_review_storage
 from user_auth.dependencies import get_optional_user
 from user_auth.models import UserResponse
 from user_auth.config import settings as user_auth_settings
@@ -154,8 +156,11 @@ def generate(
     start_llm_request_session()
     trace = trace_service.start_trace(request_id=request_id, session_id=session_id, topic=req.topic)
 
+    user_id_val = str(current_user.id) if current_user else None
+    scoped_session_id = f"user:{user_id_val}:{session_id}" if user_id_val else f"guest:{session_id}"
+
     try:
-        history = parts.get_history(session_id)
+        history = parts.get_history(scoped_session_id)
     except Exception as e:
         log.warning(f"history load failed, treating as a new session: {e}")
         history = []
@@ -199,7 +204,13 @@ def generate(
     # 2. Semantic cache: first message of a conversation only
     if not is_followup:
         try:
-            cached = parts.check_cache(req.topic)
+            cached = parts.check_cache(req.topic, user_id=user_id_val)
+        except TypeError:
+            try:
+                cached = parts.check_cache(req.topic)
+            except Exception as e:
+                log.warning(f"cache check failed, continuing: {e}")
+                cached = None
         except Exception as e:
             log.warning(f"cache check failed, continuing: {e}")
             cached = None
@@ -210,7 +221,25 @@ def generate(
                 c_results = cached.get("search_results")
             else:
                 c_report, c_score, c_results = parts.report_to_text(cached), None, None
-            _remember(session_id, req.topic, c_report, c_results)
+            _remember(scoped_session_id, req.topic, c_report, c_results)
+            if current_user:
+                try:
+                    c_store = get_chat_review_storage()
+                    if not c_store.get_chat_session(user_id=user_id_val, session_id=session_id):
+                        c_store.create_chat_session(user_id=user_id_val, title=req.topic[:80], session_id=session_id)
+                    c_store.add_chat_message(session_id=session_id, role="user", content=req.topic)
+                    c_store.add_chat_message(
+                        session_id=session_id,
+                        role="report",
+                        content=c_report,
+                        search_results=c_results,
+                        score=c_score,
+                        intent="new_research",
+                        seconds=round(time.time() - start, 2),
+                        cached=True,
+                    )
+                except Exception as e:
+                    log.warning(f"Could not persist server chat turn on cache hit: {e}")
             trace.complete(
                 outcome=RequestOutcome.SUCCESS,
                 cache_status="hit",
@@ -330,13 +359,38 @@ def generate(
         score = grade_report(original_topic, report)
 
     # 6. Memory: always keep the conversation; cache and archive verified NEW research only
-    _remember(session_id, req.topic, report, search_results,
+    _remember(scoped_session_id, req.topic, report, search_results,
               role="answer" if intent == "question" else "report")
     if intent == "new_research" and verified:
         try:
-            parts.save_to_ltm(report, topic=req.topic, score=score, search_results=search_results)
+            parts.save_to_ltm(report, topic=req.topic, score=score, search_results=search_results, user_id=user_id_val)
+        except TypeError:
+            try:
+                parts.save_to_ltm(report, topic=req.topic, score=score, search_results=search_results)
+            except Exception as e:
+                log.warning(f"save_to_ltm failed: {e}")
         except Exception as e:
             log.warning(f"save_to_ltm failed: {e}")
+
+    # Server-side user chat turn persistence (when authenticated)
+    if current_user:
+        try:
+            c_store = get_chat_review_storage()
+            if not c_store.get_chat_session(user_id=user_id_val, session_id=session_id):
+                c_store.create_chat_session(user_id=user_id_val, title=req.topic[:80], session_id=session_id)
+            c_store.add_chat_message(session_id=session_id, role="user", content=req.topic)
+            c_store.add_chat_message(
+                session_id=session_id,
+                role=intent,
+                content=report,
+                search_results=search_results,
+                score=score,
+                intent=intent,
+                seconds=round(time.time() - start, 2),
+                cached=False,
+            )
+        except Exception as e:
+            log.warning(f"Could not persist server chat turn: {e}")
 
     # Trace completion & metric logging with actual LLM telemetry
     telemetry = get_llm_request_telemetry()
@@ -540,9 +594,10 @@ def scores(limit: int = 20):
 
 
 # ---------------------------------------------------------------------------
-# Mount the Regular User Auth router under /api/auth
+# Mount User Auth and User Chats/Reviews routers under /api
 # ---------------------------------------------------------------------------
 app.include_router(user_auth_router, prefix="/api/auth")
+app.include_router(chat_review_router, prefix="/api")
 
 # ---------------------------------------------------------------------------
 # Mount the Admin Backend router (accessible at both /api/admin and /admin)

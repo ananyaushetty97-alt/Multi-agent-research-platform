@@ -995,9 +995,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Follow-ups: edit, question, or new topic, routed by the backend ---
   async function appendFollowUpInStream(questionText, attachments = []) {
     if (!dynamicFollowups) return;
-    if (welcomeScreen.style.display !== 'none') return runPipeline(questionText);
+    if (welcomeScreen.style.display !== 'none') return runPipeline(questionText, attachments);
     if (state.busy) { showToast('Still working on the previous request', 'hourglass_empty'); return; }
-    if (attachments.length) showToast('Attachments are not sent to the research backend yet', 'info', 4000);
     state.busy = true;
     dynamicFollowups.append(userBubbleNode(questionText, attachments));
     const holder = document.createElement('div');
@@ -1007,7 +1006,13 @@ document.addEventListener('DOMContentLoaded', () => {
     scrollToBottom();
     activeController = new AbortController();
     try {
-      const data = await RP.generate(questionText, activeController.signal);
+      // Extract all File objects from both file and folder attachments
+      const files = (attachments || []).flatMap(a =>
+        a.file ? [a.file] : (a.files || [])
+      );
+      const data = files.length > 0
+        ? await RP.generateWithFiles(questionText, files, activeController.signal)
+        : await RP.generate(questionText, activeController.signal);
       const turn = turnFrom(questionText, data);
       holder.replaceChildren(buildAssistant(turn));
       afterTurn(turn);
@@ -1044,9 +1049,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function runPipeline(topicText) {
+  async function runPipeline(topicText, attachments = []) {
     topicText = (topicText || '').trim();
-    if (!topicText || !pipelineModal) return;
+    if (!topicText && attachments.length === 0) return;
+    if (!pipelineModal) return;
     if (state.busy) { showToast('Still working on the previous request', 'hourglass_empty'); return; }
     state.busy = true;
     RP.newChat();
@@ -1062,7 +1068,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const timer = setInterval(tick, 5000);
     activeController = new AbortController();
     try {
-      const data = await RP.generate(topicText, activeController.signal);
+      // Extract all File objects from both file and folder attachments
+      const files = (attachments || []).flatMap(a =>
+        a.file ? [a.file] : (a.files || [])
+      );
+      const data = files.length > 0
+        ? await RP.generateWithFiles(topicText, files, activeController.signal)
+        : await RP.generate(topicText, activeController.signal);
       const turn = turnFrom(topicText, data);
       state.lastTopic = topicText;
       state.dossier = null;
@@ -1154,7 +1166,8 @@ document.addEventListener('DOMContentLoaded', () => {
       state.attachedFiles.push({
         name: file.name,
         type: 'file',
-        size: formatFileSize(file.size)
+        size: formatFileSize(file.size),
+        file: file  // Store the actual File object for upload
       });
     });
     inputUploadFile.value = '';
@@ -1172,7 +1185,8 @@ document.addEventListener('DOMContentLoaded', () => {
       name: folderName,
       type: 'folder',
       count: files.length,
-      size: formatFileSize(totalBytes)
+      size: formatFileSize(totalBytes),
+      files: files  // Store the actual File objects for upload
     });
     inputUploadFolder.value = '';
     renderComposerAttachments();

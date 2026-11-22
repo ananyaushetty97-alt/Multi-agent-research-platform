@@ -294,6 +294,60 @@ const RP = (() => {
     }
   };
 
+  // ---------- RP.reviews: Report Review & Feedback APIs ----------
+  const reviews = {
+    async submit(reportId, rating, comment = null, topic = null, sId = null) {
+      return await _fetchAuth("/api/reviews", "POST", {
+        report_id: reportId,
+        relevance: rating.relevance,
+        accuracy: rating.accuracy,
+        clarity: rating.clarity,
+        comment: comment || null,
+        topic: topic || null,
+        session_id: sId || sessionId || null
+      });
+    },
+    async getMine() {
+      return await _fetchAuth("/api/reviews/mine", "GET");
+    },
+    async getForReport(reportId) {
+      try {
+        return await _fetchAuth("/api/reviews/" + encodeURIComponent(reportId), "GET");
+      } catch (e) {
+        if (e.status === 404) return null;
+        throw e;
+      }
+    }
+  };
+
+  // Sync server-side chats when logged in
+  async function syncServerChats() {
+    if (!currentUser || !currentUser.id) return listChats();
+    try {
+      const serverChats = await _fetchAuth("/api/chats", "GET");
+      if (Array.isArray(serverChats)) {
+        const localChats = load();
+        for (const sc of serverChats) {
+          const match = localChats.find(lc => lc.id === sc.id);
+          if (!match) {
+            localChats.push({
+              id: sc.id,
+              title: sc.title,
+              created: new Date(sc.created_at).getTime(),
+              updated: new Date(sc.updated_at).getTime(),
+              turns: []
+            });
+          } else {
+            match.title = sc.title;
+            match.updated = new Date(sc.updated_at).getTime();
+          }
+        }
+        persist(localChats);
+      }
+    } catch (e) { }
+    return listChats();
+  }
+
   return {
     baseUrl: API_BASE,
     currentId: () => sessionId,
@@ -309,6 +363,8 @@ const RP = (() => {
     sourceInfo,
     citationCount,
     auth,
+    reviews,
+    syncServerChats,
     switchUser,
     getCurrentUser,
     getLastActiveChatId,

@@ -1015,6 +1015,72 @@
     </div>
   </div>
 
+  <!-- ======================================================================
+       REPORT REVIEW & RATING MODAL
+       ====================================================================== -->
+  <div class="modal-overlay" id="review-modal">
+    <div class="modal-dialog review-dialog" style="max-width: 480px;">
+      <div class="delete-modal-header" style="border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 0.75rem;">
+        <div class="delete-brand-group">
+          <div class="brand-icon" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+            <span class="material-symbols-outlined text-[20px]">rate_review</span>
+          </div>
+          <div>
+            <h3 class="delete-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Rate Research Monograph</h3>
+            <p class="delete-modal-subtitle" style="margin: 0; font-size: 0.85rem; color: #64748b;">Help improve multi-agent synthesis quality</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-review-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <form id="review-form" style="padding-top: 1rem;">
+        <input type="hidden" id="review-report-id" value="" />
+        <input type="hidden" id="review-session-id" value="" />
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Relevance</span>
+            <span id="review-relevance-val" style="font-weight: 600; color: #0284c7;">8/10</span>
+          </label>
+          <input type="range" id="review-relevance" min="1" max="10" value="8" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Accuracy &amp; Factuality</span>
+            <span id="review-accuracy-val" style="font-weight: 600; color: #0284c7;">8/10</span>
+          </label>
+          <input type="range" id="review-accuracy" min="1" max="10" value="8" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Clarity &amp; Structure</span>
+            <span id="review-clarity-val" style="font-weight: 600; color: #0284c7;">9/10</span>
+          </label>
+          <input type="range" id="review-clarity" min="1" max="10" value="9" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Comments / Feedback (Optional)</span>
+            <span id="review-comment-count" style="font-size: 0.75rem; color: #94a3b8;">0/1000</span>
+          </label>
+          <textarea id="review-comment" maxlength="1000" rows="3" placeholder="Provide feedback on evidence citations, depth, or formatting..." style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button type="button" class="btn-delete-cancel" id="btn-cancel-review">Cancel</button>
+          <button type="submit" id="btn-submit-review" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; background: #0284c7; color: white; border: none; cursor: pointer;">
+            Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="toast-notice" id="toast-notice">
     <span class="material-symbols-outlined text-[17px]">check_circle</span>

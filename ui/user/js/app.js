@@ -1140,6 +1140,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="material-symbols-outlined text-[16px]">content_copy</span>
           <span>Copy report</span>
         </button>
+        <button class="btn-report-tool btn-review-turn" type="button" title="Rate & review monograph">
+          <span class="material-symbols-outlined text-[16px]">rate_review</span>
+          <span>Review</span>
+        </button>
         <div class="download-dropdown-wrapper">
           <button class="btn-report-tool btn-download-trigger" type="button" title="Download report">
             <span class="material-symbols-outlined text-[16px]">download</span>
@@ -1165,12 +1169,17 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const copyBtn = bar.querySelector('.btn-copy-turn');
+    const reviewBtn = bar.querySelector('.btn-review-turn');
     const trigger = bar.querySelector('.btn-download-trigger');
     const menu = bar.querySelector('.download-format-menu');
 
     copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(articleEl.innerText);
       showToast('Monograph copied to clipboard', 'content_copy');
+    });
+
+    reviewBtn?.addEventListener('click', () => {
+      openReviewModal(RP.currentId() || 'report-' + Date.now(), RP.currentId(), null);
     });
 
     trigger.addEventListener('click', (e) => {
@@ -2454,6 +2463,92 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast('Conversation deleted', 'delete');
   }
+
+  // --- Review Modal Controls ---
+  const reviewModalBackdrop = document.getElementById('review-modal');
+  const btnCloseReviewModal = document.getElementById('btn-close-review-modal');
+  const btnCancelReview = document.getElementById('btn-cancel-review');
+  const reviewForm = document.getElementById('review-form');
+  const reviewReportIdInput = document.getElementById('review-report-id');
+  const reviewSessionIdInput = document.getElementById('review-session-id');
+  const reviewRelevanceInput = document.getElementById('review-relevance');
+  const reviewAccuracyInput = document.getElementById('review-accuracy');
+  const reviewClarityInput = document.getElementById('review-clarity');
+  const reviewCommentInput = document.getElementById('review-comment');
+  const reviewRelevanceVal = document.getElementById('review-relevance-val');
+  const reviewAccuracyVal = document.getElementById('review-accuracy-val');
+  const reviewClarityVal = document.getElementById('review-clarity-val');
+  const reviewCommentCount = document.getElementById('review-comment-count');
+
+  reviewRelevanceInput?.addEventListener('input', () => {
+    if (reviewRelevanceVal) reviewRelevanceVal.textContent = reviewRelevanceInput.value + '/10';
+  });
+  reviewAccuracyInput?.addEventListener('input', () => {
+    if (reviewAccuracyVal) reviewAccuracyVal.textContent = reviewAccuracyInput.value + '/10';
+  });
+  reviewClarityInput?.addEventListener('input', () => {
+    if (reviewClarityVal) reviewClarityVal.textContent = reviewClarityInput.value + '/10';
+  });
+  reviewCommentInput?.addEventListener('input', () => {
+    if (reviewCommentCount) reviewCommentCount.textContent = (reviewCommentInput.value || '').length + '/1000';
+  });
+
+  function openReviewModal(reportId, sId) {
+    const user = RP.getCurrentUser();
+    if (!user) {
+      showToast('Sign in to review reports', 'info');
+      openAuthModal('login');
+      return;
+    }
+    if (reviewReportIdInput) reviewReportIdInput.value = reportId || (RP.currentId() || 'report-' + Date.now());
+    if (reviewSessionIdInput) reviewSessionIdInput.value = sId || RP.currentId() || '';
+    if (reviewCommentInput) reviewCommentInput.value = '';
+    if (reviewCommentCount) reviewCommentCount.textContent = '0/1000';
+    if (reviewRelevanceInput) reviewRelevanceInput.value = '8';
+    if (reviewAccuracyInput) reviewAccuracyInput.value = '8';
+    if (reviewClarityInput) reviewClarityInput.value = '9';
+    if (reviewRelevanceVal) reviewRelevanceVal.textContent = '8/10';
+    if (reviewAccuracyVal) reviewAccuracyVal.textContent = '8/10';
+    if (reviewClarityVal) reviewClarityVal.textContent = '9/10';
+
+    reviewModalBackdrop?.classList.add('active');
+  }
+
+  function closeReviewModal() {
+    reviewModalBackdrop?.classList.remove('active');
+  }
+
+  btnCloseReviewModal?.addEventListener('click', closeReviewModal);
+  btnCancelReview?.addEventListener('click', closeReviewModal);
+  reviewModalBackdrop?.addEventListener('click', (e) => {
+    if (e.target === reviewModalBackdrop) closeReviewModal();
+  });
+
+  reviewForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = RP.getCurrentUser();
+    if (!user) {
+      showToast('Sign in to review reports', 'info');
+      closeReviewModal();
+      openAuthModal('login');
+      return;
+    }
+
+    const reportId = reviewReportIdInput?.value || RP.currentId() || 'report-' + Date.now();
+    const sId = reviewSessionIdInput?.value || RP.currentId() || null;
+    const relevance = parseInt(reviewRelevanceInput?.value || '8', 10);
+    const accuracy = parseInt(reviewAccuracyInput?.value || '8', 10);
+    const clarity = parseInt(reviewClarityInput?.value || '9', 10);
+    const comment = (reviewCommentInput?.value || '').trim();
+
+    try {
+      await RP.reviews.submit(reportId, { relevance, accuracy, clarity }, comment, null, sId);
+      closeReviewModal();
+      showToast('Review submitted successfully!', 'check_circle');
+    } catch (err) {
+      showToast(err.message || 'Could not submit review', 'error');
+    }
+  });
 
   btnCloseDeleteModal?.addEventListener('click', closeDeleteModal);
   btnCancelDelete?.addEventListener('click', closeDeleteModal);

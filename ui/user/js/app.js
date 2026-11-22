@@ -1106,66 +1106,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return d;
   }
 
-  function createReportQualityScorecard(score) {
-    if (!score || score.overall == null) return document.createDocumentFragment();
-    const wrap = document.createElement('div');
-    wrap.className = 'user-report-eval-card';
-    wrap.style.cssText = 'margin-top: 1.5rem; padding: 1.15rem 1.35rem; background: var(--surface-container-low, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);';
-    
-    const rel = score.relevance != null ? score.relevance : '—';
-    const acc = score.accuracy != null ? score.accuracy : '—';
-    const cla = score.clarity != null ? score.clarity : '—';
-    const ovr = Number(score.overall).toFixed(1);
-    
-    wrap.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(2, 132, 199, 0.12); display: flex; align-items: center; justify-content: center; color: #0284c7;">
-            <span class="material-symbols-outlined text-[17px]">gavel</span>
-          </div>
-          <div>
-            <div style="font-size: 0.88rem; font-weight: 600; color: var(--on-surface, #0f172a);">Automated Quality Evaluation (LLM-as-a-Judge)</div>
-            <div style="font-size: 0.72rem; color: var(--on-surface-variant, #64748b);">Calibrated pipeline rubrics: relevance, accuracy, and clarity</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: baseline; gap: 3px; background: rgba(2, 132, 199, 0.1); padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(2, 132, 199, 0.2);">
-          <span style="font-size: 1.05rem; font-weight: 800; color: #0284c7;">${ovr}</span>
-          <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">/ 10</span>
-        </div>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 0.75rem;">
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
-            <span>Relevance</span>
-            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${rel} / 10</span>
-          </div>
-          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
-            <div style="height: 100%; width: ${(score.relevance || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
-            <span>Accuracy</span>
-            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${acc} / 10</span>
-          </div>
-          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
-            <div style="height: 100%; width: ${(score.accuracy || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
-            <span>Clarity</span>
-            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${cla} / 10</span>
-          </div>
-          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
-            <div style="height: 100%; width: ${(score.clarity || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
-          </div>
-        </div>
-      </div>
-      ${score.comment ? `<div style="font-size: 0.78rem; color: var(--on-surface-variant, #475569); line-height: 1.4; background: rgba(2, 132, 199, 0.04); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #0284c7; font-style: italic;">"${escapeHTML(score.comment)}"</div>` : ''}
-    `;
-    return wrap;
-  }
   function fillScore(score) {
     const ok = score && score.overall != null;
     const root = document.getElementById('admin-eval-scorecard');
@@ -2550,7 +2490,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Review Modal Controls ---
-  const reviewModalBackdrop = document.getElementById('review-modal');
+  const reviewModalBackdrop = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
   const btnCloseReviewModal = document.getElementById('btn-close-review-modal');
   const btnCancelReview = document.getElementById('btn-cancel-review');
   const reviewForm = document.getElementById('review-form');
@@ -2596,7 +2536,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reviewAccuracyVal) reviewAccuracyVal.textContent = '8/10';
     if (reviewClarityVal) reviewClarityVal.textContent = '9/10';
 
-    const modal = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    const modal = reviewModalBackdrop || document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
     if (modal) {
       modal.classList.add('active');
       modal.style.display = 'flex';
@@ -2604,7 +2544,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function closeReviewModal() {
-    const modal = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    const modal = reviewModalBackdrop || document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
     if (modal) {
       modal.classList.remove('active');
       modal.style.display = 'none';

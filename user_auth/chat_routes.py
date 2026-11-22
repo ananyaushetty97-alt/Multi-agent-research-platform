@@ -183,21 +183,12 @@ def create_or_update_review(
     except Exception as e:
         log.warning(f"Could not log user activity for review: {e}")
 
-    # Record review in quality_service so admin Quality overview & human review feed reflect it
+    # Invalidate admin backend summary count cache so newly submitted PostgreSQL review reflects immediately
     try:
         from admin_backend.services.quality_service import quality_service
-        quality_service.add_human_review(
-            topic=req.topic or f"Report {req.report_id}",
-            reviewer_username=username,
-            relevance=req.relevance,
-            accuracy=req.accuracy,
-            clarity=req.clarity,
-            report_id=req.report_id,
-            feedback_notes=req.comment,
-            flagged_for_rerun=False,
-        )
+        quality_service.invalidate_human_reviews_count_cache()
     except Exception as e:
-        log.warning(f"Could not record review in quality_service: {e}")
+        log.warning(f"Could not invalidate quality_service count cache: {e}")
 
     return review
 

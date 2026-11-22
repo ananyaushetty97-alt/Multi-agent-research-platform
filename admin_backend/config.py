@@ -34,9 +34,14 @@ class AdminSettings(BaseSettings):
     scores_log_path: str = os.path.join("logs", "scores.jsonl")
     redteam_results_path: str = os.path.join("logs", "redteam_results.json")
 
+    # Environment
+    environment: str = "production"
+
     # Dependency Connection URLs (for health probes & future live adapters)
     redis_url: str = "redis://localhost:6379/0"
-    postgres_dsn: str = "postgresql://postgres:devpassword@localhost:5432/research_platform"
+    postgres_dsn: Optional[str] = None
+    dev_postgres_dsn_fallback: Optional[str] = None
+    dev_postgres_fallback_allowed: bool = False
     groq_api_key: Optional[str] = None
     ollama_host: str = "http://localhost:11434"
     tavily_api_key: Optional[str] = None
@@ -45,6 +50,25 @@ class AdminSettings(BaseSettings):
     admin_data_retention_days: int = 30
     admin_max_preview_length: int = 160
     admin_mask_pii: bool = True
+
+    def resolve_postgres_dsn(self) -> Optional[str]:
+        """
+        Resolves the PostgreSQL DSN strictly honoring precedence:
+        1. Explicitly configured postgres_dsn or POSTGRES_DSN / DATABASE_URL environment variables.
+        2. Development fallback only if environment == 'development' and fallback is explicitly allowed.
+        3. Returns None if unconfigured.
+        """
+        primary = self.postgres_dsn or os.environ.get("POSTGRES_DSN") or os.environ.get("DATABASE_URL")
+        if primary and primary.strip():
+            return primary.strip()
+        if (
+            getattr(self, "environment", "production").lower() == "development"
+            and getattr(self, "dev_postgres_fallback_allowed", False)
+            and getattr(self, "dev_postgres_dsn_fallback", None)
+            and self.dev_postgres_dsn_fallback.strip()
+        ):
+            return self.dev_postgres_dsn_fallback.strip()
+        return None
 
     def get_signing_key(self) -> bytes:
         """

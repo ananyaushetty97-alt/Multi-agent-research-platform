@@ -38,6 +38,7 @@ class HumanReviewScore(BaseModel):
     overall: float = Field(..., ge=1.0, le=10.0)
     feedback_notes: Optional[str] = Field(None, max_length=1000)
     flagged_for_rerun: bool = False
+    is_expert: bool = False
 
 
 class QualityFilter(BaseModel):

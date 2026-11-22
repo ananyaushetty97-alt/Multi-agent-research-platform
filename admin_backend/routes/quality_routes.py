@@ -1,8 +1,9 @@
 """
 Quality scoring, LLM-as-a-judge history, and human evaluation review routes.
 """
+import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from admin_backend.models.audit import AuditAction
 from admin_backend.models.quality import (
@@ -14,6 +15,8 @@ from admin_backend.models.quality import (
 from admin_backend.security.dependencies import AuthenticatedUser, require_admin_role
 from admin_backend.services.audit_service import audit_service
 from admin_backend.services.quality_service import quality_service
+
+log = logging.getLogger("admin_backend.quality_routes")
 
 router = APIRouter(prefix="/quality", tags=["Admin Quality"])
 
@@ -52,7 +55,11 @@ def get_quality_summary(admin: AuthenticatedUser = Depends(require_admin_role)):
     average scores per criterion (relevance, accuracy, clarity),
     low-scoring report count, failed evaluation count, and suspected truncation counts.
     """
-    return quality_service.get_quality_summary()
+    try:
+        return quality_service.get_quality_summary()
+    except Exception as e:
+        log.error(f"Failed to compute quality summary: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="Quality summary service temporarily unavailable")
 
 
 class HumanReviewSubmission(QualitySummary.__base__):
@@ -91,6 +98,7 @@ def create_human_review(
         report_id=review_req.report_id,
         feedback_notes=review_req.feedback_notes,
         flagged_for_rerun=review_req.flagged_for_rerun,
+        is_expert=True,
     )
 
     client_ip = request.client.host if request.client else "unknown"
@@ -113,4 +121,8 @@ def list_human_reviews(admin: AuthenticatedUser = Depends(require_admin_role)):
     """
     List all recorded human reviews.
     """
-    return quality_service.list_human_reviews()
+    try:
+        return quality_service.list_human_reviews()
+    except Exception as e:
+        log.error(f"Failed to list human reviews: {e}", exc_info=True)
+        raise HTTPException(status_code=503, detail="Human reviews service temporarily unavailable")

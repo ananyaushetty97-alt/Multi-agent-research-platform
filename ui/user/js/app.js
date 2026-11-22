@@ -1225,10 +1225,21 @@ document.addEventListener('DOMContentLoaded', () => {
     composerInput.value = '';
     autoResizeTextarea();
 
+    // Use a proper research prompt when only files are uploaded (no text)
+    // This avoids guardrail false positives from filenames
+    const hasText = text.trim().length > 0;
+    const hasFiles = attachments.length > 0;
+
+    const effectiveTopic = hasText
+      ? text
+      : (hasFiles
+        ? 'Analyze and summarize the uploaded documents'
+        : 'Uploaded File Research');
+
     if (welcomeScreen.style.display !== 'none') {
-      runPipeline(text || (attachments.length > 0 ? attachments[0].name : 'Uploaded File Research'));
+      runPipeline(effectiveTopic, attachments);
     } else {
-      appendFollowUpInStream(text || '(Attached file inquiry)', attachments);
+      appendFollowUpInStream(effectiveTopic, attachments);
     }
   }
 

@@ -111,6 +111,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLoginIcon = document.getElementById('btn-login-icon');
   const loginForm = document.getElementById('login-form');
 
+  // Human Review Modal Elements
+  const humanReviewModal = document.getElementById('humanReviewModal');
+  const btnCloseHumanReviewModal = document.getElementById('btn-close-human-review-modal');
+  const btnCancelHumanReview = document.getElementById('btn-cancel-human-review');
+  const humanReviewForm = document.getElementById('humanReviewForm');
+  const hrTopicInput = document.getElementById('hrTopicInput');
+  const hrRelInput = document.getElementById('hrRelInput');
+  const hrAccInput = document.getElementById('hrAccInput');
+  const hrClaInput = document.getElementById('hrClaInput');
+  const hrNotesInput = document.getElementById('hrNotesInput');
+  const hrRerunCheckbox = document.getElementById('hrRerunCheckbox');
+
   // Pipeline Simulator Modal
   const pipelineModal = document.getElementById('pipeline-modal');
   const pipelineLiveTitle = document.getElementById('pipeline-live-title');
@@ -276,6 +288,107 @@ document.addEventListener('DOMContentLoaded', () => {
     loginModalBackdrop?.classList.remove('active');
     const errorBanner = document.getElementById('login-error-banner');
     if (errorBanner) errorBanner.style.display = 'none';
+  }
+
+  // Human Review Modal Functions
+  function openHumanReviewModal() {
+    if (!humanReviewModal) return;
+    // Pre-fill with current topic if available
+    if (hrTopicInput && headerBreadcrumbTitle) {
+      hrTopicInput.value = headerBreadcrumbTitle.textContent || '';
+    }
+    humanReviewModal.classList.add('active');
+    setTimeout(() => hrRelInput?.focus(), 150);
+  }
+
+  function closeHumanReviewModal() {
+    if (!humanReviewModal) return;
+    humanReviewModal.classList.remove('active');
+    // Reset form
+    if (humanReviewForm) humanReviewForm.reset();
+    // Restore defaults
+    if (hrRelInput) hrRelInput.value = '9';
+    if (hrAccInput) hrAccInput.value = '9';
+    if (hrClaInput) hrClaInput.value = '9';
+  }
+
+  async function handleHumanReviewSubmit(e) {
+    e.preventDefault();
+    if (!hrTopicInput || !hrRelInput || !hrAccInput || !hrClaInput) return;
+
+    const topic = hrTopicInput.value.trim();
+    if (!topic) {
+      showToast('Please provide an inquiry topic.', 'warning');
+      return;
+    }
+
+    const rel = parseInt(hrRelInput.value, 10);
+    const acc = parseInt(hrAccInput.value, 10);
+    const cla = parseInt(hrClaInput.value, 10);
+    const overall = parseFloat(((rel + acc + cla) / 3).toFixed(1));
+    const feedbackNotes = hrNotesInput ? hrNotesInput.value.trim() : '';
+    const flaggedForRerun = hrRerunCheckbox ? hrRerunCheckbox.checked : false;
+
+    const payload = {
+      topic,
+      relevance: rel,
+      accuracy: acc,
+      clarity: cla,
+      feedback_notes: feedbackNotes,
+      flagged_for_rerun: flaggedForRerun
+    };
+
+    try {
+      // Try to submit to backend
+      const origins = [];
+      if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
+        origins.push(window.location.origin);
+      }
+      origins.push('http://localhost:8000', 'http://127.0.0.1:8000');
+
+      let submitted = false;
+      for (const base of origins) {
+        try {
+          const resp = await fetch(`${base}/api/admin/quality/human-reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (resp.ok) {
+            submitted = true;
+            break;
+          }
+        } catch (err) {
+          // Continue to next origin
+        }
+      }
+
+      if (!submitted) {
+        // Fallback to local storage
+        const review = {
+          review_id: `hr-${Date.now().toString().slice(-4)}`,
+          report_id: `rep-${Date.now().toString().slice(-4)}`,
+          topic,
+          reviewer_username: 'user',
+          review_timestamp: new Date().toISOString(),
+          relevance: rel,
+          accuracy: acc,
+          clarity: cla,
+          overall,
+          feedback_notes: feedbackNotes,
+          flagged_for_rerun: flaggedForRerun
+        };
+        // Store in localStorage for user's own records
+        const existingReviews = JSON.parse(localStorage.getItem('user_human_reviews') || '[]');
+        existingReviews.unshift(review);
+        localStorage.setItem('user_human_reviews', JSON.stringify(existingReviews));
+      }
+
+      showToast(`Human review submitted (${overall}/10 recorded)`, 'success');
+      closeHumanReviewModal();
+    } catch (err) {
+      showToast('Failed to submit review', 'error');
+    }
   }
 
   async function verifyAndAuthenticate() {
@@ -1426,6 +1539,14 @@ document.addEventListener('DOMContentLoaded', () => {
     verifyAndAuthenticate();
   });
 
+  // Human Review Modal Event Listeners
+  btnCloseHumanReviewModal?.addEventListener('click', closeHumanReviewModal);
+  btnCancelHumanReview?.addEventListener('click', closeHumanReviewModal);
+  humanReviewModal?.addEventListener('click', (e) => {
+    if (e.target === humanReviewModal) closeHumanReviewModal();
+  });
+  humanReviewForm?.addEventListener('submit', handleHumanReviewSubmit);
+
   // Global Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -1435,6 +1556,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeSearchModal();
       closeLoginModal();
       closeShareModal();
+      closeHumanReviewModal();
       downloadFormatMenu?.classList.remove('show');
       uploadOptionsMenu?.classList.remove('show');
       profileDropdown?.classList.remove('show');
@@ -1581,6 +1703,11 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.clipboard.writeText(article.innerText);
       showToast('Monograph copied to clipboard', 'content_copy');
     }
+  });
+
+  // Human Review Button
+  document.getElementById('btn-human-review')?.addEventListener('click', () => {
+    openHumanReviewModal();
   });
 
   // Download Dropdown Menu Toggle

@@ -1,4 +1,4 @@
-// admin-app.js: Interactive State & Live API Controller for the Multi-Agent Research Platform Admin Dashboard.
+﻿// admin-app.js: Interactive State & Live API Controller for the Multi-Agent Research Platform Admin Dashboard.
 // Connects directly to FastAPI admin routes (/api/admin/...) with automatic offline fallback to actual project dataset.
 
 (function () {
@@ -70,7 +70,7 @@
 
   // Indian Standard Time (IST) formatting helper
   function formatIST(isoStr, includeDate = true) {
-    if (!isoStr) return "—";
+    if (!isoStr) return "â€”";
     try {
       const d = new Date(isoStr);
       if (isNaN(d.getTime())) return isoStr;
@@ -648,12 +648,6 @@
       confirmExecuteBtn.addEventListener("click", executePendingDestructiveAction);
     }
 
-    const humanReviewForm = document.getElementById("humanReviewForm");
-    if (humanReviewForm) {
-      humanReviewForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        submitHumanReview();
-      });
     }
   }
 
@@ -790,9 +784,9 @@
       if (pidEl) pidEl.textContent = `${proc.pid}`;
       if (pyVerEl) pyVerEl.textContent = `Python ${proc.python_version || ""} (${proc.platform || ""})`.trim();
     } else {
-      if (uptimeEl) uptimeEl.textContent = "—";
-      if (pidEl) pidEl.textContent = "—";
-      if (pyVerEl) pyVerEl.textContent = "—";
+      if (uptimeEl) uptimeEl.textContent = "â€”";
+      if (pidEl) pidEl.textContent = "â€”";
+      if (pyVerEl) pyVerEl.textContent = "â€”";
     }
 
     for (const [key, dep] of Object.entries(deps)) {
@@ -800,7 +794,7 @@
       const statusPill = document.getElementById(`status-${key}`);
 
       if (rttEl) {
-        rttEl.textContent = dep.latency_ms !== null && dep.latency_ms !== undefined ? `${dep.latency_ms} ms` : "—";
+        rttEl.textContent = dep.latency_ms !== null && dep.latency_ms !== undefined ? `${dep.latency_ms} ms` : "â€”";
       }
       if (statusPill && dep.status) {
         const isHealthy = dep.status === "healthy";
@@ -869,12 +863,12 @@
     const tokensSubEl = document.getElementById("metricTokensSub");
 
     if (!m) {
-      if (p50El) p50El.textContent = "—";
-      if (p90El) p90El.textContent = "—";
-      if (p95El) p95El.textContent = "—";
-      if (p99El) p99El.textContent = "—";
-      if (avgEl) avgEl.textContent = "—";
-      if (minMaxEl) minMaxEl.textContent = "—";
+      if (p50El) p50El.textContent = "â€”";
+      if (p90El) p90El.textContent = "â€”";
+      if (p95El) p95El.textContent = "â€”";
+      if (p99El) p99El.textContent = "â€”";
+      if (avgEl) avgEl.textContent = "â€”";
+      if (minMaxEl) minMaxEl.textContent = "â€”";
       if (totalReqEl) totalReqEl.textContent = "0";
       if (errorRateEl) errorRateEl.textContent = "0.00%";
       if (cacheHitEl) cacheHitEl.textContent = "0.0%";
@@ -887,12 +881,12 @@
 
     const lat = m.latency || { p50_ms: 0, p90_ms: 0, p95_ms: 0, p99_ms: 0, avg_ms: 0, min_ms: 0, max_ms: 0 };
 
-    if (p50El) p50El.textContent = lat.p50_ms ? `${((lat.p50_ms || 0) / 1000).toFixed(2)}s` : "—";
-    if (p90El) p90El.textContent = lat.p90_ms ? `${((lat.p90_ms || 0) / 1000).toFixed(2)}s` : "—";
-    if (p95El) p95El.textContent = lat.p95_ms ? `${((lat.p95_ms || 0) / 1000).toFixed(2)}s` : "—";
-    if (p99El) p99El.textContent = lat.p99_ms ? `${((lat.p99_ms || 0) / 1000).toFixed(2)}s` : "—";
-    if (avgEl) avgEl.textContent = lat.avg_ms ? `${(lat.avg_ms || 0).toFixed(1)} ms` : "—";
-    if (minMaxEl) minMaxEl.textContent = lat.max_ms ? `${(lat.min_ms || 0).toFixed(0)}ms / ${(lat.max_ms || 0).toFixed(0)}ms` : "—";
+    if (p50El) p50El.textContent = lat.p50_ms ? `${((lat.p50_ms || 0) / 1000).toFixed(2)}s` : "â€”";
+    if (p90El) p90El.textContent = lat.p90_ms ? `${((lat.p90_ms || 0) / 1000).toFixed(2)}s` : "â€”";
+    if (p95El) p95El.textContent = lat.p95_ms ? `${((lat.p95_ms || 0) / 1000).toFixed(2)}s` : "â€”";
+    if (p99El) p99El.textContent = lat.p99_ms ? `${((lat.p99_ms || 0) / 1000).toFixed(2)}s` : "â€”";
+    if (avgEl) avgEl.textContent = lat.avg_ms ? `${(lat.avg_ms || 0).toFixed(1)} ms` : "â€”";
+    if (minMaxEl) minMaxEl.textContent = lat.max_ms ? `${(lat.min_ms || 0).toFixed(0)}ms / ${(lat.max_ms || 0).toFixed(0)}ms` : "â€”";
 
     if (totalReqEl) totalReqEl.textContent = (m.total_requests || 0).toLocaleString();
     if (errorRateEl) errorRateEl.textContent = `${(m.error_rate_pct || 0).toFixed(2)}%`;
@@ -979,7 +973,7 @@
       const durationSec = ((trace.duration_ms || 0) / 1000).toFixed(2);
       const scoreStr = trace.overall_score !== null && trace.overall_score !== undefined
         ? `${Number(trace.overall_score).toFixed(1)}/10`
-        : "—";
+        : "â€”";
 
       // Working model and fallback badge
       const workingModel = trace.actual_model || trace.model || "qwen/qwen3.8-27b";
@@ -998,7 +992,7 @@
               <span class="font-mono text-[11px] text-on-surface-variant font-medium bg-surface-container px-1.5 py-0.5 rounded" title="Active Working Model">${workingModel}</span>
               ${fallbackPill}
               <span class="font-mono text-primary font-semibold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded" title="Prompt: ${(trace.prompt_tokens || 0).toLocaleString()} | Completion: ${(trace.completion_tokens || 0).toLocaleString()}">
-                ${totalTok ? `${totalTok.toLocaleString()} tok` : "—"}
+                ${totalTok ? `${totalTok.toLocaleString()} tok` : "â€”"}
               </span>
             </div>
           </div>
@@ -1072,13 +1066,13 @@
 
     if (!trace) {
       if (titleEl) titleEl.textContent = "No Trace Selected";
-      if (idEl) idEl.textContent = "—";
+      if (idEl) idEl.textContent = "â€”";
       if (timeEl) timeEl.textContent = "0.00s";
-      if (modelEl) modelEl.textContent = "—";
-      if (modelBadge) modelBadge.textContent = "—";
-      if (fallbackBadge) fallbackBadge.textContent = "—";
-      if (tokensBadge) tokensBadge.textContent = "—";
-      if (costBadge) costBadge.textContent = "—";
+      if (modelEl) modelEl.textContent = "â€”";
+      if (modelBadge) modelBadge.textContent = "â€”";
+      if (fallbackBadge) fallbackBadge.textContent = "â€”";
+      if (tokensBadge) tokensBadge.textContent = "â€”";
+      if (costBadge) costBadge.textContent = "â€”";
       if (fallbackAlert) fallbackAlert.style.display = "none";
       if (processTokensSec) processTokensSec.style.display = "none";
       if (container) {
@@ -1094,7 +1088,7 @@
     }
 
     if (titleEl) titleEl.textContent = trace.topic_preview;
-    if (idEl) idEl.textContent = `${trace.request_id} • ${trace.session_id}`;
+    if (idEl) idEl.textContent = `${trace.request_id} â€¢ ${trace.session_id}`;
     if (timeEl) timeEl.textContent = `${((trace.duration_ms || 0) / 1000).toFixed(2)}s total`;
 
     // Active working model
@@ -1105,9 +1099,9 @@
     // Fallback status
     if (fallbackBadge) {
       if (trace.fallback_used) {
-        fallbackBadge.innerHTML = `<span style="color: #b45309; font-weight: 700;">⚠️ Fallback Triggered</span>`;
+        fallbackBadge.innerHTML = `<span style="color: #b45309; font-weight: 700;">âš ï¸ Fallback Triggered</span>`;
       } else {
-        fallbackBadge.innerHTML = `<span style="color: var(--primary); font-weight: 600;">✓ Primary Direct (${trace.provider || 'groq'})</span>`;
+        fallbackBadge.innerHTML = `<span style="color: var(--primary); font-weight: 600;">âœ“ Primary Direct (${trace.provider || 'groq'})</span>`;
       }
     }
 
@@ -1134,9 +1128,9 @@
       : "$0.00000";
     const scoreVal = trace.overall_score !== null && trace.overall_score !== undefined
       ? `${Number(trace.overall_score).toFixed(1)}/10`
-      : "—";
+      : "â€”";
     if (costBadge) {
-      costBadge.textContent = `${costUsd} • Score: ${scoreVal}`;
+      costBadge.textContent = `${costUsd} â€¢ Score: ${scoreVal}`;
     }
 
     // Process Token Accounting for Search, Summarize, Write, Verify, Router
@@ -1361,10 +1355,10 @@
     const failedCountEl = document.getElementById("qualityFailedCount");
 
     if (totalEl) totalEl.textContent = (q.total_records || 0).toLocaleString();
-    if (avgOverallEl) avgOverallEl.textContent = (q.average_overall !== null && q.average_overall !== undefined && q.average_overall > 0) ? `${Number(q.average_overall).toFixed(1)} / 10` : "—";
-    if (avgRelEl) avgRelEl.textContent = (q.average_relevance !== null && q.average_relevance !== undefined && q.average_relevance > 0) ? `${Number(q.average_relevance).toFixed(1)}` : "—";
-    if (avgAccEl) avgAccEl.textContent = (q.average_accuracy !== null && q.average_accuracy !== undefined && q.average_accuracy > 0) ? `${Number(q.average_accuracy).toFixed(1)}` : "—";
-    if (avgClaEl) avgClaEl.textContent = (q.average_clarity !== null && q.average_clarity !== undefined && q.average_clarity > 0) ? `${Number(q.average_clarity).toFixed(1)}` : "—";
+    if (avgOverallEl) avgOverallEl.textContent = (q.average_overall !== null && q.average_overall !== undefined && q.average_overall > 0) ? `${Number(q.average_overall).toFixed(1)} / 10` : "â€”";
+    if (avgRelEl) avgRelEl.textContent = (q.average_relevance !== null && q.average_relevance !== undefined && q.average_relevance > 0) ? `${Number(q.average_relevance).toFixed(1)}` : "â€”";
+    if (avgAccEl) avgAccEl.textContent = (q.average_accuracy !== null && q.average_accuracy !== undefined && q.average_accuracy > 0) ? `${Number(q.average_accuracy).toFixed(1)}` : "â€”";
+    if (avgClaEl) avgClaEl.textContent = (q.average_clarity !== null && q.average_clarity !== undefined && q.average_clarity > 0) ? `${Number(q.average_clarity).toFixed(1)}` : "â€”";
     if (truncCountEl) truncCountEl.textContent = `${q.suspected_truncated_count || 0}`;
     if (failedCountEl) failedCountEl.textContent = `${q.failed_grades || 0}`;
 
@@ -1394,17 +1388,17 @@
           statusBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold" title="' + (item.truncation_reason || "") + '">Truncation Suspected</span>';
         }
 
-        const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "—";
+        const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "â€”";
 
         tr.innerHTML = `
           <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate hover:text-primary transition-colors" title="${item.topic}">${item.topic}</td>
           <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
-          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
-          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
-          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "â€”"}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "â€”"}</td>
+          <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "â€”"}</td>
           <td class="px-space-md py-3">${statusBadge}</td>
           <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.comment || item.error_message || ''}">
-            ${item.comment || item.error_message || "—"}
+            ${item.comment || item.error_message || "â€”"}
           </td>
         `;
 
@@ -1426,104 +1420,11 @@
       });
     }
 
-    const openReviewBtn = document.getElementById("open-human-modal-btn");
-    if (openReviewBtn) {
-      openReviewBtn.onclick = openHumanReviewModal;
-    }
-  }
-
-  function openHumanReviewModal() {
-    closeAllModals();
-    const modal = document.getElementById("humanReviewModal");
-    if (modal) modal.classList.add("active");
-  }
-
-  async function submitHumanReview() {
-    const topicInput = document.getElementById("hrTopicInput");
-    const relInput = document.getElementById("hrRelInput");
-    const accInput = document.getElementById("hrAccInput");
-    const claInput = document.getElementById("hrClaInput");
-    const notesInput = document.getElementById("hrNotesInput");
-    const rerunInput = document.getElementById("hrRerunCheckbox");
-
-    if (!topicInput || !relInput || !accInput || !claInput) return;
-
-    const topic = topicInput.value.trim();
-    if (!topic) {
-      showToast("Please provide an inquiry topic.", "warning");
-      return;
-    }
-
-    const rel = parseInt(relInput.value, 10);
-    const acc = parseInt(accInput.value, 10);
-    const cla = parseInt(claInput.value, 10);
-    const overall = parseFloat(((rel + acc + cla) / 3).toFixed(1));
-    const feedbackNotes = notesInput ? notesInput.value.trim() : "";
-    const flaggedForRerun = rerunInput ? rerunInput.checked : false;
-
-    const payload = {
-      topic,
-      relevance: rel,
-      accuracy: acc,
-      clarity: cla,
-      feedback_notes: feedbackNotes,
-      flagged_for_rerun: flaggedForRerun
-    };
-
-    try {
-      if (isBackendConnected) {
-        const res = await apiRequest("/quality/human-reviews", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        if (res.ok) {
-          const createdReview = await res.json();
-          if (!state.quality.human_reviews) state.quality.human_reviews = [];
-          state.quality.human_reviews.unshift(createdReview);
-          state.quality.summary.human_reviews_count++;
-          showToast(`Human review saved to database (${overall}/10 recorded)`, "success");
-          fetchAudit();
-        } else {
-          throw new Error("Server rejected review submission");
-        }
-      } else {
-        throw new Error("Offline mode");
       }
-    } catch (e) {
-      const fallbackReview = {
-        review_id: `hr-${Date.now().toString().slice(-4)}`,
-        report_id: `rep-${Date.now().toString().slice(-4)}`,
-        topic,
-        reviewer_username: "admin",
-        review_timestamp: new Date().toISOString(),
-        relevance: rel,
-        accuracy: acc,
-        clarity: cla,
-        overall,
-        feedback_notes: feedbackNotes,
-        flagged_for_rerun: flaggedForRerun
-      };
-      if (!state.quality.human_reviews) state.quality.human_reviews = [];
-      state.quality.human_reviews.unshift(fallbackReview);
-      state.quality.summary.human_reviews_count++;
 
-      appendAuditLog({
-        action: "quality.human_review_add",
-        resource_type: "human_review",
-        resource_id: fallbackReview.review_id,
-        status: "success",
-        details: { topic, overall, flagged_for_rerun: flaggedForRerun }
-      });
-
-      showToast(`Human review recorded (${overall}/10 recorded)`, "success");
     }
 
-    closeAllModals();
-    renderQualityView();
-  }
-
+  
   // 5. Safety & Red-Team View
   function renderSafetyView() {
     const rt = state.safety.redteam || {
@@ -1539,7 +1440,7 @@
     const indirectEl = document.getElementById("safetyIndirectAttacks");
     const directEl = document.getElementById("safetyDirectAttacks");
 
-    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "—";
+    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "â€”";
     if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
     if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
     if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
@@ -1605,7 +1506,7 @@
 
           tr.innerHTML = `
             <td class="px-space-md py-3 font-mono text-primary text-label-sm font-semibold">${item.id}</td>
-            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} — Click to inspect process tokens in Traces">${item.topic}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} â€” Click to inspect process tokens in Traces">${item.topic}</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm font-mono">${item.sources_count || 0} sources</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
             <td class="px-space-md py-3 text-right">
@@ -1661,7 +1562,7 @@
 
           tr.innerHTML = `
             <td class="px-space-md py-3 font-mono text-label-sm text-outline">${item.entry_id}</td>
-            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} — Click to inspect process tokens in Traces">${item.topic}</td>
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate cursor-pointer hover:text-primary transition-colors" title="${item.topic} â€” Click to inspect process tokens in Traces">${item.topic}</td>
             <td class="px-space-md py-3 font-mono text-primary font-semibold text-label-sm">${ttlMin}m remaining</td>
             <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-md truncate">${item.preview}</td>
             <td class="px-space-md py-3 text-right">
@@ -1772,7 +1673,7 @@
           <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${timeDisplay}</td>
           <td class="px-space-md py-3 text-on-surface font-semibold">${log.actor_username}</td>
           <td class="px-space-md py-3">${actionBadge}</td>
-          <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "—"})</td>
+          <td class="px-space-md py-3 text-on-surface-variant">${log.resource_type} (${log.resource_id || "â€”"})</td>
           <td class="px-space-md py-3 text-primary uppercase font-bold">${log.status}</td>
           <td class="px-space-md py-3 text-outline">${log.client_ip || "127.0.0.1"}</td>
         `;
@@ -2202,7 +2103,6 @@
     switchTab,
     triggerSyntheticProbe,
     exportScoresData,
-    openHumanReviewModal,
     requestDestructiveConfirmation,
     openSwitchUserModal,
     verifyAndSwitchToUser,
@@ -2210,3 +2110,6 @@
     lockAdminSession
   };
 })();
+
+
+

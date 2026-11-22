@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import contextvars
 from typing import Dict, List, Any, Optional
 from groq import Groq
@@ -8,11 +9,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+log = logging.getLogger("gateway")
+
+def get_groq_model() -> str:
+    return os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
+
+def get_ollama_model() -> str:
+    return os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+
+GROQ_MODEL = get_groq_model()
+OLLAMA_MODEL = get_ollama_model()
+
+log.info("LLM Gateway initialized: GROQ_MODEL=%s, OLLAMA_MODEL=%s", GROQ_MODEL, OLLAMA_MODEL)
+
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 ollama_client = OllamaClient(host="http://localhost:11434")
-
-GROQ_MODEL = "qwen/qwen3.8-27b"      # check console.groq.com/docs/models — Groq renames/deprecates models occasionally
-OLLAMA_MODEL = "qwen2.5:7b"          # must match what you pulled with `ollama pull`
 
 # Request-scoped telemetry context variable
 _active_request_llm_telemetry: contextvars.ContextVar[Optional[List[Dict[str, Any]]]] = contextvars.ContextVar(
@@ -41,11 +52,13 @@ def get_llm_request_telemetry() -> Dict[str, Any]:
     - Cost estimation
     """
     calls = _active_request_llm_telemetry.get() or []
+    groq_mod = get_groq_model()
+    ollama_mod = get_ollama_model()
     if not calls:
         return {
             "provider": "groq",
-            "model": GROQ_MODEL,
-            "actual_model": GROQ_MODEL,
+            "model": groq_mod,
+            "actual_model": groq_mod,
             "fallback_used": False,
             "fallback_details": None,
             "prompt_tokens": 0,
@@ -62,13 +75,13 @@ def get_llm_request_telemetry() -> Dict[str, Any]:
 
     # Determine dominant/latest working model
     last_call = calls[-1]
-    actual_model = last_call.get("model", GROQ_MODEL)
+    actual_model = last_call.get("model", groq_mod)
     actual_provider = last_call.get("provider", "groq")
 
     fallback_details = None
     if any_fallback:
         reasons = [c.get("fallback_reason") for c in calls if c.get("fallback_reason")]
-        fallback_details = f"Groq ({GROQ_MODEL}) failed: {reasons[0] if reasons else 'Unspecified error'} -> Fallback to Ollama ({OLLAMA_MODEL})"
+        fallback_details = f"Groq ({groq_mod}) failed: {reasons[0] if reasons else 'Unspecified error'} -> Fallback to Ollama ({ollama_mod})"
 
     # Cost estimate (approx $0.05 per 1M tokens on Groq, $0.00 local Ollama)
     cost = 0.0
@@ -98,20 +111,21 @@ def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None
     if max_tokens is not None:
         actual_max = max_tokens
     elif "one word" in lower_p or "exactly the word" in lower_p or "classifier" in lower_s:
-        actual_max = 30
+        actual_max = 120
     elif "fact-checker" in lower_s or "verified" in lower_p:
-        actual_max = 150
+        actual_max = 200
     elif "summariz" in lower_s or "summarizer" in lower_s:
         actual_max = 350
     elif "judge" in lower_s or "grade" in lower_s:
-        actual_max = 200
+        actual_max = 250
     elif "editor" in lower_s or "modify" in lower_s or "writer" in lower_s:
         actual_max = 900
     else:
         actual_max = 600
 
+    active_groq_model = get_groq_model()
     response = groq_client.chat.completions.create(
-        model=GROQ_MODEL,
+        model=active_groq_model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
@@ -119,7 +133,10 @@ def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None
         temperature=0.3,
         max_tokens=actual_max,
     )
-    content = response.choices[0].message.content or ""
+    choice_msg = response.choices[0].message
+    content = choice_msg.content or ""
+    if not content.strip() and getattr(choice_msg, "reasoning", None):
+        content = choice_msg.reasoning or ""
     duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     # Token counting
@@ -130,7 +147,7 @@ def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None
 
     record_call_telemetry({
         "provider": "groq",
-        "model": GROQ_MODEL,
+        "model": active_groq_model,
         "fallback_used": False,
         "fallback_reason": None,
         "prompt_tokens": prompt_tokens,
@@ -145,8 +162,9 @@ def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None
 def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
     start_time = time.perf_counter()
     opts = {"num_predict": max_tokens} if max_tokens else None
+    active_ollama_model = get_ollama_model()
     response = ollama_client.chat(
-        model=OLLAMA_MODEL,
+        model=active_ollama_model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
@@ -162,7 +180,7 @@ def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str]
 
     record_call_telemetry({
         "provider": "ollama",
-        "model": OLLAMA_MODEL,
+        "model": active_ollama_model,
         "fallback_used": fallback_reason is not None,
         "fallback_reason": fallback_reason,
         "prompt_tokens": prompt_tokens,

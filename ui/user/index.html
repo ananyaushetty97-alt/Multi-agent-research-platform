@@ -504,6 +504,10 @@
                         <span class="material-symbols-outlined text-[16px]">refresh</span>
                         <span>Retry</span>
                       </button>
+                      <button class="btn-report-tool" id="btn-human-review" type="button" title="Submit Human Review">
+                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                        <span>Human Review</span>
+                      </button>
                       <!-- Multi-format Download Dropdown (.pdf, .doc, .txt) -->
                       <div class="download-dropdown-wrapper" id="download-dropdown-wrapper">
                         <button class="btn-report-tool btn-download-trigger" id="btn-dl-report" type="button" title="Download report">
@@ -876,6 +880,73 @@
           <span>Delete Conversation</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       HUMAN REVIEW SUBMISSION MODAL (User Portal)
+       ====================================================================== -->
+  <div class="modal-backdrop" id="humanReviewModal">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #ffffff;">
+            <span class="material-symbols-outlined text-[20px]">rate_review</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Submit Human Expert Review</h3>
+            <p class="login-modal-subtitle">Calibrate pipeline LLM-as-a-judge scoring with your ground truth assessment</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-human-review-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <form id="humanReviewForm" class="login-modal-body" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="hrTopicInput">Research Inquiry Topic</label>
+          <div class="form-input-wrapper">
+            <input id="hrTopicInput" type="text" class="form-input" placeholder="e.g. Impact of Microplastics on Marine Life" required />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label" for="hrRelInput">Relevance (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrRelInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hrAccInput">Accuracy (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrAccInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hrClaInput">Clarity (1-10)</label>
+            <div class="form-input-wrapper">
+              <input id="hrClaInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="hrNotesInput">Feedback Notes & Critique</label>
+          <textarea id="hrNotesInput" rows="3" class="form-input" style="height: auto; padding: 0.625rem; resize: vertical;" placeholder="Add qualitative critique on hallucinations, citations, gaps..."></textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input id="hrRerunCheckbox" type="checkbox" style="cursor: pointer;" />
+          <label for="hrRerunCheckbox" style="font-size: 0.75rem; color: var(--on-surface); cursor: pointer;">Flag inquiry for pipeline automated re-run</label>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+          <button type="button" class="btn-header-action" id="btn-cancel-human-review">Cancel</button>
+          <button type="submit" class="btn-new-inquiry" style="width: auto; padding: 0.5rem 1rem;">Submit Review</button>
+        </div>
+      </form>
     </div>
   </div>
 

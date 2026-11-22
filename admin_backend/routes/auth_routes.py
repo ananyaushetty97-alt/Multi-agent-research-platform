@@ -30,7 +30,9 @@ user_storage = InMemoryUserStorage()
 
 
 def seed_default_users_if_empty():
-    """Seed initial administrator and user accounts if storage is empty."""
+    """Seed initial administrator account if storage is empty.
+    Regular users should be created in the app_users table, not admin_users.
+    """
     if not user_storage.get_by_username("admin"):
         admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
         now = datetime.now(timezone.utc)
@@ -54,29 +56,6 @@ def seed_default_users_if_empty():
             "created_at": now,
         })
 
-    if not user_storage.get_by_username("user"):
-        user_pass = os.environ.get("USER_PASSWORD", "user123")
-        now = datetime.now(timezone.utc)
-        hashed_user = hash_password(user_pass, iterations=50_000)
-        user_storage.create_user({
-            "id": "user-1",
-            "username": "user",
-            "email": "user@platform.ai",
-            "hashed_password": hashed_user,
-            "role": "user",
-            "is_active": True,
-            "created_at": now,
-        })
-        user_storage.create_user({
-            "id": "user-alias",
-            "username": "user@platform.ai",
-            "email": "user@platform.ai",
-            "hashed_password": hashed_user,
-            "role": "user",
-            "is_active": True,
-            "created_at": now,
-        })
-
 
 seed_default_users_if_empty()
 
@@ -84,8 +63,9 @@ seed_default_users_if_empty()
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(rate_limit_guard)])
 def login(login_req: LoginRequest, request: Request):
     """
-    Authenticate an administrator or user and issue a signed bearer token.
+    Authenticate an administrator and issue a signed bearer token.
     Records successful and failed login attempts in the audit log.
+    Regular users authenticate via the user portal, not admin auth.
     """
     client_ip = request.client.host if request.client else "unknown"
     clean_username = (login_req.username or "").strip().lower()
@@ -95,9 +75,6 @@ def login(login_req: LoginRequest, request: Request):
     password_ok = verify_password(raw_password, user_record.get("hashed_password", "")) if user_record else False
     if not password_ok and user_record:
         password_ok = verify_password(raw_password.strip(), user_record.get("hashed_password", ""))
-    if not password_ok and user_record and user_record.get("role") == "user":
-        if raw_password.strip() in ("user123", "user1234", "user12345"):
-            password_ok = True
 
     if not user_record or not password_ok:
         # Audit failed login attempt

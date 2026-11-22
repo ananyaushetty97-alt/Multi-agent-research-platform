@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      // Try to submit to backend
+      // Try to submit to backend (user-facing endpoint)
       const origins = [];
       if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
         origins.push(window.location.origin);
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let submitted = false;
       for (const base of origins) {
         try {
-          const resp = await fetch(`${base}/api/admin/quality/human-reviews`, {
+          const resp = await fetch(`${base}/quality/human-reviews`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(payload)

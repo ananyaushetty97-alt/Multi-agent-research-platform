@@ -24,6 +24,7 @@ from admin_backend.router import admin_router
 from admin_backend.services.trace_service import trace_service
 from admin_backend.services.metrics_service import metrics_service
 from admin_backend.services.safety_service import safety_service
+from admin_backend.services.quality_service import quality_service
 from admin_backend.models.traces import (
     RequestOutcome,
     AgentStepRecord,
@@ -31,6 +32,7 @@ from admin_backend.models.traces import (
     AgentStepStatus,
 )
 from admin_backend.models.safety import GuardCheckType
+from admin_backend.models.quality import HumanReviewScore
 from gateway.llm_gateway import start_llm_request_session, get_llm_request_telemetry
 
 log = logging.getLogger("api")
@@ -444,6 +446,52 @@ def generate(req: TopicRequest, request: Request):
 def scores(limit: int = 20):
     """Recent grading results."""
     return score_history(limit)
+
+
+class UserHumanReviewRequest(BaseModel):
+    topic: str
+    relevance: int = Field(..., ge=1, le=10)
+    accuracy: int = Field(..., ge=1, le=10)
+    clarity: int = Field(..., ge=1, le=10)
+    report_id: str | None = None
+    feedback_notes: str | None = Field(None, max_length=1000)
+    flagged_for_rerun: bool = False
+
+
+@app.post("/quality/human-reviews", response_model=HumanReviewScore)
+def create_user_human_review(review_req: UserHumanReviewRequest, request: Request):
+    """
+    Submit a human evaluation review for a generated report.
+    User-facing endpoint (no admin auth required).
+    """
+    # Use "user" as reviewer since this is from user portal
+    review = quality_service.add_human_review(
+        topic=review_req.topic,
+        reviewer_username="user",
+        relevance=review_req.relevance,
+        accuracy=review_req.accuracy,
+        clarity=review_req.clarity,
+        report_id=review_req.report_id,
+        feedback_notes=review_req.feedback_notes,
+        flagged_for_rerun=review_req.flagged_for_rerun,
+    )
+
+    # Audit log for user human review submission
+    client_ip = request.client.host if request.client else "unknown"
+    from admin_backend.services.audit_service import audit_service
+    from admin_backend.models.audit import AuditAction
+    audit_service.log_action(
+        actor_username="user",
+        actor_role="user",
+        action=AuditAction.HUMAN_REVIEW_ADD,
+        resource_type="human_review",
+        resource_id=review.review_id,
+        status="success",
+        details={"topic": review_req.topic, "overall": review.overall},
+        client_ip=client_ip,
+    )
+
+    return review
 
 
 # ---------------------------------------------------------------------------

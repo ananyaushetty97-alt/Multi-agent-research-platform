@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Observability Suite — Research Hub</title>
+  <title>Admin Observability Suite â€” Research Hub</title>
   <meta name="description" content="Granular diagnostics, telemetry, LangGraph 4-agent traces, quality scoring, safety red-teaming, and memory controls."/>
 
   <!-- Google Typography: Inter (UI), Newsreader (Editorial Serif), JetBrains Mono (Metrology) -->
@@ -319,7 +319,7 @@
                 </div>
                 <div class="probe-metrology-row">
                   <span style="color: var(--outline);">RTT Ping:</span>
-                  <span id="rtt-redis" class="probe-latency-val">—</span>
+                  <span id="rtt-redis" class="probe-latency-val">â€”</span>
                 </div>
               </div>
 
@@ -338,7 +338,7 @@
                 </div>
                 <div class="probe-metrology-row">
                   <span style="color: var(--outline);">RTT Ping:</span>
-                  <span id="rtt-postgres" class="probe-latency-val">—</span>
+                  <span id="rtt-postgres" class="probe-latency-val">â€”</span>
                 </div>
               </div>
 
@@ -357,7 +357,7 @@
                 </div>
                 <div class="probe-metrology-row">
                   <span style="color: var(--outline);">API RTT:</span>
-                  <span id="rtt-groq" class="probe-latency-val">—</span>
+                  <span id="rtt-groq" class="probe-latency-val">â€”</span>
                 </div>
               </div>
 
@@ -376,7 +376,7 @@
                 </div>
                 <div class="probe-metrology-row">
                   <span style="color: var(--outline);">Socket RTT:</span>
-                  <span id="rtt-ollama" class="probe-latency-val">—</span>
+                  <span id="rtt-ollama" class="probe-latency-val">â€”</span>
                 </div>
               </div>
 
@@ -395,7 +395,7 @@
                 </div>
                 <div class="probe-metrology-row">
                   <span style="color: var(--outline);">Search RTT:</span>
-                  <span id="rtt-tavily" class="probe-latency-val">—</span>
+                  <span id="rtt-tavily" class="probe-latency-val">â€”</span>
                 </div>
               </div>
             </div>
@@ -409,18 +409,18 @@
               </div>
               <div>
                 <span class="process-stat-label">Active Server Process</span>
-                <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--on-surface); margin-top: 2px;" id="healthPythonDisplay">—</h4>
+                <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--on-surface); margin-top: 2px;" id="healthPythonDisplay">â€”</h4>
               </div>
             </div>
 
             <div class="process-tiles-cluster">
               <div class="process-stat-tile">
                 <span class="process-stat-label">Process PID</span>
-                <span class="process-stat-val" id="healthPidDisplay">—</span>
+                <span class="process-stat-val" id="healthPidDisplay">â€”</span>
               </div>
               <div class="process-stat-tile">
                 <span class="process-stat-label">Uptime</span>
-                <span class="process-stat-val" id="healthUptimeDisplay" style="color: var(--primary);">—</span>
+                <span class="process-stat-val" id="healthUptimeDisplay" style="color: var(--primary);">â€”</span>
               </div>
               <div class="process-stat-tile">
                 <span class="process-stat-label">Failure Budget</span>
@@ -495,27 +495,27 @@
             <div class="metric-tiles-grid">
               <div class="metric-tile">
                 <span class="metric-tile-label">P50 (Median)</span>
-                <span class="metric-tile-number" id="metricP50">—</span>
+                <span class="metric-tile-number" id="metricP50">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">P90</span>
-                <span class="metric-tile-number" id="metricP90">—</span>
+                <span class="metric-tile-number" id="metricP90">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">P95</span>
-                <span class="metric-tile-number accent" id="metricP95">—</span>
+                <span class="metric-tile-number accent" id="metricP95">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">P99</span>
-                <span class="metric-tile-number warning" id="metricP99">—</span>
+                <span class="metric-tile-number warning" id="metricP99">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">Average</span>
-                <span class="metric-tile-number" id="metricAvg">—</span>
+                <span class="metric-tile-number" id="metricAvg">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">Min / Max</span>
-                <span class="metric-tile-number" id="metricMinMax" style="font-size: 0.9375rem;">—</span>
+                <span class="metric-tile-number" id="metricMinMax" style="font-size: 0.9375rem;">â€”</span>
               </div>
             </div>
           </div>
@@ -579,31 +579,31 @@
               <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="sidebar-admin-tag">Execution Waterfall</span>
-                  <span id="waterfallDuration" style="font-family: var(--font-mono); font-weight: 700; color: var(--primary); font-size: 0.8125rem;">—</span>
+                  <span id="waterfallDuration" style="font-family: var(--font-mono); font-weight: 700; color: var(--primary); font-size: 0.8125rem;">â€”</span>
                 </div>
                 <h3 id="waterfallTopicTitle" style="font-size: 1.0625rem; font-weight: 600; color: var(--on-surface); margin-top: 2px;">No Trace Selected</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--outline);">
-                  <span id="waterfallRequestId">—</span>
-                  <span id="waterfallModel">—</span>
+                  <span id="waterfallRequestId">â€”</span>
+                  <span id="waterfallModel">â€”</span>
                 </div>
 
                 <!-- Detailed Model, Fallback & Token Telemetry Box -->
                 <div id="waterfallDiagnosticsCard" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 0.6875rem;">
                   <div style="display: flex; flex-direction: column; gap: 2px;">
                     <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Active Model</span>
-                    <span id="waterfallModelBadge" style="font-weight: 600; color: var(--on-surface); word-break: break-all;">—</span>
+                    <span id="waterfallModelBadge" style="font-weight: 600; color: var(--on-surface); word-break: break-all;">â€”</span>
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
                     <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Fallback Status</span>
-                    <span id="waterfallFallbackBadge" style="font-weight: 600; color: var(--primary);">—</span>
+                    <span id="waterfallFallbackBadge" style="font-weight: 600; color: var(--primary);">â€”</span>
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
                     <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Tokens Consumed</span>
-                    <span id="waterfallTokensBadge" style="font-weight: 600; color: var(--primary);">—</span>
+                    <span id="waterfallTokensBadge" style="font-weight: 600; color: var(--primary);">â€”</span>
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
                     <span style="color: var(--outline); text-transform: uppercase; font-size: 0.625rem;">Est. Cost / Score</span>
-                    <span id="waterfallCostBadge" style="font-weight: 600; color: var(--on-surface);">—</span>
+                    <span id="waterfallCostBadge" style="font-weight: 600; color: var(--on-surface);">â€”</span>
                   </div>
                 </div>
 
@@ -654,9 +654,9 @@
                 Continuous automated evaluation scores ingested from <code style="font-family: var(--font-mono); color: var(--primary);">logs/scores.jsonl</code> with human reviewer calibration.
               </p>
             </div>
-            <button class="btn-new-inquiry" id="open-human-modal-btn" type="button" style="padding: 0.5rem 1rem; width: auto;">
-              <span class="material-symbols-outlined text-[18px]">add_task</span>
-              <span>Submit Human Review</span>
+            <button class="btn-header-action" onclick="AdminController.exportScoresData('json')" type="button" style="padding: 0.5rem 1rem; width: auto;">
+              <span class="material-symbols-outlined text-[18px]">data_object</span>
+              <span>Export Scores</span>
             </button>
           </div>
 
@@ -664,19 +664,19 @@
           <div class="metric-tiles-grid">
             <div class="metric-tile">
               <span class="metric-tile-label">Average Overall</span>
-              <span class="metric-tile-number accent" id="qualityAvgOverall">—</span>
+              <span class="metric-tile-number accent" id="qualityAvgOverall">â€”</span>
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Relevance</span>
-              <span class="metric-tile-number" id="qualityAvgRelevance">—</span>
+              <span class="metric-tile-number" id="qualityAvgRelevance">â€”</span>
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Accuracy</span>
-              <span class="metric-tile-number" id="qualityAvgAccuracy">—</span>
+              <span class="metric-tile-number" id="qualityAvgAccuracy">â€”</span>
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Clarity</span>
-              <span class="metric-tile-number" id="qualityAvgClarity">—</span>
+              <span class="metric-tile-number" id="qualityAvgClarity">â€”</span>
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Truncations</span>
@@ -744,7 +744,7 @@
             <div class="summary-tiles-grid">
               <div class="metric-tile">
                 <span class="metric-tile-label">Defense Rate</span>
-                <span class="metric-tile-number accent" id="safetyDefenseRate">—</span>
+                <span class="metric-tile-number accent" id="safetyDefenseRate">â€”</span>
               </div>
               <div class="metric-tile">
                 <span class="metric-tile-label">Attacks Defended</span>
@@ -1004,71 +1004,6 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 2: HUMAN REVIEW SUBMISSION ==================== -->
-  <div class="modal-backdrop" id="humanReviewModal">
-    <div class="modal-dialog" style="max-width: 560px;">
-      <div class="login-modal-header">
-        <div class="login-brand-group">
-          <div class="brand-icon" style="background-color: var(--primary-container); color: #ffffff;">
-            <span class="material-symbols-outlined text-[20px]">rate_review</span>
-          </div>
-          <div>
-            <h3 class="login-modal-title">Submit Human Expert Review</h3>
-            <p class="login-modal-subtitle">Calibrate pipeline LLM-as-a-judge scoring with ground truth</p>
-          </div>
-        </div>
-        <button class="icon-btn" data-close-modal type="button" title="Close">
-          <span class="material-symbols-outlined text-[18px]">close</span>
-        </button>
-      </div>
-
-      <form id="humanReviewForm" class="login-modal-body" onsubmit="return false;">
-        <div class="form-group">
-          <label class="form-label" for="hrTopicInput">Research Inquiry Topic</label>
-          <div class="form-input-wrapper">
-            <input id="hrTopicInput" type="text" class="form-input" placeholder="e.g. Quantum Error Mitigation Review" required />
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
-          <div class="form-group">
-            <label class="form-label" for="hrRelInput">Relevance (1-10)</label>
-            <div class="form-input-wrapper">
-              <input id="hrRelInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="hrAccInput">Accuracy (1-10)</label>
-            <div class="form-input-wrapper">
-              <input id="hrAccInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="hrClaInput">Clarity (1-10)</label>
-            <div class="form-input-wrapper">
-              <input id="hrClaInput" type="number" min="1" max="10" step="0.5" value="9" class="form-input" required />
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="hrNotesInput">Feedback Notes &amp; Critique</label>
-          <textarea id="hrNotesInput" rows="3" class="form-input" style="height: auto; padding: 0.625rem; resize: vertical;" placeholder="Add qualitative critique on hallucinations, citations..."></textarea>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <input id="hrRerunCheckbox" type="checkbox" style="cursor: pointer;" />
-          <label for="hrRerunCheckbox" style="font-size: 0.75rem; color: var(--on-surface); cursor: pointer;">Flag inquiry for pipeline automated re-run</label>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-          <button data-close-modal class="btn-header-action" type="button">Cancel</button>
-          <button type="submit" class="btn-new-inquiry" style="width: auto; padding: 0.5rem 1rem;">Submit Review</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- ==================== MODAL 3: PASSWORD VERIFICATION TO SWITCH TO USER MODE ==================== -->
   <div class="modal-backdrop" id="switch-user-modal">
     <div class="modal-dialog login-dialog">
@@ -1151,3 +1086,4 @@
   <script src="js/admin-app.js?v=20261104.2" defer></script>
 </body>
 </html>
+

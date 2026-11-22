@@ -36,6 +36,40 @@ const RP = (() => {
     return data; // { session_id, intent, report, sources, cached, score, seconds }
   }
 
+  // ---------- backend call with file uploads ----------
+  async function generateWithFiles(text, files, signal) {
+    let res;
+    const formData = new FormData();
+    formData.append("topic", text);
+    if (sessionId) formData.append("session_id", sessionId);
+    formData.append("grade", "true");
+
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    try {
+      res = await fetch(API_BASE + "/generate-with-files", {
+        method: "POST",
+        body: formData,
+        signal,
+      });
+    } catch (e) {
+      if (e.name === "AbortError") throw e;
+      throw Object.assign(new Error("Can\u2019t reach the server."), { status: 0 });
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      let msg = "Something went wrong. Please try again.";
+      if (res.status === 503) msg = "The AI service is temporarily unavailable. Please try again.";
+      else if ((res.status === 400 || res.status === 422) && typeof data.detail === "string") msg = data.detail;
+      throw Object.assign(new Error(msg), { status: res.status });
+    }
+    sessionId = data.session_id;
+    saveTurn(text, data);
+    return data;
+  }
+
   async function health() {
     try { return (await fetch(API_BASE + "/health")).ok; } catch (e) { return false; }
   }
@@ -112,5 +146,5 @@ const RP = (() => {
     return (String(report).split("\n## Sources")[0].match(new RegExp("\\[" + n + "\\]", "g")) || []).length;
   }
 
-  return { baseUrl: API_BASE, currentId: () => sessionId, generate, health, newChat, openChat, listChats, getChat, renameChat, deleteChat, search, sourceInfo, citationCount };
+  return { baseUrl: API_BASE, currentId: () => sessionId, generate, generateWithFiles, health, newChat, openChat, listChats, getChat, renameChat, deleteChat, search, sourceInfo, citationCount };
 })();

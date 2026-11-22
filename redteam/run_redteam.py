@@ -1,7 +1,7 @@
 """
 Red-team harness (PyRIT) for the REAL research pipeline.
 
-Based on Ryan's original run_xpia.py idea (payload list + PyRIT target +
+Based on  original run_xpia.py idea (payload list + PyRIT target +
 results table), rewritten to attack our actual code instead of a mock:
 
     poisoned search result  ->  real Summarize -> Write -> Verify agents

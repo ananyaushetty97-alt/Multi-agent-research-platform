@@ -3,13 +3,16 @@ API routes for user chats and report reviews.
 Enforces strict user ownership, CSRF protection, and isolation.
 """
 
+import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from user_auth.dependencies import get_current_user, require_csrf_protection
+from user_auth.dependencies import get_current_user, get_optional_user, require_csrf_protection
 from user_auth.models import UserResponse
 from user_auth.chat_storage import get_chat_review_storage
+
+log = logging.getLogger("user_auth.chat_routes")
 
 router = APIRouter(tags=["User Chats & Reviews"])
 
@@ -130,15 +133,21 @@ def delete_user_chat(
 )
 def create_or_update_review(
     req: ReviewCreateRequest,
-    user: UserResponse = Depends(get_current_user),
+    request: Request,
+    user: Optional[UserResponse] = Depends(get_optional_user),
 ):
     """
     Rate and review a research monograph (1-10 scores, optional <= 1000 char comment).
-    One review per user per report via upsert.
+    One review per user per report via upsert. Supports both logged-in and guest user mode.
     """
+    DEFAULT_GUEST_USER_ID = "be7bb556-cc84-4d2d-b6e9-792bc0bc9881"
+    user_id = str(user.id) if user else DEFAULT_GUEST_USER_ID
+    username = (user.username or user.email) if user else "guest"
+    user_email = user.email if user else "guest@platform.ai"
+
     storage = get_chat_review_storage()
-    return storage.upsert_review(
-        user_id=str(user.id),
+    review = storage.upsert_review(
+        user_id=user_id,
         report_id=req.report_id.strip(),
         relevance=req.relevance,
         accuracy=req.accuracy,
@@ -148,6 +157,50 @@ def create_or_update_review(
         session_id=req.session_id,
     )
 
+    # Log user activity so admin can monitor review submissions in User Activity Logs
+    try:
+        from admin_backend.services.audit_service import audit_service
+        from admin_backend.models.audit import UserActivityAction
+        client_ip = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent")
+        audit_service.log_user_activity(
+            session_id=str(review.get("session_id") or req.session_id or "review"),
+            username=username,
+            email=user_email,
+            action=UserActivityAction.REPORT_VIEW,
+            topic=f"Review [{req.relevance}/{req.accuracy}/{req.clarity}]: {req.topic or req.report_id}",
+            status="success",
+            details={
+                "report_id": req.report_id,
+                "relevance": req.relevance,
+                "accuracy": req.accuracy,
+                "clarity": req.clarity,
+                "comment": (req.comment[:120] + "...") if req.comment and len(req.comment) > 120 else req.comment,
+            },
+            client_ip=client_ip,
+            user_agent=user_agent,
+        )
+    except Exception as e:
+        log.warning(f"Could not log user activity for review: {e}")
+
+    # Record review in quality_service so admin Quality overview & human review feed reflect it
+    try:
+        from admin_backend.services.quality_service import quality_service
+        quality_service.add_human_review(
+            topic=req.topic or f"Report {req.report_id}",
+            reviewer_username=username,
+            relevance=req.relevance,
+            accuracy=req.accuracy,
+            clarity=req.clarity,
+            report_id=req.report_id,
+            feedback_notes=req.comment,
+            flagged_for_rerun=False,
+        )
+    except Exception as e:
+        log.warning(f"Could not record review in quality_service: {e}")
+
+    return review
+
 
 @router.get("/reviews/mine", response_model=List[Dict[str, Any]])
 def list_my_reviews(
@@ -156,6 +209,13 @@ def list_my_reviews(
     """List all monograph reviews submitted by the authenticated user."""
     storage = get_chat_review_storage()
     return storage.list_user_reviews(str(user.id))
+
+
+@router.get("/reviews", response_model=List[Dict[str, Any]])
+def list_all_reviews(limit: int = 100):
+    """List recent monograph reviews across all generated reports."""
+    storage = get_chat_review_storage()
+    return storage.list_all_reviews(limit=limit)
 
 
 @router.get("/reviews/{report_id}", response_model=Dict[str, Any])

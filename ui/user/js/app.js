@@ -1044,7 +1044,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   function turnFrom(user, d) {
-    return { user, intent: d.intent, report: d.report, sources: d.sources || [], cached: !!d.cached, score: d.score || null, seconds: d.seconds };
+    return {
+      id: d.report_id || d.id || ('rep-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6)),
+      user,
+      intent: d.intent,
+      report: d.report,
+      sources: d.sources || [],
+      cached: !!d.cached,
+      score: d.score || null,
+      seconds: d.seconds
+    };
   }
   function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
   function fmtDate(ts) { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -1096,6 +1105,67 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof turn.seconds === 'number') d.append(mk(turn.seconds.toFixed(1) + ' s'));
     return d;
   }
+
+  function createReportQualityScorecard(score) {
+    if (!score || score.overall == null) return document.createDocumentFragment();
+    const wrap = document.createElement('div');
+    wrap.className = 'user-report-eval-card';
+    wrap.style.cssText = 'margin-top: 1.5rem; padding: 1.15rem 1.35rem; background: var(--surface-container-low, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);';
+    
+    const rel = score.relevance != null ? score.relevance : '—';
+    const acc = score.accuracy != null ? score.accuracy : '—';
+    const cla = score.clarity != null ? score.clarity : '—';
+    const ovr = Number(score.overall).toFixed(1);
+    
+    wrap.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(2, 132, 199, 0.12); display: flex; align-items: center; justify-content: center; color: #0284c7;">
+            <span class="material-symbols-outlined text-[17px]">gavel</span>
+          </div>
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--on-surface, #0f172a);">Automated Quality Evaluation (LLM-as-a-Judge)</div>
+            <div style="font-size: 0.72rem; color: var(--on-surface-variant, #64748b);">Calibrated pipeline rubrics: relevance, accuracy, and clarity</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 3px; background: rgba(2, 132, 199, 0.1); padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(2, 132, 199, 0.2);">
+          <span style="font-size: 1.05rem; font-weight: 800; color: #0284c7;">${ovr}</span>
+          <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">/ 10</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 0.75rem;">
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
+            <span>Relevance</span>
+            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${rel} / 10</span>
+          </div>
+          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
+            <div style="height: 100%; width: ${(score.relevance || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
+            <span>Accuracy</span>
+            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${acc} / 10</span>
+          </div>
+          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
+            <div style="height: 100%; width: ${(score.accuracy || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--on-surface-variant, #64748b); margin-bottom: 4px;">
+            <span>Clarity</span>
+            <span style="font-weight: 600; color: var(--on-surface, #0f172a);">${cla} / 10</span>
+          </div>
+          <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 999px; overflow: hidden;">
+            <div style="height: 100%; width: ${(score.clarity || 0) * 10}%; background: #0284c7; border-radius: 999px;"></div>
+          </div>
+        </div>
+      </div>
+      ${score.comment ? `<div style="font-size: 0.78rem; color: var(--on-surface-variant, #475569); line-height: 1.4; background: rgba(2, 132, 199, 0.04); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #0284c7; font-style: italic;">"${escapeHTML(score.comment)}"</div>` : ''}
+    `;
+    return wrap;
+  }
   function fillScore(score) {
     const ok = score && score.overall != null;
     const root = document.getElementById('admin-eval-scorecard');
@@ -1130,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     p.textContent = e.name === 'AbortError' ? 'Request cancelled.' : e.message;
     d.append(p); return d;
   }
-  function createReportActionBar(articleEl) {
+  function createReportActionBar(articleEl, turn) {
     const bar = document.createElement('div');
     bar.className = 'report-action-bar';
     bar.style.marginTop = '1rem';
@@ -1179,7 +1249,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     reviewBtn?.addEventListener('click', () => {
-      openReviewModal(RP.currentId() || 'report-' + Date.now(), RP.currentId(), null);
+      const reportId = turn?.id || (turn?.created ? 'rep-' + turn.created : 'report-' + Date.now());
+      const topic = turn?.user || turn?.topic || 'Research Monograph';
+      openReviewModal(reportId, RP.currentId(), topic, reviewBtn);
     });
 
     trigger.addEventListener('click', (e) => {
@@ -1223,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const head = document.createElement('header'); head.className = 'article-header';
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h); art.append(head, badgesEl(turn), parts.node);
-    container.append(art, createReportActionBar(art));
+    container.append(art, createReportActionBar(art, turn));
     return container;
   }
   function assistantHolder(turn) {
@@ -1242,6 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // First turn goes into the existing static layout (keeps copy / download / retry bar)
   function showTurnInSlot(turn, when) {
+    state.currentMainTurn = turn;
     welcomeScreen.style.display = 'none';
     conversationStream.style.display = 'flex';
     dynamicFollowups.innerHTML = '';
@@ -1254,6 +1327,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h);
     art.replaceChildren(head, badgesEl(turn), parts.node);
+
+    // Wire up main review button
+    const mainRevBtn = document.getElementById('btn-review-main-report');
+    if (mainRevBtn) {
+      mainRevBtn.onclick = () => {
+        const t = state.currentMainTurn || turn;
+        const reportId = t?.id || (t?.created ? 'rep-' + t.created : 'report-' + Date.now());
+        const topic = t?.user || t?.topic || 'Research Monograph';
+        openReviewModal(reportId, RP.currentId(), topic, mainRevBtn);
+      };
+    }
+
     updateHeaderSourcesBadge((turn.sources || []).length);
     if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = parts.title || turn.user;
     if (window.innerWidth <= 768) setSidebarState(false);
@@ -2471,6 +2556,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const reviewForm = document.getElementById('review-form');
   const reviewReportIdInput = document.getElementById('review-report-id');
   const reviewSessionIdInput = document.getElementById('review-session-id');
+  const reviewTopicInput = document.getElementById('review-topic');
+  const reviewModalSubtitle = document.getElementById('review-modal-subtitle');
+  let activeReviewTargetBtn = null;
   const reviewRelevanceInput = document.getElementById('review-relevance');
   const reviewAccuracyInput = document.getElementById('review-accuracy');
   const reviewClarityInput = document.getElementById('review-clarity');
@@ -2493,15 +2581,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reviewCommentCount) reviewCommentCount.textContent = (reviewCommentInput.value || '').length + '/1000';
   });
 
-  function openReviewModal(reportId, sId) {
-    const user = RP.getCurrentUser();
-    if (!user) {
-      showToast('Sign in to review reports', 'info');
-      openAuthModal('login');
-      return;
-    }
+  function openReviewModal(reportId, sId, topic, targetBtn) {
+    activeReviewTargetBtn = targetBtn || null;
     if (reviewReportIdInput) reviewReportIdInput.value = reportId || (RP.currentId() || 'report-' + Date.now());
     if (reviewSessionIdInput) reviewSessionIdInput.value = sId || RP.currentId() || '';
+    if (reviewTopicInput) reviewTopicInput.value = topic || '';
+    if (reviewModalSubtitle) reviewModalSubtitle.textContent = topic ? 'Rating Monograph: ' + topic : 'Help improve multi-agent synthesis quality';
     if (reviewCommentInput) reviewCommentInput.value = '';
     if (reviewCommentCount) reviewCommentCount.textContent = '0/1000';
     if (reviewRelevanceInput) reviewRelevanceInput.value = '8';
@@ -2511,11 +2596,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reviewAccuracyVal) reviewAccuracyVal.textContent = '8/10';
     if (reviewClarityVal) reviewClarityVal.textContent = '9/10';
 
-    reviewModalBackdrop?.classList.add('active');
+    const modal = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    if (modal) {
+      modal.classList.add('active');
+      modal.style.display = 'flex';
+    }
   }
 
   function closeReviewModal() {
-    reviewModalBackdrop?.classList.remove('active');
+    const modal = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
   }
 
   btnCloseReviewModal?.addEventListener('click', closeReviewModal);
@@ -2524,26 +2617,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === reviewModalBackdrop) closeReviewModal();
   });
 
+  const btnReviewMainInit = document.getElementById('btn-review-main-report');
+  btnReviewMainInit?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const t = state.currentMainTurn;
+    const reportId = t?.id || (t?.created ? 'rep-' + t.created : 'report-' + Date.now());
+    const topic = t?.user || t?.topic || (headerBreadcrumbTitle ? headerBreadcrumbTitle.textContent : 'Research Monograph');
+    openReviewModal(reportId, RP.currentId(), topic, btnReviewMainInit);
+  });
+
   reviewForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const user = RP.getCurrentUser();
-    if (!user) {
-      showToast('Sign in to review reports', 'info');
-      closeReviewModal();
-      openAuthModal('login');
-      return;
-    }
 
     const reportId = reviewReportIdInput?.value || RP.currentId() || 'report-' + Date.now();
     const sId = reviewSessionIdInput?.value || RP.currentId() || null;
+    const topic = reviewTopicInput?.value || null;
     const relevance = parseInt(reviewRelevanceInput?.value || '8', 10);
     const accuracy = parseInt(reviewAccuracyInput?.value || '8', 10);
     const clarity = parseInt(reviewClarityInput?.value || '9', 10);
     const comment = (reviewCommentInput?.value || '').trim();
 
     try {
-      await RP.reviews.submit(reportId, { relevance, accuracy, clarity }, comment, null, sId);
+      await RP.reviews.submit(reportId, { relevance, accuracy, clarity }, comment, topic, sId);
       closeReviewModal();
+      if (activeReviewTargetBtn) {
+        const avg = ((relevance + accuracy + clarity) / 3).toFixed(1);
+        const span = activeReviewTargetBtn.querySelector('span:last-child');
+        if (span) span.textContent = `Reviewed (${avg}/10)`;
+        activeReviewTargetBtn.disabled = true;
+        activeReviewTargetBtn.style.opacity = '0.75';
+      }
       showToast('Review submitted successfully!', 'check_circle');
     } catch (err) {
       showToast(err.message || 'Could not submit review', 'error');

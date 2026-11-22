@@ -76,6 +76,10 @@ class ChatReviewStorageInterface(ABC):
     def list_user_reviews(self, user_id: str) -> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def list_all_reviews(self, limit: int = 100) -> List[Dict[str, Any]]:
+        pass
+
 
 class InMemoryChatReviewStorage(ChatReviewStorageInterface):
     def __init__(self):
@@ -209,6 +213,15 @@ class InMemoryChatReviewStorage(ChatReviewStorageInterface):
             matched = [dict(r) for r in self._reviews.values() if r["user_id"] == user_str]
             matched.sort(key=lambda r: r["created_at"], reverse=True)
             return matched
+
+    def list_all_reviews(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self._lock:
+            all_revs = [dict(r) for r in self._reviews.values()]
+            all_revs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+            for r in all_revs:
+                r["overall"] = round((r.get("relevance", 8) + r.get("accuracy", 8) + r.get("clarity", 8)) / 3.0, 1)
+                r["reviewer_username"] = r.get("reviewer_username") or "User"
+            return all_revs[:limit]
 
 
 class PostgresChatReviewStorage(ChatReviewStorageInterface):
@@ -367,6 +380,20 @@ class PostgresChatReviewStorage(ChatReviewStorageInterface):
         topic: Optional[str] = None,
         session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        clean_session_id = None
+        if session_id:
+            try:
+                parsed_uuid = str(uuid.UUID(str(session_id).strip()))
+                with self._connect() as chk_conn:
+                    exists = chk_conn.execute(
+                        "SELECT 1 FROM public.chat_sessions WHERE id = %s",
+                        (parsed_uuid,),
+                    ).fetchone()
+                    if exists:
+                        clean_session_id = parsed_uuid
+            except Exception:
+                clean_session_id = None
+
         with self._connect() as conn:
             row = conn.execute(
                 """
@@ -384,7 +411,7 @@ class PostgresChatReviewStorage(ChatReviewStorageInterface):
                 """,
                 (
                     str(user_id),
-                    str(session_id) if session_id else None,
+                    clean_session_id,
                     str(report_id),
                     topic[:255] if topic else None,
                     relevance,
@@ -438,6 +465,31 @@ class PostgresChatReviewStorage(ChatReviewStorageInterface):
                 d["user_id"] = str(d["user_id"])
                 if d.get("session_id"):
                     d["session_id"] = str(d["session_id"])
+                out.append(d)
+            return out
+
+    def list_all_reviews(self, limit: int = 100) -> List[Dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT r.id, r.user_id, r.session_id, r.report_id, r.topic, r.relevance, r.accuracy, r.clarity, r.comment, r.created_at, r.updated_at,
+                       COALESCE(u.username, u.email, 'User') as reviewer_username,
+                       u.email as reviewer_email
+                FROM public.report_reviews r
+                LEFT JOIN public.app_users u ON r.user_id = u.id
+                ORDER BY r.created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            ).fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                d["id"] = str(d["id"])
+                d["user_id"] = str(d["user_id"])
+                if d.get("session_id"):
+                    d["session_id"] = str(d["session_id"])
+                d["overall"] = round((d["relevance"] + d["accuracy"] + d["clarity"]) / 3.0, 1)
                 out.append(d)
             return out
 

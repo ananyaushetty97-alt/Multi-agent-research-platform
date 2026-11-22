@@ -1372,6 +1372,42 @@
       });
     }
 
+    // Render Human & User Reviews
+    const hrTableBody = document.getElementById("humanReviewsTableBody");
+    if (hrTableBody) {
+      hrTableBody.innerHTML = "";
+      const hrList = state.quality.human_reviews || [];
+      if (hrList.length === 0) {
+        hrTableBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
+              No human reviews recorded yet. Reviews submitted from user mode or expert reviews will appear here.
+            </td>
+          </tr>
+        `;
+      } else {
+        hrList.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/60 transition-colors";
+          const scoreVal = item.overall !== null && item.overall !== undefined ? Number(item.overall).toFixed(1) : "—";
+          const timeDisplay = item.review_timestamp ? formatIST(item.review_timestamp) : "—";
+          tr.innerHTML = `
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${item.topic || ''}">${item.topic || "Research Monograph"}</td>
+            <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-primary">${item.reviewer_username || "user"}</td>
+            <td class="px-space-md py-3 font-mono text-[11px] text-on-surface-variant whitespace-nowrap">${timeDisplay}</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.feedback_notes || ''}">
+              ${item.feedback_notes || "—"}
+            </td>
+          `;
+          hrTableBody.appendChild(tr);
+        });
+      }
+    }
+
     const openReviewBtn = document.getElementById("open-human-modal-btn");
     if (openReviewBtn) {
       openReviewBtn.onclick = openHumanReviewModal;

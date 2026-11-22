@@ -7,6 +7,7 @@ import time
 import uuid
 import logging
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 import collections
@@ -78,6 +79,7 @@ class ReportResponse(BaseModel):
     cached: bool
     score: dict | None = None
     seconds: float
+    report_id: Optional[str] = None
 
 
 def _sources_from(search_results):
@@ -153,6 +155,7 @@ def generate(
     start = time.time()
     session_id = req.session_id or str(uuid.uuid4())
     request_id = str(uuid.uuid4())
+    report_id = str(uuid.uuid4())
     start_llm_request_session()
     trace = trace_service.start_trace(request_id=request_id, session_id=session_id, topic=req.topic)
 
@@ -270,7 +273,7 @@ def generate(
             except Exception as e:
                 log.warning(f"Failed to log user activity: {e}")
 
-            return ReportResponse(session_id=session_id, topic=req.topic, intent="new_research",
+            return ReportResponse(session_id=session_id, report_id=report_id, topic=req.topic, intent="new_research",
                                   report=c_report, sources=_sources_from(c_results), cached=True,
                                   score=c_score, seconds=round(time.time() - start, 2))
 
@@ -582,7 +585,7 @@ def generate(
     except Exception as e:
         log.warning(f"Failed to log user activity: {e}")
 
-    return ReportResponse(session_id=session_id, topic=req.topic, intent=intent, report=report,
+    return ReportResponse(session_id=session_id, report_id=report_id, topic=req.topic, intent=intent, report=report,
                           sources=_sources_from(search_results), cached=False, score=score,
                           seconds=round(time.time() - start, 2))
 

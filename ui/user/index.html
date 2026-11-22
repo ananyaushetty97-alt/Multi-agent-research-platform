@@ -516,6 +516,10 @@
                         <span class="material-symbols-outlined text-[16px]">content_copy</span>
                         <span>Copy report</span>
                       </button>
+                      <button class="btn-report-tool btn-review-turn" id="btn-review-main-report" type="button" title="Rate & review monograph">
+                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                        <span>Review</span>
+                      </button>
                       <button class="btn-report-tool" id="btn-retry-synthesis" type="button" title="Regenerate">
                         <span class="material-symbols-outlined text-[16px]">refresh</span>
                         <span>Retry</span>
@@ -1018,7 +1022,7 @@
   <!-- ======================================================================
        REPORT REVIEW & RATING MODAL
        ====================================================================== -->
-  <div class="modal-overlay" id="review-modal">
+  <div class="modal-backdrop" id="review-modal-backdrop">
     <div class="modal-dialog review-dialog" style="max-width: 480px;">
       <div class="delete-modal-header" style="border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 0.75rem;">
         <div class="delete-brand-group">
@@ -1026,8 +1030,8 @@
             <span class="material-symbols-outlined text-[20px]">rate_review</span>
           </div>
           <div>
-            <h3 class="delete-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Rate Research Monograph</h3>
-            <p class="delete-modal-subtitle" style="margin: 0; font-size: 0.85rem; color: #64748b;">Help improve multi-agent synthesis quality</p>
+            <h3 class="delete-modal-title" id="review-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Rate Research Monograph</h3>
+            <p class="delete-modal-subtitle" id="review-modal-subtitle" style="margin: 0; font-size: 0.85rem; color: #64748b;">Help improve multi-agent synthesis quality</p>
           </div>
         </div>
         <button class="icon-btn" id="btn-close-review-modal" type="button" title="Close">
@@ -1038,6 +1042,7 @@
       <form id="review-form" style="padding-top: 1rem;">
         <input type="hidden" id="review-report-id" value="" />
         <input type="hidden" id="review-session-id" value="" />
+        <input type="hidden" id="review-topic" value="" />
 
         <div style="margin-bottom: 1rem;">
           <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">

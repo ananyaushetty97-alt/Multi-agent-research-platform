@@ -26,9 +26,9 @@ def _ensure_schema():
 MAX_HISTORY_ENTRIES = 12
 
 
-def check_cache(topic: str):
+def check_cache(topic: str, user_id: str | None = None):
     try:
-        result = _cache.lookup(topic)
+        result = _cache.lookup(topic, user_id=user_id)
         return result["report"] if result else None   # a dict: report, score, search_results
     except Exception as e:
         log.warning(f"check_cache failed ({e})")
@@ -36,21 +36,24 @@ def check_cache(topic: str):
 
 
 def save_to_ltm(report: str, topic: str | None = None, score: dict | None = None,
-                search_results: list | None = None):
+                search_results: list | None = None, user_id: str | None = None):
     _ensure_schema()
     sources = [{"title": r.get("title"), "url": r.get("url")} for r in (search_results or [])]
+    meta = {"topic": topic, "sources": sources} if topic else {}
+    if user_id is not None:
+        meta["user_id"] = str(user_id)
     try:
         _ltm.store_report(
             text=report,
             embedding=embed(report),
-            metadata={"topic": topic, "sources": sources} if topic else {},
+            metadata=meta,
         )
     except Exception as e:
         log.warning(f"save_to_ltm database store failed ({e})")
 
     if topic:
         try:
-            _cache.store(topic, {"report": report, "score": score, "search_results": search_results})
+            _cache.store(topic, {"report": report, "score": score, "search_results": search_results}, user_id=user_id)
         except Exception as e:
             log.warning(f"save_to_ltm cache store failed ({e})")
 

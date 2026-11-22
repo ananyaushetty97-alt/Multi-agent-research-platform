@@ -11,11 +11,6 @@ Comprehensive tests for user_auth module:
 """
 import os
 import unittest.mock
-try:
-    import psycopg
-    unittest.mock.patch("psycopg.connect", side_effect=psycopg.OperationalError("PostgreSQL offline for unit test")).start()
-except ImportError:
-    pass
 
 import pytest
 from datetime import datetime, timedelta, timezone
@@ -42,10 +37,38 @@ def setup_in_memory_auth(monkeypatch):
     settings.neutralize_demo_users = True
     settings.require_login = False
 
+    try:
+        import psycopg
+        monkeypatch.setattr(psycopg, "connect", unittest.mock.MagicMock(side_effect=psycopg.OperationalError("PostgreSQL offline for unit test")))
+    except ImportError:
+        pass
+
     # Also inject InMemoryUserStorage for admin auth routes so tests run fast offline
     from admin_backend.storage.in_memory import InMemoryUserStorage
     from admin_backend.security.passwords import hash_password
     from admin_backend.routes import auth_routes
+    from admin_backend.services.audit_service import audit_service
+    from admin_backend.config import settings as admin_settings
+    import tempfile
+
+    class InMemoryAuditStorageForTests:
+        def __init__(self):
+            self.audit_entries = []
+            self.user_activity_entries = []
+        def append_audit_entry(self, entry):
+            self.audit_entries.append(entry)
+        def append_user_activity_entry(self, entry):
+            self.user_activity_entries.append(entry)
+        def query_audit_entries(self, filter_opts):
+            return list(self.audit_entries)
+        def query_user_activity_entries(self, filter_opts):
+            return list(self.user_activity_entries)
+
+    monkeypatch.setattr(audit_service, "storage", InMemoryAuditStorageForTests())
+    temp_audit_file = os.path.join(tempfile.mkdtemp(), "test_user_auth_audit.jsonl")
+    monkeypatch.setattr(audit_service, "log_file", temp_audit_file)
+    monkeypatch.setattr(admin_settings, "admin_audit_log_path", temp_audit_file)
+
     admin_mem = InMemoryUserStorage()
     hashed_admin = hash_password("admin123", iterations=50_000)
     admin_mem.create_user({

@@ -724,8 +724,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return { id: s.n, domain: info.domain || 'source', title: s.title || info.domain || s.url, url: safeUrl(s.url), snippet: '', citationsCount: RP.citationCount(turn.report, s.n) };
     });
   }
-  function turnFrom(user, d) {
-    return { user, intent: d.intent, report: d.report, sources: d.sources || [], cached: !!d.cached, score: d.score || null, seconds: d.seconds };
+  function turnFrom(user, d, attachments = []) {
+    return { user, intent: d.intent, report: d.report, sources: d.sources || [], cached: !!d.cached, score: d.score || null, seconds: d.seconds, attachments };
   }
   function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
   function fmtDate(ts) { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -939,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.dossier = null;
     showTurnInSlot(first, chat.created);
     chat.turns.slice(1).forEach(t => {
-      dynamicFollowups.append(userBubbleNode(t.user, [], chat.updated), assistantHolder(t));
+      dynamicFollowups.append(userBubbleNode(t.user, t.attachments || [], chat.updated), assistantHolder(t));
     });
     for (let i = chat.turns.length - 1; i >= 0; i--) {
       if (chat.turns[i].sources && chat.turns[i].sources.length) { afterTurn(chat.turns[i]); break; }
@@ -1033,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = files.length > 0
         ? await RP.generateWithFiles(questionText, files, activeController.signal)
         : await RP.generate(questionText, activeController.signal);
-      const turn = turnFrom(questionText, data);
+      const turn = turnFrom(questionText, data, attachments);
       holder.replaceChildren(buildAssistant(turn));
       afterTurn(turn);
     } catch (e) {
@@ -1095,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = files.length > 0
         ? await RP.generateWithFiles(topicText, files, activeController.signal)
         : await RP.generate(topicText, activeController.signal);
-      const turn = turnFrom(topicText, data);
+      const turn = turnFrom(topicText, data, attachments);
       state.lastTopic = topicText;
       state.dossier = null;
       if (data && data.session_id) {

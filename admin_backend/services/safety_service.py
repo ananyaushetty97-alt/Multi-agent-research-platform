@@ -20,7 +20,7 @@ from admin_backend.models.safety import (
     SafetyEventFilter,
     SafetyOutcome,
 )
-from admin_backend.storage.in_memory import InMemorySafetyStorage
+from admin_backend.storage.persistent import PersistentSafetyStorage
 from admin_backend.storage.interfaces import SafetyStorageInterface
 
 log = logging.getLogger("admin_backend.safety")
@@ -167,7 +167,7 @@ def _seed_default_safety_events(svc: SafetyService):
 
 
 # No seeding - only real data from actual guardrail events and red-team runs
-safety_service = SafetyService()
+safety_service = SafetyService(storage=PersistentSafetyStorage())
 # Sample events are no longer loaded at startup: the Safety page now shows only
 # real guardrail blocks and real sanitizer actions (see guardrails.checks.guarded_search).
 # To fill it with demo data on purpose, call _seed_default_safety_events(safety_service).

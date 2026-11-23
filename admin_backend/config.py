@@ -29,8 +29,11 @@ class AdminSettings(BaseSettings):
 
     # Storage paths
     admin_audit_log_path: str = os.path.join("logs", "admin_audit.jsonl")
+    admin_user_activity_log_path: str = os.path.join("logs", "admin_user_activity.jsonl")
     admin_traces_log_path: str = os.path.join("logs", "admin_traces.jsonl")
     admin_safety_log_path: str = os.path.join("logs", "admin_safety.jsonl")
+    admin_metrics_log_path: str = os.path.join("logs", "admin_metrics.jsonl")
+    admin_human_reviews_log_path: str = os.path.join("logs", "admin_human_reviews.jsonl")
     scores_log_path: str = os.path.join("logs", "scores.jsonl")
     redteam_results_path: str = os.path.join("logs", "redteam_results.json")
 

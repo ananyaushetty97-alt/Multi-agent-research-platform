@@ -20,9 +20,40 @@ log = logging.getLogger("admin_backend.quality")
 
 
 class QualityService:
-    def __init__(self, log_path: Optional[str] = None):
+    def __init__(self, log_path: Optional[str] = None, human_reviews_path: Optional[str] = None):
         self.log_path = log_path or settings.scores_log_path
+        self.human_reviews_path = human_reviews_path or settings.admin_human_reviews_log_path
         self._human_reviews: List[HumanReviewScore] = []
+        self._load_human_reviews()
+
+    def _load_human_reviews(self) -> None:
+        """Load human reviews from JSONL file."""
+        if not os.path.exists(self.human_reviews_path):
+            return
+        try:
+            with open(self.human_reviews_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        review = HumanReviewScore.model_validate(data)
+                        self._human_reviews.append(review)
+                    except Exception:
+                        continue
+            log.info(f"Loaded {len(self._human_reviews)} human reviews from {self.human_reviews_path}")
+        except Exception as e:
+            log.warning(f"Could not load human reviews from {self.human_reviews_path}: {e}")
+
+    def _append_human_review(self, review: HumanReviewScore) -> None:
+        """Append a human review to the JSONL file."""
+        try:
+            os.makedirs(os.path.dirname(self.human_reviews_path) or ".", exist_ok=True)
+            with open(self.human_reviews_path, "a", encoding="utf-8") as f:
+                f.write(review.model_dump_json() + "\n")
+        except Exception as e:
+            log.warning(f"Could not write human review to {self.human_reviews_path}: {e}")
 
     def load_judge_records(self) -> List[JudgeScoreRecord]:
         """
@@ -159,6 +190,7 @@ class QualityService:
             reviewed=True,
         )
         self._human_reviews.append(review)
+        self._append_human_review(review)
         return review
 
     def list_human_reviews(self) -> List[HumanReviewScore]:

@@ -445,20 +445,28 @@
           showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
           return;
         }
+        const confirmed = window.confirm(
+          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+        );
+        if (!confirmed) return;
         redteamButton.disabled = true;
         const statusEl = document.getElementById("safetyRedteamRunStatus");
-        if (statusEl) statusEl.textContent = "Running offline PyRIT with defenses enabled...";
+        if (statusEl) statusEl.textContent = "Running live API and LangGraph cases with defenses enabled...";
         try {
           const response = await apiRequest("/safety/redteam/run", { method: "POST" });
-          if (!response.ok) throw new Error(`Benchmark failed (${response.status})`);
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
           const summary = await response.json();
           state.safety.redteam = summary;
           renderSafetyView();
-          if (statusEl) statusEl.textContent = "Persisted successfully.";
-          showToast("Offline PyRIT benchmark persisted", "success");
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Live platform test results saved", "success");
         } catch (error) {
           if (statusEl) statusEl.textContent = "Run failed.";
-          showToast(error.message || "Offline benchmark failed", "error");
+          showToast(error.message || "Live platform test failed", "error");
         } finally {
           redteamButton.disabled = false;
         }
@@ -1567,11 +1575,13 @@
     const totalAttacksEl = document.getElementById("safetyTotalAttacks");
     const indirectEl = document.getElementById("safetyIndirectAttacks");
     const directEl = document.getElementById("safetyDirectAttacks");
+    const errorsEl = document.getElementById("safetyRedteamErrors");
 
-    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "—";
+    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${Number(rt.defense_rate_pct ?? 0).toFixed(1)}%` : "—";
     if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
     if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
     if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
+    if (errorsEl) errorsEl.textContent = `${rt.attacks_errored || 0}`;
 
     const runMeta = document.getElementById("safetyRedteamRunMeta");
     if (runMeta) {
@@ -1579,7 +1589,7 @@
       const defense = rt.defense_enabled === true ? "defenses enabled" : "defense status unavailable";
       runMeta.textContent = rt.run_id
         ? `${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
-        : "No persisted offline benchmark found.";
+        : "No persisted benchmark found.";
     }
 
     const attacksBody = document.getElementById("safetyRedteamAttacksBody");
@@ -1590,7 +1600,7 @@
         attacksBody.innerHTML = '<tr><td colspan="4">No persisted benchmark attacks loaded.</td></tr>';
       } else {
         attacks.forEach((attack) => {
-          const evidence = attack.reason
+          const evidence = attack.error || attack.reason
             || (attack.guard_blocked === true ? "Guard blocked"
               : attack.verify_flagged === true ? "Verifier flagged"
               : attack.canary_leaked === true ? "Canary detected"
@@ -1599,7 +1609,7 @@
             <tr>
               <td>${escapeHtml(attack.type || "unknown")}</td>
               <td title="${escapeHtml(attack.payload_preview || "")}">${escapeHtml((attack.payload_preview || "").slice(0, 120))}</td>
-              <td>${attack.reached_user ? "Yes" : "No"}</td>
+              <td>${escapeHtml(attack.status || (attack.reached_user ? "breached" : "defended"))}</td>
               <td>${escapeHtml(evidence)}</td>
             </tr>
           `);

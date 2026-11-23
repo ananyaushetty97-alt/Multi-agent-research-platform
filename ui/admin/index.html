@@ -769,18 +769,21 @@
               <div class="admin-card-title-group">
                 <span class="material-symbols-outlined text-[20px]" style="color: var(--primary);">shield</span>
                 <div>
-                  <h3 class="admin-card-title">Offline PyRIT Red-Team Benchmark Suite</h3>
-                  <p class="admin-card-subtitle">Multi-turn jailbreak and indirect prompt injection defense verification</p>
+                  <h3 class="admin-card-title">Live PyRIT Platform Integration Test</h3>
+                  <p class="admin-card-subtitle">Runs fixed direct-injection cases through the real API and indirect XPIA cases through LangGraph agents.</p>
                 </div>
               </div>
               <span class="admin-nav-chip">pyrit-run-001</span>
             </div>
 
-            <div class="admin-card-subtitle" id="safetyRedteamRunMeta">Loading latest offline benchmark...</div>
+            <div class="admin-card-subtitle" id="safetyRedteamRunMeta">Loading latest benchmark...</div>
+            <p class="admin-card-subtitle" style="color: var(--error); margin-top: 6px;">
+              Live run: tests this platform only with up to 11 fixed cases. It invokes the configured LLM and may consume provider quota; if a direct attack bypasses input checks, the normal research pipeline (including configured search) may run. Defenses stay enabled.
+            </p>
             <div style="display:flex; gap:8px; margin: 8px 0;">
               <button type="button" id="safetyRunRedteamButton" class="btn-header-action">
                 <span class="material-symbols-outlined text-[16px]">play_circle</span>
-                Run Offline PyRIT Benchmark
+                Run Live Platform Test
               </button>
               <span class="admin-card-subtitle" id="safetyRedteamRunStatus"></span>
             </div>
@@ -802,16 +805,20 @@
                 <span class="metric-tile-label">Direct Jailbreaks</span>
                 <span class="metric-tile-number" id="safetyDirectAttacks">0</span>
               </div>
-              <div class="admin-table-scroll" style="margin-top:12px;">
-                <table class="admin-table">
-                  <thead>
-                    <tr><th>Attack</th><th>Preview</th><th>Reached User</th><th>Defense Evidence</th></tr>
-                  </thead>
-                  <tbody id="safetyRedteamAttacksBody">
-                    <tr><td colspan="4">No persisted benchmark loaded.</td></tr>
-                  </tbody>
-                </table>
+              <div class="metric-tile">
+                <span class="metric-tile-label">Run Errors</span>
+                <span class="metric-tile-number" id="safetyRedteamErrors">0</span>
               </div>
+            </div>
+            <div class="admin-table-scroll" style="margin-top:12px;">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Attack</th><th>Preview</th><th>Status</th><th>Evidence / Error</th></tr>
+                </thead>
+                <tbody id="safetyRedteamAttacksBody">
+                  <tr><td colspan="4">No persisted benchmark loaded.</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 

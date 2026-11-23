@@ -106,7 +106,7 @@ def test_redteam_routes_require_admin(client, user_token):
     assert resp.status_code == 403
 
 
-def test_admin_can_trigger_offline_redteam(client, admin_token):
+def test_admin_can_trigger_live_redteam(client, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     with patch("admin_backend.routes.safety_routes.subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
@@ -116,7 +116,7 @@ def test_admin_can_trigger_offline_redteam(client, admin_token):
                 run_id="redteam-test",
                 recorded_at="2026-11-23T10:00:00+00:00",
                 source_file="logs/redteam_results.json",
-                mode="offline-fake-llm",
+                mode="live-pyrit",
                 defense_enabled=True,
                 total_attacks=11,
                 attacks_defended=11,
@@ -126,6 +126,9 @@ def test_admin_can_trigger_offline_redteam(client, admin_token):
                 direct_count=5,
             )
             resp = client.post("/admin/safety/redteam/run", headers=headers)
+            command = mock_run.call_args.args[0]
 
     assert resp.status_code == 200
-    assert resp.json()["mode"] == "offline-fake-llm"
+    assert resp.json()["mode"] == "live-pyrit"
+    assert "--all" in command
+    assert "--fake-llm" not in command

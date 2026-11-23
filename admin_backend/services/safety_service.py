@@ -70,7 +70,7 @@ class SafetyService:
 
     def load_redteam_summary(self) -> Optional[RedTeamRunSummary]:
         """
-        Read offline red-team evaluation results from logs/redteam_results.json.
+        Read fixed-vector red-team evaluation results from logs/redteam_results.json.
         Kept separate from live production safety events.
         """
         if not os.path.exists(self.redteam_file):
@@ -91,13 +91,26 @@ class SafetyService:
 
             attacks: List[RedTeamAttackRecord] = []
             reached_count = 0
+            error_count = 0
+            defended_count = 0
             indirect_count = 0
             direct_count = 0
 
             for r in rows:
-                is_reached = bool(r.get("reached_user", False))
+                if not isinstance(r, dict):
+                    continue
+                status_value = r.get("status")
+                if status_value is None:
+                    status_value = "breached" if r.get("reached_user", False) else "defended"
+                elif status_value not in {"defended", "breached", "error"}:
+                    status_value = "error"
+                is_reached = status_value == "breached"
                 if is_reached:
                     reached_count += 1
+                if status_value == "error":
+                    error_count += 1
+                elif status_value == "defended":
+                    defended_count += 1
 
                 t = r.get("type", "unknown")
                 if t == "indirect":
@@ -110,16 +123,21 @@ class SafetyService:
                         type=t,
                         payload_preview=str(r.get("payload", ""))[:120],
                         reached_user=is_reached,
+                        status=status_value,
                         canary_leaked=r.get("canary_leaked"),
                         verify_flagged=r.get("verify_flagged"),
                         guard_blocked=r.get("guard_blocked") or r.get("input_blocked"),
                         reason=r.get("reason") or r.get("guard_reason"),
+                        error=(
+                            str(r.get("error") or "Unrecognized result status")[:300]
+                            if status_value == "error"
+                            else None
+                        ),
                     )
                 )
 
             total = len(attacks)
-            defended = total - reached_count
-            defense_rate = round((defended / total * 100), 1) if total > 0 else 0.0
+            defense_rate = round((defended_count / total * 100), 1) if total > 0 else 0.0
 
             file_mtime = os.path.getmtime(self.redteam_file)
             recorded_at = str(
@@ -134,8 +152,10 @@ class SafetyService:
                 mode=envelope.get("mode"),
                 defense_enabled=bool(envelope["defense_enabled"]) if "defense_enabled" in envelope else None,
                 total_attacks=total,
-                attacks_defended=defended,
+                attacks_defended=defended_count,
                 attacks_reached_user=reached_count,
+                attacks_errored=error_count,
+                attacks_completed=total - error_count,
                 defense_rate_pct=defense_rate,
                 indirect_count=indirect_count,
                 direct_count=direct_count,

@@ -132,3 +132,36 @@ def test_admin_can_trigger_live_redteam(client, admin_token):
     assert resp.json()["mode"] == "live-pyrit"
     assert "--all" in command
     assert "--fake-llm" not in command
+
+
+def test_live_redteam_failure_logs_sanitized_subprocess_diagnostic(client, admin_token, monkeypatch, caplog):
+    import logging
+
+    secret = "provider-secret-value"
+    monkeypatch.setenv("GROQ_API_KEY", secret)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    with patch(
+        "admin_backend.routes.safety_routes.subprocess.run",
+        return_value=MagicMock(returncode=1, stderr=f"ImportError: missing pyrit; key={secret}"),
+    ):
+        with caplog.at_level(logging.ERROR, logger="admin_backend.safety.redteam"):
+            response = client.post("/admin/safety/redteam/run", headers=headers)
+
+    assert response.status_code == 502
+    assert "missing pyrit" in caplog.text
+    assert secret not in caplog.text
+    assert "[redacted]" in caplog.text
+
+
+def test_live_redteam_timeout_returns_gateway_timeout(client, admin_token):
+    import subprocess
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    with patch(
+        "admin_backend.routes.safety_routes.subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd="redteam", timeout=600, stderr="provider timeout"),
+    ):
+        response = client.post("/admin/safety/redteam/run", headers=headers)
+
+    assert response.status_code == 504
+    assert "timed out" in response.json()["detail"]

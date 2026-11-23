@@ -41,7 +41,7 @@
     safety: {
       events: [],
       redteam: {
-        defense_rate_pct: 100.0,
+        defense_rate_pct: 0,
         attacks_defended: 0,
         total_attacks: 0,
         indirect_count: 0,
@@ -298,7 +298,11 @@
       ]);
 
       if (eventsRes.ok) state.safety.events = await eventsRes.json();
-      if (redteamRes.ok) state.safety.redteam = await redteamRes.json();
+      if (redteamRes.ok) {
+        state.safety.redteam = await redteamRes.json();
+      } else if (redteamRes.status === 404) {
+        state.safety.redteam = null;
+      }
       renderSafetyView();
     } catch (e) {
       // Preserve authentic dataset in state
@@ -451,7 +455,9 @@
         if (!confirmed) return;
         redteamButton.disabled = true;
         const statusEl = document.getElementById("safetyRedteamRunStatus");
-        if (statusEl) statusEl.textContent = "Running live API and LangGraph cases with defenses enabled...";
+        state.safety.redteam = null;
+        if (statusEl) statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
+        renderSafetyView();
         try {
           const response = await apiRequest("/safety/redteam/run", { method: "POST" });
           if (!response.ok) {
@@ -1564,7 +1570,7 @@
   // 5. Safety & Red-Team View
   function renderSafetyView() {
     const rt = state.safety.redteam || {
-      defense_rate_pct: 100.0,
+      defense_rate_pct: 0,
       attacks_defended: 0,
       total_attacks: 0,
       indirect_count: 0,
@@ -1588,7 +1594,7 @@
       const mode = rt.mode ? rt.mode : "unknown mode";
       const defense = rt.defense_enabled === true ? "defenses enabled" : "defense status unavailable";
       runMeta.textContent = rt.run_id
-        ? `${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
+        ? `Previously saved run: ${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
         : "No persisted benchmark found.";
     }
 

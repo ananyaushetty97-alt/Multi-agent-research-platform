@@ -300,14 +300,14 @@ def print_tables(rows):
         print("\nINDIRECT ATTACKS (poisoned web page -> real agents -> output guard)")
         print(f"{'payload':<45} {'leaked':<7} {'verify':<7} {'guard':<7} {'status':<9} ERROR")
         for r in ind:
-            print(f"{r['payload'][:44]:<45} {str(r['canary_leaked']):<7} "
-                  f"{str(r['verify_flagged']):<7} {str(r['guard_blocked']):<7} "
+            print(f"{r.get('payload', '')[:44]:<45} {str(r.get('canary_leaked', '-')):<7} "
+                  f"{str(r.get('verify_flagged', '-')):<7} {str(r.get('guard_blocked', '-')):<7} "
                   f"{r.get('status', 'error'):<9} {r.get('error', '')}")
     if dct:
         print("\nDIRECT ATTACKS (typed into topic box -> input guard)")
         print(f"{'payload':<60} {'blocked':<8} {'status':<9} ERROR")
         for r in dct:
-            print(f"{r['payload'][:59]:<60} {str(r.get('input_blocked', False)):<8} "
+            print(f"{r.get('payload', '')[:59]:<60} {str(r.get('input_blocked', '-')):<8} "
                   f"{r.get('status', 'error'):<9} {r.get('error', '')}")
     defended = sum(r.get("status") == "defended" for r in rows)
     breached = sum(r.get("status") == "breached" for r in rows)

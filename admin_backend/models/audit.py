@@ -71,6 +71,7 @@ class UserActivityLogEntry(BaseModel):
     details: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     client_ip: Optional[str] = Field(None, description="Client IP address")
     user_agent: Optional[str] = Field(None, description="Client user agent")
+    actor_role: str = Field("user", description="Role of the actor (user or admin)")
 
 
 class UserActivityLogFilter(BaseModel):

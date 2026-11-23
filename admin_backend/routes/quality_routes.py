@@ -22,8 +22,6 @@ router = APIRouter(prefix="/quality", tags=["Admin Quality"])
 def get_evaluation_scores(
     min_overall: Optional[float] = Query(None, ge=1.0, le=10.0),
     max_overall: Optional[float] = Query(None, ge=1.0, le=10.0),
-    only_failed: bool = Query(False, description="Filter only failed grading runs"),
-    only_suspected_truncated: bool = Query(False, description="Filter only reports suspected of truncation"),
     search_topic: Optional[str] = Query(None, description="Search by topic substring"),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -31,13 +29,11 @@ def get_evaluation_scores(
 ):
     """
     Query automated LLM-as-a-judge score history from logs/scores.jsonl.
-    Supports filtering by score thresholds, failed evaluations, and suspected truncation heuristics.
+    Supports filtering by score thresholds.
     """
     filter_opts = QualityFilter(
         min_overall=min_overall,
         max_overall=max_overall,
-        only_failed=only_failed,
-        only_suspected_truncated=only_suspected_truncated,
         search_topic=search_topic,
         limit=limit,
         offset=offset,
@@ -50,7 +46,7 @@ def get_quality_summary(admin: AuthenticatedUser = Depends(require_admin_role)):
     """
     Retrieve aggregate statistics across automated evaluations:
     average scores per criterion (relevance, accuracy, clarity),
-    low-scoring report count, failed evaluation count, and suspected truncation counts.
+    low-scoring report count, failed evaluation count.
     """
     return quality_service.get_quality_summary()
 

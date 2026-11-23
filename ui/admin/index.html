@@ -672,19 +672,19 @@
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Accuracy</span>
-              <span class="metric-tile-number" id="qualityAvgAccuracy">â€”</span>
+              <span class="metric-tile-number" id="qualityAvgAccuracy">â€—</span>
             </div>
             <div class="metric-tile">
               <span class="metric-tile-label">Clarity</span>
-              <span class="metric-tile-number" id="qualityAvgClarity">â€”</span>
+              <span class="metric-tile-number" id="qualityAvgClarity">â€—</span>
             </div>
             <div class="metric-tile">
-              <span class="metric-tile-label">Truncations</span>
-              <span class="metric-tile-number warning" id="qualityTruncatedCount">0</span>
+              <span class="metric-tile-label">Low Scores (<7.0)</span>
+              <span class="metric-tile-number warning" id="qualityLowScoreCount">0</span>
             </div>
             <div class="metric-tile">
-              <span class="metric-tile-label">Failed Gradings</span>
-              <span class="metric-tile-number error" id="qualityFailedCount">0</span>
+              <span class="metric-tile-label">Human Reviews</span>
+              <span class="metric-tile-number" id="qualityHumanReviewsCount">0</span>
             </div>
           </div>
 
@@ -708,6 +708,41 @@
                   </tr>
                 </thead>
                 <tbody id="qualityScoresTableBody">
+                  <!-- Injected via admin-app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Human Reviews Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span class="admin-card-title">Human Evaluation Reviews</span>
+                <button class="btn-header-action" onclick="AdminController.openHumanReviewModal()" type="button" style="padding: 0.5rem 1rem; width: auto;">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                  <span>Add Human Review</span>
+                </button>
+              </div>
+              <span class="admin-card-subtitle">Human reviewer calibration separate from automated LLM-as-a-judge scores</span>
+            </div>
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Topic</th>
+                    <th>Reviewer</th>
+                    <th>Overall</th>
+                    <th>Rel</th>
+                    <th>Acc</th>
+                    <th>Cla</th>
+                    <th>Status</th>
+                    <th>Flagged for Rerun</th>
+                    <th>Feedback Notes</th>
+                    <th>Time (IST)</th>
+                  </tr>
+                </thead>
+                <tbody id="qualityHumanReviewsTableBody">
                   <!-- Injected via admin-app.js -->
                 </tbody>
               </table>

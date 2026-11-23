@@ -6,7 +6,10 @@ without requiring live PostgreSQL or Redis databases.
 import threading
 from typing import Optional, List, Dict, Any
 
-from admin_backend.models.audit import AuditLogEntry, AuditLogFilter
+from admin_backend.models.audit import (
+    AuditLogEntry, AuditLogFilter,
+    UserActivityLogEntry, UserActivityLogFilter
+)
 from admin_backend.models.traces import RequestTrace, TraceFilter
 from admin_backend.models.safety import SafetyEvent, SafetyEventFilter
 from admin_backend.models.metrics import RequestMetric
@@ -59,6 +62,7 @@ class InMemoryUserStorage(UserStorageInterface):
 class InMemoryAuditStorage(AuditStorageInterface):
     def __init__(self):
         self._entries: List[AuditLogEntry] = []
+        self._user_activity_entries: List[UserActivityLogEntry] = []
         self._lock = threading.Lock()
 
     def append_audit_entry(self, entry: AuditLogEntry) -> None:
@@ -84,9 +88,37 @@ class InMemoryAuditStorage(AuditStorageInterface):
         end = start + filter_opts.limit
         return matched[start:end]
 
+    def append_user_activity_entry(self, entry: UserActivityLogEntry) -> None:
+        with self._lock:
+            self._user_activity_entries.append(entry)
+
+    def query_user_activity_entries(self, filter_opts: UserActivityLogFilter) -> List[UserActivityLogEntry]:
+        with self._lock:
+            matched = list(self._user_activity_entries)
+
+        if filter_opts.username:
+            matched = [e for e in matched if e.username.lower() == filter_opts.username.lower()]
+        if filter_opts.action:
+            matched = [e for e in matched if e.action == filter_opts.action]
+        if filter_opts.status:
+            matched = [e for e in matched if e.status == filter_opts.status]
+        if filter_opts.session_id:
+            matched = [e for e in matched if e.session_id == filter_opts.session_id]
+        if filter_opts.start_date:
+            matched = [e for e in matched if e.timestamp >= filter_opts.start_date]
+        if filter_opts.end_date:
+            matched = [e for e in matched if e.timestamp <= filter_opts.end_date]
+
+        # Newest first
+        matched = list(reversed(matched))
+        start = filter_opts.offset
+        end = start + filter_opts.limit
+        return matched[start:end]
+
     def clear(self):
         with self._lock:
             self._entries.clear()
+            self._user_activity_entries.clear()
 
 
 class InMemoryTraceStorage(TraceStorageInterface):

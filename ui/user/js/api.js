@@ -70,9 +70,8 @@ const RP = (() => {
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      let msg = "Something went wrong. Please try again.";
-      if (res.status === 503) msg = "The AI service is temporarily unavailable. Please try again.";
-      else if ((res.status === 400 || res.status === 422) && typeof data.detail === "string") msg = data.detail;
+      let msg = typeof data.detail === "string" ? data.detail : "Something went wrong. Please try again.";
+      if (res.status === 503 && !data.detail) msg = "The AI service is temporarily unavailable. Please try again.";
       throw Object.assign(new Error(msg), { status: res.status });
     }
     sessionId = data.session_id;
@@ -125,11 +124,17 @@ const RP = (() => {
       c.unshift({ id, title, created: Date.now(), updated: Date.now(), turns: [] });
       persist(c);
     }
+    if (currentUser && currentUser.id) {
+      _fetchAuth(`/api/chats/${encodeURIComponent(id)}`, "PUT", { title }).catch(() => {});
+    }
   }
 
   function deleteChat(id) {
     persist(load().filter(c => c.id !== id));
     if (sessionId === id) sessionId = null;
+    if (currentUser && currentUser.id) {
+      _fetchAuth(`/api/chats/${encodeURIComponent(id)}`, "DELETE").catch(() => {});
+    }
   }
 
   // Active chat id helpers (namespaced)
@@ -291,6 +296,22 @@ const RP = (() => {
       currentUser = res;
       sessionId = null;
       return res;
+    },
+    async verifyOtp({ email, otp }) {
+      const res = await _fetchAuth("/api/auth/verify-otp", "POST", { email, otp });
+      if (currentUser && currentUser.email === email) {
+        currentUser.email_verified = true;
+      }
+      return res;
+    },
+    async resendOtp({ email }) {
+      return await _fetchAuth("/api/auth/resend-otp", "POST", { email });
+    },
+    async forgotPassword({ email }) {
+      return await _fetchAuth("/api/auth/forgot-password", "POST", { email });
+    },
+    async resetPassword({ token, password, confirm_password }) {
+      return await _fetchAuth("/api/auth/reset-password", "POST", { token, password, confirm_password });
     }
   };
 

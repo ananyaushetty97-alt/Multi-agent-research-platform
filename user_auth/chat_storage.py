@@ -80,6 +80,26 @@ class ChatReviewStorageInterface(ABC):
     def list_all_reviews(self, limit: int = 100) -> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def get_user_conversations_with_messages(self, user_id: str) -> List[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def count_user_conversations(self, user_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def count_user_messages(self, user_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def get_total_conversations_count(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_total_messages_count(self) -> int:
+        pass
+
 
 class InMemoryChatReviewStorage(ChatReviewStorageInterface):
     def __init__(self):
@@ -222,6 +242,42 @@ class InMemoryChatReviewStorage(ChatReviewStorageInterface):
                 r["overall"] = round((r.get("relevance", 8) + r.get("accuracy", 8) + r.get("clarity", 8)) / 3.0, 1)
                 r["reviewer_username"] = r.get("reviewer_username") or "User"
             return all_revs[:limit]
+
+    def get_user_conversations_with_messages(self, user_id: str) -> List[Dict[str, Any]]:
+        with self._lock:
+            user_str = str(user_id)
+            matched = [dict(s) for s in self._sessions.values() if s["user_id"] == user_str]
+            matched.sort(key=lambda s: s["created_at"], reverse=True)
+            for s in matched:
+                sid = s["id"]
+                s["messages"] = [dict(m) for m in self._messages.get(sid, [])]
+            return matched
+
+    def count_user_conversations(self, user_id: str) -> int:
+        with self._lock:
+            user_str = str(user_id)
+            return sum(1 for s in self._sessions.values() if s["user_id"] == user_str)
+
+    def count_user_messages(self, user_id: str) -> int:
+        with self._lock:
+            user_str = str(user_id)
+            total = 0
+            for s in self._sessions.values():
+                if s["user_id"] == user_str:
+                    total += len(self._messages.get(s["id"], []))
+            return total
+
+    def get_total_conversations_count(self) -> int:
+        with self._lock:
+            return len(self._sessions)
+
+    def get_total_messages_count(self) -> int:
+        with self._lock:
+            return sum(len(msgs) for msgs in self._messages.values())
+
+    # Aliases
+    create_conversation = create_chat_session
+    add_message = add_chat_message
 
 
 class PostgresChatReviewStorage(ChatReviewStorageInterface):
@@ -492,6 +548,76 @@ class PostgresChatReviewStorage(ChatReviewStorageInterface):
                 d["overall"] = round((d["relevance"] + d["accuracy"] + d["clarity"]) / 3.0, 1)
                 out.append(d)
             return out
+
+    def get_user_conversations_with_messages(self, user_id: str) -> List[Dict[str, Any]]:
+        with self._connect() as conn:
+            s_rows = conn.execute(
+                """
+                SELECT id, user_id, title, created_at, updated_at
+                FROM public.chat_sessions
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                """,
+                (str(user_id),),
+            ).fetchall()
+            conversations = []
+            for s in s_rows:
+                sd = dict(s)
+                sd["id"] = str(sd["id"])
+                sd["user_id"] = str(sd["user_id"])
+                m_rows = conn.execute(
+                    """
+                    SELECT id, session_id, role, content, search_results, score, intent, seconds, cached, created_at
+                    FROM public.chat_messages
+                    WHERE session_id = %s
+                    ORDER BY created_at ASC
+                    """,
+                    (sd["id"],),
+                ).fetchall()
+                messages = []
+                for m in m_rows:
+                    md = dict(m)
+                    md["id"] = str(md["id"])
+                    md["session_id"] = str(md["session_id"])
+                    messages.append(md)
+                sd["messages"] = messages
+                conversations.append(sd)
+            return conversations
+
+    def count_user_conversations(self, user_id: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS cnt FROM public.chat_sessions WHERE user_id = %s;",
+                (str(user_id),),
+            ).fetchone()
+            return row["cnt"] if row else 0
+
+    def count_user_messages(self, user_id: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS cnt 
+                FROM public.chat_messages m
+                JOIN public.chat_sessions s ON m.session_id = s.id
+                WHERE s.user_id = %s;
+                """,
+                (str(user_id),),
+            ).fetchone()
+            return row["cnt"] if row else 0
+
+    def get_total_conversations_count(self) -> int:
+        with self._connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS cnt FROM public.chat_sessions;").fetchone()
+            return row["cnt"] if row else 0
+
+    def get_total_messages_count(self) -> int:
+        with self._connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS cnt FROM public.chat_messages;").fetchone()
+            return row["cnt"] if row else 0
+
+    # Aliases
+    create_conversation = create_chat_session
+    add_message = add_chat_message
 
 
 _storage_instance: Optional[ChatReviewStorageInterface] = None

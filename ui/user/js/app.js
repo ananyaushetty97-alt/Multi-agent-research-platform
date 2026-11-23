@@ -538,6 +538,100 @@ document.addEventListener('DOMContentLoaded', () => {
     clearFormErrors();
   }
 
+  // --- Extended User Auth Modals: Verification, Forgot & Reset Password ---
+  let verifyTargetEmail = '';
+  let resendCooldownInterval = null;
+
+  function openVerifyModal(email, initialErrorMsg = null) {
+    verifyTargetEmail = email || (state.currentUser && state.currentUser.email) || '';
+    const emailDisp = document.getElementById('verify-email-display');
+    if (emailDisp) emailDisp.textContent = verifyTargetEmail || 'your email';
+    const otpInput = document.getElementById('verify-otp-input');
+    if (otpInput) otpInput.value = '';
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+    if (initialErrorMsg && errBanner && errText) {
+      errText.textContent = initialErrorMsg;
+      errBanner.style.display = 'flex';
+    } else if (errBanner) {
+      errBanner.style.display = 'none';
+    }
+    const succBanner = document.getElementById('verify-success-banner');
+    if (succBanner) succBanner.style.display = 'none';
+
+    document.getElementById('verify-modal-backdrop')?.classList.add('active');
+    setTimeout(() => otpInput?.focus(), 150);
+  }
+
+  function closeVerifyModal() {
+    document.getElementById('verify-modal-backdrop')?.classList.remove('active');
+  }
+
+  function openForgotModal() {
+    closeLoginModal();
+    const forgotEmail = document.getElementById('forgot-email');
+    if (forgotEmail) forgotEmail.value = loginEmail?.value || '';
+    const errBanner = document.getElementById('forgot-error-banner');
+    if (errBanner) errBanner.style.display = 'none';
+    const succBanner = document.getElementById('forgot-success-banner');
+    if (succBanner) succBanner.style.display = 'none';
+
+    document.getElementById('forgot-modal-backdrop')?.classList.add('active');
+    setTimeout(() => forgotEmail?.focus(), 150);
+  }
+
+  function closeForgotModal() {
+    document.getElementById('forgot-modal-backdrop')?.classList.remove('active');
+  }
+
+  function openResetModal(token = '') {
+    closeLoginModal();
+    closeForgotModal();
+    const tokenInput = document.getElementById('reset-token-input');
+    if (tokenInput) tokenInput.value = token;
+    const newPass = document.getElementById('reset-new-password');
+    const confPass = document.getElementById('reset-confirm-password');
+    if (newPass) newPass.value = '';
+    if (confPass) confPass.value = '';
+    const errBanner = document.getElementById('reset-error-banner');
+    if (errBanner) errBanner.style.display = 'none';
+
+    document.getElementById('reset-modal-backdrop')?.classList.add('active');
+    setTimeout(() => newPass?.focus(), 150);
+  }
+
+  function closeResetModal() {
+    document.getElementById('reset-modal-backdrop')?.classList.remove('active');
+  }
+
+  function startResendCooldown(seconds = 60) {
+    const btn = document.getElementById('btn-resend-otp');
+    const timer = document.getElementById('resend-cooldown-timer');
+    const secSpan = document.getElementById('cooldown-seconds');
+    if (!btn || !timer || !secSpan) return;
+
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    timer.style.display = 'inline';
+    let remaining = seconds;
+    secSpan.textContent = remaining;
+
+    if (resendCooldownInterval) clearInterval(resendCooldownInterval);
+    resendCooldownInterval = setInterval(() => {
+      remaining--;
+      secSpan.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(resendCooldownInterval);
+        resendCooldownInterval = null;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        timer.style.display = 'none';
+      }
+    }, 1000);
+  }
+
   function showAuthError(message) {
     const errorBanner = document.getElementById('login-error-banner');
     const errorText = document.getElementById('login-error-text');
@@ -719,14 +813,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
           const user = await RP.auth.register({ name, email, password, confirm_password });
-          updateAuthState(user);
           closeLoginModal();
-          showToast(`Account created! Welcome, ${user.full_name || user.email}`, 'person_add', 3000);
+          openVerifyModal(user.email);
+          startResendCooldown(60);
+          showToast(`Account created! Please enter the 6-digit verification code sent to ${user.email}`, 'mark_email_read', 6000);
           return true;
         } catch (err) {
-          const msg = (err.status === 409 || err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('already registered'))
-            ? "An account with this email already exists. Try signing in."
-            : (err.message || 'Registration failed.');
+          const errMsg = err.message || '';
+          if (errMsg.toLowerCase().includes('could not send') || errMsg.toLowerCase().includes('failed to deliver')) {
+            closeLoginModal();
+            openVerifyModal(email, "Could not send the verification email. Please check your configuration and click 'Resend code'.");
+            showToast("Could not send the verification email. Click 'Resend code' to retry.", "error", 6000);
+            return false;
+          }
+          const msg = (err.status === 409 || errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('already registered'))
+            ? "An account with this email already exists. Try signing in, resetting your password, or Continue with Google."
+            : (errMsg || 'Registration failed.');
           showAuthError(msg);
           registerEmail?.classList.add('input-error');
           registerPassword?.classList.add('input-error');
@@ -751,7 +853,17 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast(`Signed in as ${user.full_name || user.email}`, 'verified_user', 3000);
           return true;
         } catch (err) {
-          showAuthError(err.message || 'Invalid email or password.');
+          const errMsg = err.message || '';
+          if (err.status === 403 && (errMsg.toLowerCase().includes('verification') || errMsg.toLowerCase().includes('verify'))) {
+            closeLoginModal();
+            const deliveryFail = errMsg.toLowerCase().includes('could not send');
+            const initialBanner = deliveryFail ? "Could not send the verification email. Please click 'Resend code'." : null;
+            openVerifyModal(email, initialBanner);
+            if (!deliveryFail) startResendCooldown(60);
+            showToast(errMsg, 'mark_email_read', 6000);
+            return false;
+          }
+          showAuthError(errMsg || 'Invalid email or password. Don\'t have an account? Click \'Create one\' below.');
           loginPassword?.classList.add('input-error');
           return false;
         }
@@ -1585,6 +1697,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Submit Handler for the SINGLE Composer Box ---
   function handleComposerSubmit() {
+    if (!state.currentUser) {
+      openLoginModal('user');
+      showToast('Please sign in or create an account to start research.', 'login', 3500);
+      return;
+    }
+
     const text = composerInput.value.trim();
     if (!text && state.attachedFiles.length === 0) return;
 
@@ -1988,6 +2106,178 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 'btn-toggle-password');
 
+  // Links for switching between Sign In, Create Account & Forgot Password
+  document.getElementById('link-forgot-password')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openForgotModal();
+  });
+
+  document.getElementById('link-goto-register')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    userAuthMode = 'register';
+    updateLoginModalUI('user');
+  });
+
+  document.getElementById('link-goto-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    userAuthMode = 'signin';
+    updateLoginModalUI('user');
+  });
+
+  document.getElementById('link-back-to-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeForgotModal();
+    openLoginModal('user');
+  });
+
+  // Extended Auth Modals Close Handlers
+  document.getElementById('btn-close-verify-modal')?.addEventListener('click', closeVerifyModal);
+  document.getElementById('btn-close-forgot-modal')?.addEventListener('click', closeForgotModal);
+  document.getElementById('btn-close-reset-modal')?.addEventListener('click', closeResetModal);
+
+  document.getElementById('verify-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'verify-modal-backdrop') closeVerifyModal();
+  });
+  document.getElementById('forgot-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'forgot-modal-backdrop') closeForgotModal();
+  });
+  document.getElementById('reset-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'reset-modal-backdrop') closeResetModal();
+  });
+
+  // Verify OTP Action
+  document.getElementById('btn-submit-verify-otp')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const otp = document.getElementById('verify-otp-input')?.value.trim();
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+
+    if (!otp || otp.length !== 6) {
+      if (errBanner && errText) {
+        errText.textContent = 'Please enter the 6-digit verification code.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      const res = await RP.auth.verifyOtp({ email: verifyTargetEmail, otp });
+      closeVerifyModal();
+      if (res && res.user) {
+        updateAuthState(res.user);
+      } else {
+        const me = await RP.auth.me().catch(() => null);
+        if (me) updateAuthState(me);
+      }
+      showToast('Email verified successfully! Welcome to the research platform.', 'verified', 4000);
+      RP.syncServerChats().then(() => renderHistory());
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Verification failed. Please check the code.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Resend OTP Action
+  document.getElementById('btn-resend-otp')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!verifyTargetEmail) {
+      showToast('No email address available to resend code.', 'error');
+      return;
+    }
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+    const succBanner = document.getElementById('verify-success-banner');
+    try {
+      await RP.auth.resendOtp({ email: verifyTargetEmail });
+      if (succBanner) succBanner.style.display = 'flex';
+      if (errBanner) errBanner.style.display = 'none';
+      startResendCooldown(60);
+      showToast('Verification code resent to ' + verifyTargetEmail, 'send');
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Failed to resend code. Please wait before retrying.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Forgot Password Submit Action
+  document.getElementById('btn-submit-forgot')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email')?.value.trim().toLowerCase();
+    const errBanner = document.getElementById('forgot-error-banner');
+    const errText = document.getElementById('forgot-error-text');
+    const succBanner = document.getElementById('forgot-success-banner');
+
+    if (!email) {
+      if (errBanner && errText) {
+        errText.textContent = 'Please enter your account email.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      await RP.auth.forgotPassword({ email });
+      if (succBanner) succBanner.style.display = 'flex';
+      if (errBanner) errBanner.style.display = 'none';
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Request failed. Please try again later.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Reset Password Submit Action
+  document.getElementById('btn-submit-reset-password')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const token = document.getElementById('reset-token-input')?.value.trim();
+    const password = document.getElementById('reset-new-password')?.value;
+    const confirm_password = document.getElementById('reset-confirm-password')?.value;
+    const errBanner = document.getElementById('reset-error-banner');
+    const errText = document.getElementById('reset-error-text');
+
+    if (!token) {
+      if (errBanner && errText) {
+        errText.textContent = 'Missing or invalid reset token. Please request a new link.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    const hasLetter = /[A-Za-z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    if (!password || password.length < 8 || !hasLetter || !hasDigit) {
+      if (errBanner && errText) {
+        errText.textContent = 'Password must be at least 8 characters with at least one letter and one number.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+    if (password !== confirm_password) {
+      if (errBanner && errText) {
+        errText.textContent = 'Passwords do not match.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      await RP.auth.resetPassword({ token, password, confirm_password });
+      closeResetModal();
+      showToast('Password updated successfully! Please sign in with your new password.', 'lock_reset', 4000);
+      openLoginModal('user');
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Failed to update password. The reset link may have expired.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
   // Global Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -1996,6 +2286,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'Escape') {
       closeSearchModal();
       closeLoginModal();
+      closeVerifyModal();
+      closeForgotModal();
+      closeResetModal();
       closeShareModal();
       downloadFormatMenu?.classList.remove('show');
       uploadOptionsMenu?.classList.remove('show');
@@ -2653,11 +2946,32 @@ document.addEventListener('DOMContentLoaded', () => {
   setRole('user');
   fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => { });
 
+  function checkUrlAuthParams() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || params.get('reset_token');
+      const view = params.get('view');
+      const verified = params.get('verified');
+      const email = params.get('email');
+
+      if (token || view === 'reset-password') {
+        openResetModal(token || '');
+      } else if (verified === 'true') {
+        showToast('Email successfully verified! You may now sign in.', 'verified_user', 4000);
+        openLoginModal('user');
+      } else if (view === 'verify' && email) {
+        openVerifyModal(email);
+      }
+    } catch (e) { }
+  }
+
   // Call /api/auth/me on startup to restore session and load user chats
   RP.auth.me().then(user => {
     updateAuthState(user);
+    checkUrlAuthParams();
   }).catch(() => {
     updateAuthState(null);
+    checkUrlAuthParams();
   });
 
   // Fetch auth config exactly once on page load to initialize Google Sign-in

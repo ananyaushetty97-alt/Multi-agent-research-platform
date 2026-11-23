@@ -55,6 +55,29 @@
     audit: {
       logs: [],
       config_draft: {}
+    },
+    userTracking: {
+      stats: {
+        total_users: 0,
+        active_users: 0,
+        suspended_users: 0,
+        signups_today: 0,
+        signups_7d: 0,
+        signups_30d: 0,
+        google_users: 0,
+        email_users: 0,
+        total_conversations: 0,
+        total_messages: 0
+      },
+      users: [],
+      total_users_count: 0,
+      activities: [],
+      page: 0,
+      limit: 20,
+      search: "",
+      status_filter: "",
+      provider_filter: "",
+      event_filter: ""
     }
   };
   let currentTab = "overview-health";
@@ -174,6 +197,9 @@
   async function initAuthAndLiveData() {
     if (!authToken) {
       await attemptAutoLogin();
+    } else {
+      isBackendConnected = true;
+      updateBackendStatusBadge(true);
     }
     await fetchAllLiveTelemetry();
   }
@@ -211,7 +237,8 @@
         fetchQuality(),
         fetchSafety(),
         fetchMemory(),
-        fetchAudit()
+        fetchAudit(),
+        fetchUserTrackingData()
       ]);
     } catch (err) {
       console.warn("Using offline authentic dataset fallback:", err);
@@ -329,6 +356,49 @@
     }
   }
 
+  async function fetchUserTrackingData() {
+    try {
+      const statsRes = await apiRequest("/tracking/stats");
+      if (statsRes.ok) {
+        state.userTracking.stats = await statsRes.json();
+      }
+
+      const qParams = new URLSearchParams({
+        limit: String(state.userTracking.limit),
+        offset: String(state.userTracking.page * state.userTracking.limit)
+      });
+      if (state.userTracking.search) qParams.append("search", state.userTracking.search);
+      if (state.userTracking.status_filter) qParams.append("status", state.userTracking.status_filter);
+      if (state.userTracking.provider_filter) qParams.append("auth_provider", state.userTracking.provider_filter);
+
+      const usersRes = await apiRequest(`/tracking/users?${qParams.toString()}`);
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        state.userTracking.users = data.users || [];
+        state.userTracking.total_users_count = data.total || 0;
+      }
+
+      await fetchUserTrackingActivity();
+      renderUserTrackingView();
+    } catch (e) {
+      console.warn("User tracking live fetch encountered:", e);
+    }
+  }
+
+  async function fetchUserTrackingActivity() {
+    try {
+      const qParams = new URLSearchParams({ limit: "100" });
+      if (state.userTracking.event_filter) qParams.append("event_type", state.userTracking.event_filter);
+      const actRes = await apiRequest(`/tracking/activity?${qParams.toString()}`);
+      if (actRes.ok) {
+        const data = await actRes.json();
+        state.userTracking.activities = data.activities || [];
+      }
+    } catch (e) {
+      console.warn("Activity live fetch encountered:", e);
+    }
+  }
+
   // ---------- ROUTING & VIEW NAVIGATION ----------
   function initRouting() {
     const panels = document.querySelectorAll(".admin-view-panel");
@@ -345,7 +415,8 @@
       "quality-judge",
       "safety-red-team",
       "memory-cache",
-      "audit-logs-config"
+      "audit-logs-config",
+      "user-tracking"
     ];
 
     if (validTabs.includes(hash)) {
@@ -400,6 +471,8 @@
         await fetchMemory();
       } else if (tabId === "audit-logs-config") {
         await fetchAudit();
+      } else if (tabId === "user-tracking") {
+        await fetchUserTrackingData();
       }
     } catch (e) {
       console.warn(`Telemetry refresh for ${tabId} encountered:`, e);
@@ -426,7 +499,8 @@
         "quality-judge": "Quality & LLM-as-a-Judge",
         "safety-red-team": "Safety & Red-Team",
         "memory-cache": "Memory & Cache",
-        "audit-logs-config": "Audit Logs & Config"
+        "audit-logs-config": "Audit Logs & Config",
+        "user-tracking": "User Tracking & Activity"
       };
       breadcrumbTitle.textContent = tabTitles[currentTab] || "Overview & Health";
     }
@@ -663,6 +737,114 @@
         submitHumanReview();
       });
     }
+
+    // User Tracking & Activity Ledger Controls
+    const btnRefreshTracking = document.getElementById("btnRefreshUserTracking");
+    if (btnRefreshTracking) {
+      btnRefreshTracking.addEventListener("click", () => {
+        showToast("Refreshing user tracking telemetry...", "info");
+        fetchUserTrackingData();
+      });
+    }
+
+    const subtabUsers = document.getElementById("subtabUsersList");
+    const subtabActivity = document.getElementById("subtabActivityLogs");
+    const paneUsers = document.getElementById("paneUsersList");
+    const paneActivity = document.getElementById("paneActivityLogs");
+
+    if (subtabUsers && subtabActivity && paneUsers && paneActivity) {
+      subtabUsers.addEventListener("click", () => {
+        subtabUsers.classList.add("active");
+        subtabActivity.classList.remove("active");
+        paneUsers.style.display = "block";
+        paneActivity.style.display = "none";
+      });
+
+      subtabActivity.addEventListener("click", () => {
+        subtabActivity.classList.add("active");
+        subtabUsers.classList.remove("active");
+        paneActivity.style.display = "block";
+        paneUsers.style.display = "none";
+      });
+    }
+
+    const userSearchInput = document.getElementById("filterUserSearch");
+    if (userSearchInput) {
+      let debounceTimer = null;
+      userSearchInput.addEventListener("input", (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          state.userTracking.search = e.target.value.trim();
+          state.userTracking.page = 0;
+          fetchUserTrackingData();
+        }, 300);
+      });
+    }
+
+    const filterStatus = document.getElementById("filterUserStatus");
+    if (filterStatus) {
+      filterStatus.addEventListener("change", (e) => {
+        state.userTracking.status_filter = e.target.value;
+        state.userTracking.page = 0;
+        fetchUserTrackingData();
+      });
+    }
+
+    const filterProvider = document.getElementById("filterUserProvider");
+    if (filterProvider) {
+      filterProvider.addEventListener("change", (e) => {
+        state.userTracking.provider_filter = e.target.value;
+        state.userTracking.page = 0;
+        fetchUserTrackingData();
+      });
+    }
+
+    const filterActEvent = document.getElementById("filterActivityEvent");
+    if (filterActEvent) {
+      filterActEvent.addEventListener("change", (e) => {
+        state.userTracking.event_filter = e.target.value;
+        fetchUserTrackingActivity().then(renderUserTrackingView);
+      });
+    }
+
+    const btnReloadAct = document.getElementById("btnRefreshActivity");
+    if (btnReloadAct) {
+      btnReloadAct.addEventListener("click", () => {
+        fetchUserTrackingActivity().then(renderUserTrackingView);
+      });
+    }
+
+    const btnPrevPage = document.getElementById("btnUserPrevPage");
+    if (btnPrevPage) {
+      btnPrevPage.addEventListener("click", () => {
+        if (state.userTracking.page > 0) {
+          state.userTracking.page--;
+          fetchUserTrackingData();
+        }
+      });
+    }
+
+    const btnNextPage = document.getElementById("btnUserNextPage");
+    if (btnNextPage) {
+      btnNextPage.addEventListener("click", () => {
+        state.userTracking.page++;
+        fetchUserTrackingData();
+      });
+    }
+
+    const btnCloseUserModal = document.getElementById("btnCloseUserDetailModal");
+    if (btnCloseUserModal) {
+      btnCloseUserModal.addEventListener("click", closeUserDetailModal);
+    }
+
+    const userDetailBackdrop = document.getElementById("userDetailModalBackdrop");
+    if (userDetailBackdrop) {
+      userDetailBackdrop.addEventListener("click", (e) => {
+        if (e.target === userDetailBackdrop) {
+          closeUserDetailModal();
+        }
+      });
+    }
   }
 
   // ---------- POLLING & PROBE ENGINE ----------
@@ -731,6 +913,7 @@
     renderSafetyView();
     renderMemoryView();
     renderAuditView();
+    renderUserTrackingView();
     renderTraceWaterfall(activeTraceId);
   }
 
@@ -1850,6 +2033,303 @@
     renderAuditView();
   }
 
+  // 8. User Tracking & Activity Ledger
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function renderUserTrackingView() {
+    const stats = state.userTracking.stats || {};
+    const totalUsersEl = document.getElementById("statTotalUsers");
+    const activeRatioEl = document.getElementById("statActiveRatio");
+    const signupsTodayEl = document.getElementById("statSignupsToday");
+    const signups7dEl = document.getElementById("statSignups7d");
+    const totalConvsEl = document.getElementById("statTotalConversations");
+    const totalMsgsEl = document.getElementById("statTotalMessages");
+    const providerEl = document.getElementById("statProviderBreakdown");
+    const activeCountEl = document.getElementById("statActiveUsersCount");
+    const suspendedCountEl = document.getElementById("statSuspendedUsersCount");
+    const userBadgeEl = document.getElementById("userCountBadge");
+
+    if (totalUsersEl) totalUsersEl.textContent = stats.total_users || 0;
+    if (activeRatioEl) activeRatioEl.textContent = `${stats.active_users || 0} active (${stats.suspended_users || 0} suspended)`;
+    if (signupsTodayEl) signupsTodayEl.textContent = stats.signups_today || 0;
+    if (signups7dEl) signups7dEl.textContent = `${stats.signups_7d || 0} in 7d (${stats.signups_30d || 0} in 30d)`;
+    if (totalConvsEl) totalConvsEl.textContent = stats.total_conversations || 0;
+    if (totalMsgsEl) totalMsgsEl.textContent = stats.total_messages || 0;
+    if (providerEl) providerEl.textContent = `${stats.google_users || 0} Google / ${stats.email_users || 0} Email`;
+    if (activeCountEl) activeCountEl.textContent = stats.active_users || 0;
+    if (suspendedCountEl) suspendedCountEl.textContent = stats.suspended_users || 0;
+    if (userBadgeEl) userBadgeEl.textContent = state.userTracking.total_users_count || 0;
+
+    // Render Users Table
+    const tbody = document.getElementById("userTableBody");
+    if (tbody) {
+      tbody.innerHTML = "";
+      const users = state.userTracking.users || [];
+      if (users.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+              No registered users found matching the filter criteria.
+            </td>
+          </tr>
+        `;
+      } else {
+        users.forEach((u) => {
+          const tr = document.createElement("tr");
+          const isGoogle = u.auth_provider === "google";
+          const isSuspended = u.status === "suspended";
+          const verifiedBadge = u.email_verified
+            ? `<span style="display: inline-flex; align-items: center; gap: 4px; color: #0d8a4e; font-size: 0.75rem;"><span class="material-symbols-outlined text-[14px]">check_circle</span>Verified</span>`
+            : `<span style="display: inline-flex; align-items: center; gap: 4px; color: #b26b00; font-size: 0.75rem;"><span class="material-symbols-outlined text-[14px]">pending</span>Unverified</span>`;
+
+          const statusBadge = isSuspended
+            ? `<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(186, 26, 26, 0.1); color: #ba1a1a; font-size: 0.6875rem; font-weight: 600;">Suspended</span>`
+            : `<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(13, 138, 78, 0.1); color: #0d8a4e; font-size: 0.6875rem; font-weight: 600;">Active</span>`;
+
+          const toggleStatusBtn = isSuspended
+            ? `<button class="btn-user-status-action" data-user-id="${escapeHtml(u.id)}" data-action="active" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid #0d8a4e; color: #0d8a4e; background: transparent; border-radius: 4px; cursor: pointer; font-weight: 500;" type="button">Reactivate</button>`
+            : `<button class="btn-user-status-action" data-user-id="${escapeHtml(u.id)}" data-action="suspended" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid #ba1a1a; color: #ba1a1a; background: transparent; border-radius: 4px; cursor: pointer; font-weight: 500;" type="button">Suspend</button>`;
+
+          tr.innerHTML = `
+            <td>
+              <div style="font-weight: 600; color: var(--on-surface);">${escapeHtml(u.name || "User")}</div>
+              <div style="font-size: 0.6875rem; color: var(--on-surface-variant); font-family: var(--font-mono);">${escapeHtml(u.email || "—")}</div>
+            </td>
+            <td>
+              <span class="admin-nav-chip" style="font-size: 0.6875rem;">
+                <span class="material-symbols-outlined text-[12px]">${isGoogle ? "passkey" : "mail"}</span>
+                ${escapeHtml(u.auth_provider || "email")}
+              </span>
+            </td>
+            <td>${verifiedBadge}</td>
+            <td>${statusBadge}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${formatIST(u.created_at)}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${formatIST(u.last_login_at)}</td>
+            <td style="text-align: center; font-weight: 600;">${u.total_conversations || 0}</td>
+            <td style="text-align: center; font-weight: 600;">${u.total_messages || 0}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button class="btn-user-inspect" data-user-id="${escapeHtml(u.id)}" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid var(--border-color); background: var(--surface-container-low); border-radius: 4px; cursor: pointer; margin-right: 4px;" type="button">View Dossiers</button>
+              ${toggleStatusBtn}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Attach event listeners to buttons
+        tbody.querySelectorAll(".btn-user-inspect").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const uid = btn.getAttribute("data-user-id");
+            openUserDetailModal(uid);
+          });
+        });
+
+        tbody.querySelectorAll(".btn-user-status-action").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const uid = btn.getAttribute("data-user-id");
+            const newStatus = btn.getAttribute("data-action");
+            changeUserStatus(uid, newStatus);
+          });
+        });
+      }
+    }
+
+    // Pagination info
+    const paginationEl = document.getElementById("userPaginationInfo");
+    const prevBtn = document.getElementById("btnUserPrevPage");
+    const nextBtn = document.getElementById("btnUserNextPage");
+    const page = state.userTracking.page || 0;
+    const limit = state.userTracking.limit || 20;
+    const total = state.userTracking.total_users_count || 0;
+    const from = total === 0 ? 0 : page * limit + 1;
+    const to = Math.min((page + 1) * limit, total);
+
+    if (paginationEl) paginationEl.textContent = `Showing ${from} - ${to} of ${total} users`;
+    if (prevBtn) prevBtn.disabled = page <= 0;
+    if (nextBtn) nextBtn.disabled = to >= total;
+
+    // Render Global Activity Table
+    const actBody = document.getElementById("activityTableBody");
+    if (actBody) {
+      actBody.innerHTML = "";
+      const acts = state.userTracking.activities || [];
+      if (acts.length === 0) {
+        actBody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+              No activity log entries found.
+            </td>
+          </tr>
+        `;
+      } else {
+        acts.forEach((a) => {
+          const tr = document.createElement("tr");
+          let metaStr = "—";
+          if (a.metadata && Object.keys(a.metadata).length > 0) {
+            metaStr = escapeHtml(JSON.stringify(a.metadata));
+          }
+          tr.innerHTML = `
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem; white-space: nowrap;">${formatIST(a.created_at)}</td>
+            <td>
+              <span class="admin-nav-chip" style="font-size: 0.6875rem;">${escapeHtml(a.event_type)}</span>
+            </td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${escapeHtml(a.user_id ? String(a.user_id).slice(0, 12) + "..." : "system")}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${escapeHtml(a.ip_address || "—")}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${metaStr}">${metaStr}</td>
+          `;
+          actBody.appendChild(tr);
+        });
+      }
+    }
+  }
+
+  async function openUserDetailModal(userId) {
+    const modal = document.getElementById("userDetailModalBackdrop");
+    if (!modal) return;
+
+    try {
+      const res = await apiRequest(`/tracking/users/${encodeURIComponent(userId)}`);
+      if (!res.ok) {
+        showToast("Failed to load user details", "error");
+        return;
+      }
+      const data = await res.json();
+      const p = data.profile || {};
+      const convs = data.conversations || [];
+      const timeline = data.activity_timeline || [];
+
+      const initialEl = document.getElementById("modalUserInitial");
+      const nameEl = document.getElementById("modalUserName");
+      const emailEl = document.getElementById("modalUserEmail");
+      const idEl = document.getElementById("modalUserId");
+      const providerEl = document.getElementById("modalUserProviderBadge");
+      const statusEl = document.getElementById("modalUserStatusBadge");
+      const createdEl = document.getElementById("modalUserCreated");
+      const convCountEl = document.getElementById("modalUserConvCount");
+      const convsContainer = document.getElementById("modalUserConversationsContainer");
+      const timelineContainer = document.getElementById("modalUserTimelineContainer");
+
+      const displayName = p.name || p.email || "User";
+      if (initialEl) initialEl.textContent = (displayName[0] || "U").toUpperCase();
+      if (nameEl) nameEl.textContent = displayName;
+      if (emailEl) emailEl.textContent = p.email || "No email";
+      if (idEl) idEl.textContent = p.id;
+      if (providerEl) {
+        providerEl.innerHTML = `<span class="admin-nav-chip" style="font-size: 0.6875rem;">${escapeHtml(p.auth_provider || "email")}</span> ${p.email_verified ? '<span style="color: #0d8a4e; font-size: 0.6875rem;">Verified</span>' : '<span style="color: #b26b00; font-size: 0.6875rem;">Unverified</span>'}`;
+      }
+      if (statusEl) {
+        const isSusp = p.status === "suspended";
+        statusEl.innerHTML = isSusp
+          ? `<span style="color: #ba1a1a; font-weight: 600;">Suspended</span>`
+          : `<span style="color: #0d8a4e; font-weight: 600;">Active</span>`;
+      }
+      if (createdEl) createdEl.textContent = formatIST(p.created_at);
+      if (convCountEl) convCountEl.textContent = convs.length;
+
+      // Render conversations (read-only)
+      if (convsContainer) {
+        convsContainer.innerHTML = "";
+        if (convs.length === 0) {
+          convsContainer.innerHTML = `<div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center; padding: 12px;">No conversations recorded for this user.</div>`;
+        } else {
+          convs.forEach((c, idx) => {
+            const card = document.createElement("div");
+            card.style.cssText = "background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 6px;";
+            const msgs = c.messages || [];
+            let msgsHtml = "";
+            msgs.forEach((m) => {
+              const isUser = m.role === "user";
+              msgsHtml += `
+                <div style="margin-top: 6px; padding: 6px 8px; border-radius: 4px; background: ${isUser ? 'rgba(0, 102, 136, 0.08)' : 'var(--surface-container-lowest, #fff)'}; font-size: 0.75rem;">
+                  <div style="font-weight: 600; font-size: 0.6875rem; color: ${isUser ? 'var(--primary)' : 'var(--on-surface)'}; margin-bottom: 2px;">
+                    ${isUser ? 'User Inquiry' : 'Assistant Synthesis'} (${formatIST(m.created_at, false)})
+                  </div>
+                  <div style="white-space: pre-wrap; word-break: break-word; color: var(--on-surface); max-height: 120px; overflow-y: auto;">${escapeHtml(m.content || '')}</div>
+                </div>
+              `;
+            });
+
+            card.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 600; font-size: 0.8125rem; color: var(--on-surface);">${escapeHtml(c.title || 'Untitled Dossier')}</div>
+                <div style="font-size: 0.6875rem; color: var(--on-surface-variant); font-family: var(--font-mono);">${msgs.length} messages &bull; ${formatIST(c.updated_at || c.created_at, false)}</div>
+              </div>
+              <div style="margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 4px;">
+                ${msgsHtml || '<span style="font-size: 0.6875rem; color: var(--on-surface-variant);">No messages</span>'}
+              </div>
+            `;
+            convsContainer.appendChild(card);
+          });
+        }
+      }
+
+      // Render timeline
+      if (timelineContainer) {
+        timelineContainer.innerHTML = "";
+        if (timeline.length === 0) {
+          timelineContainer.innerHTML = `<div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center; padding: 8px;">No activity logs recorded.</div>`;
+        } else {
+          timeline.forEach((t) => {
+            const item = document.createElement("div");
+            item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-bottom: 1px dashed var(--border-color);";
+            let meta = "";
+            if (t.metadata && Object.keys(t.metadata).length > 0) {
+              meta = ` &bull; ${escapeHtml(JSON.stringify(t.metadata))}`;
+            }
+            item.innerHTML = `
+              <div>
+                <span style="font-weight: 600; color: var(--primary);">${escapeHtml(t.event_type)}</span>
+                <span style="color: var(--on-surface-variant);">${meta}</span>
+              </div>
+              <div style="color: var(--outline); font-size: 0.6875rem; white-space: nowrap; margin-left: 12px;">${formatIST(t.created_at)}</div>
+            `;
+            timelineContainer.appendChild(item);
+          });
+        }
+      }
+
+      modal.style.display = "flex";
+      modal.classList.add("active");
+    } catch (e) {
+      console.warn("Could not open user detail modal:", e);
+      showToast("Error loading user profile", "error");
+    }
+  }
+
+  function closeUserDetailModal() {
+    const modal = document.getElementById("userDetailModalBackdrop");
+    if (modal) {
+      modal.style.display = "none";
+      modal.classList.remove("active");
+    }
+  }
+
+  async function changeUserStatus(userId, newStatus) {
+    try {
+      const res = await apiRequest(`/tracking/users/${encodeURIComponent(userId)}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        showToast(`User status updated to ${newStatus}`, "success");
+        await fetchUserTrackingData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.detail || "Failed to update user status", "error");
+      }
+    } catch (e) {
+      showToast("Network error updating user status", "error");
+    }
+  }
+
   // ---------- DESTRUCTIVE ACTION SAFEGUARD ENGINE ----------
   function requestDestructiveConfirmation(type, targetId, title) {
     pendingDestructiveAction = { type, targetId, title };
@@ -2257,6 +2737,9 @@
     openSwitchUserModal,
     verifyAndSwitchToUser,
     fetchAllLiveTelemetry,
+    fetchUserTrackingData,
+    openUserDetailModal,
+    changeUserStatus,
     lockAdminSession
   };
 })();

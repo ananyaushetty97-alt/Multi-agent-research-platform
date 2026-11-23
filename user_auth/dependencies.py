@@ -1,7 +1,7 @@
 import logging
 from urllib.parse import urlparse
 from typing import Optional
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, Depends, status
 
 from user_auth.config import settings
 from user_auth.models import UserResponse
@@ -66,6 +66,19 @@ def get_current_user(request: Request) -> UserResponse:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired session",
+        )
+    return user
+
+
+def require_verified_user(user: UserResponse = Depends(get_current_user)) -> UserResponse:
+    """
+    Enforce that authenticated user has completed email verification.
+    Unverified accounts cannot access protected features or chat.
+    """
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email verification required. Please verify your email before accessing research features.",
         )
     return user
 

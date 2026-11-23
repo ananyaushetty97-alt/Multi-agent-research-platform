@@ -22,8 +22,8 @@ OLLAMA_MODEL = get_ollama_model()
 
 log.info("LLM Gateway initialized: GROQ_MODEL=%s, OLLAMA_MODEL=%s", GROQ_MODEL, OLLAMA_MODEL)
 
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-ollama_client = OllamaClient(host="http://localhost:11434")
+groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"), max_retries=1, timeout=20.0)
+ollama_client = OllamaClient(host=os.environ.get("OLLAMA_URL", "http://localhost:11434"), timeout=3.0)
 
 # Request-scoped telemetry context variable
 _active_request_llm_telemetry: contextvars.ContextVar[Optional[List[Dict[str, Any]]]] = contextvars.ContextVar(
@@ -123,40 +123,63 @@ def _call_groq(prompt: str, system_prompt: str, max_tokens: Optional[int] = None
     else:
         actual_max = 600
 
-    active_groq_model = get_groq_model()
-    response = groq_client.chat.completions.create(
-        model=active_groq_model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3,
-        max_tokens=actual_max,
-    )
-    choice_msg = response.choices[0].message
-    content = choice_msg.content or ""
-    if not content.strip() and getattr(choice_msg, "reasoning", None):
-        content = choice_msg.reasoning or ""
-    duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+    primary_model = get_groq_model()
+    candidate_models = [primary_model]
+    for alt in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]:
+        if alt not in candidate_models:
+            candidate_models.append(alt)
 
-    # Token counting
-    usage = getattr(response, "usage", None)
-    prompt_tokens = getattr(usage, "prompt_tokens", None) or max(1, len(prompt) // 4)
-    completion_tokens = getattr(usage, "completion_tokens", None) or max(1, len(content) // 4)
-    total_tokens = getattr(usage, "total_tokens", None) or (prompt_tokens + completion_tokens)
+    last_error = None
+    for model_name in candidate_models:
+        try:
+            response = groq_client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=actual_max,
+            )
+            choice_msg = response.choices[0].message
+            content = choice_msg.content or ""
+            if not content.strip() and getattr(choice_msg, "reasoning", None):
+                content = choice_msg.reasoning or ""
+            if not content.strip():
+                log.warning("Groq model %s returned empty text, trying next candidate...", model_name)
+                continue
 
-    record_call_telemetry({
-        "provider": "groq",
-        "model": active_groq_model,
-        "fallback_used": False,
-        "fallback_reason": None,
-        "prompt_tokens": prompt_tokens,
-        "completion_tokens": completion_tokens,
-        "total_tokens": total_tokens,
-        "duration_ms": duration_ms,
-    })
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
-    return content
+            # Token counting
+            usage = getattr(response, "usage", None)
+            prompt_tokens = getattr(usage, "prompt_tokens", None) or max(1, len(prompt) // 4)
+            completion_tokens = getattr(usage, "completion_tokens", None) or max(1, len(content) // 4)
+            total_tokens = getattr(usage, "total_tokens", None) or (prompt_tokens + completion_tokens)
+
+            record_call_telemetry({
+                "provider": "groq",
+                "model": model_name,
+                "fallback_used": (model_name != primary_model),
+                "fallback_reason": f"Fallback from {primary_model} to {model_name}" if model_name != primary_model else None,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "duration_ms": duration_ms,
+            })
+
+            log.info(
+                "LLM call SUCCESS: provider=groq, model=%s (primary=%s, tokens=%d, duration=%.2fms)",
+                model_name, primary_model, total_tokens, duration_ms
+            )
+
+            return content
+        except Exception as e:
+            last_error = e
+            log.warning("Groq model %s failed: %s. Attempting fallback model...", model_name, e)
+            continue
+
+    raise last_error or RuntimeError("All Groq candidate models failed to return content.")
 
 
 def _call_ollama(prompt: str, system_prompt: str, fallback_reason: Optional[str] = None, max_tokens: Optional[int] = None) -> str:

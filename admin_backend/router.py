@@ -28,6 +28,7 @@ from admin_backend.routes.memory_routes import router as memory_router
 from admin_backend.routes.config_routes import router as config_router
 from admin_backend.routes.export_routes import router as export_router
 from admin_backend.routes.audit_routes import router as audit_router
+from admin_backend.routes.user_tracking_routes import router as tracking_router
 
 admin_router = APIRouter(prefix="/admin")
 
@@ -42,3 +43,4 @@ admin_router.include_router(memory_router)
 admin_router.include_router(config_router)
 admin_router.include_router(export_router)
 admin_router.include_router(audit_router)
+admin_router.include_router(tracking_router)

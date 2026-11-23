@@ -101,11 +101,60 @@ def _send_feedback(run_id, scores: dict) -> None:
 
 # --- Helpers -------------------------------------------------------------------
 def _extract_json(text: str) -> dict:
-    """LLMs often wrap JSON in ```json fences or add chatter. Pull out the {...}."""
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError(f"No JSON found in judge output: {text[:200]}")
-    return json.loads(match.group(0))
+    """
+    Robustly extract JSON object from judge LLM output.
+    Handles markdown ```json code blocks, reasoning chains, and malformed JSON.
+    """
+    if not text or not text.strip():
+        raise ValueError("Empty judge output received.")
+
+    cleaned = text.strip()
+
+    # 1. Look for markdown code fence blocks ```json { ... } ``` or ``` { ... } ```
+    fence_match = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", cleaned, re.IGNORECASE)
+    if fence_match:
+        try:
+            parsed = json.loads(fence_match.group(1))
+            if any(k in parsed for k in CRITERIA):
+                return parsed
+        except Exception:
+            pass
+
+    # 2. Extract balanced/non-greedy { ... } objects
+    candidate_matches = re.findall(r"\{[^{}]*\}", cleaned)
+    for candidate in candidate_matches:
+        try:
+            parsed = json.loads(candidate)
+            if any(k in parsed for k in CRITERIA):
+                return parsed
+        except Exception:
+            pass
+
+    # 3. Broader regex search for outer {...}
+    outer_match = re.search(r"(\{[\s\S]*\})", cleaned)
+    if outer_match:
+        try:
+            parsed = json.loads(outer_match.group(1))
+            if any(k in parsed for k in CRITERIA):
+                return parsed
+        except Exception:
+            pass
+
+    # 4. Resilient regex fallback for integer criteria and comment
+    rel_m = re.search(r'["\']?relevance["\']?\s*:\s*(\d+)', cleaned, re.IGNORECASE)
+    acc_m = re.search(r'["\']?accuracy["\']?\s*:\s*(\d+)', cleaned, re.IGNORECASE)
+    cla_m = re.search(r'["\']?clarity["\']?\s*:\s*(\d+)', cleaned, re.IGNORECASE)
+    com_m = re.search(r'["\']?comment["\']?\s*:\s*["\']([^"\']+)["\']', cleaned, re.IGNORECASE)
+
+    if rel_m and acc_m and cla_m:
+        return {
+            "relevance": int(rel_m.group(1)),
+            "accuracy": int(acc_m.group(1)),
+            "clarity": int(cla_m.group(1)),
+            "comment": com_m.group(1) if com_m else "Grading parsed via resilient extractor fallback.",
+        }
+
+    raise ValueError(f"No valid JSON found in judge output: {cleaned[:200]}")
 
 
 def _clamp(value) -> int:
@@ -133,7 +182,15 @@ def grade_report(topic: str, report: str, llm=None) -> dict:
     for attempt in range(2):  # one retry, because JSON output is flaky
         attempts += 1
         try:
-            raw_text = llm(prompt)
+            # Pass explicit judge system prompt and max_tokens if supported
+            try:
+                raw_text = llm(
+                    prompt,
+                    system_prompt="You are a strict objective evaluation judge. Return ONLY valid JSON.",
+                    max_tokens=300,
+                )
+            except TypeError:
+                raw_text = llm(prompt)
             raw = _extract_json(raw_text)
             scores = {c: _clamp(raw[c]) for c in CRITERIA}
             scores["overall"] = round(sum(scores.values()) / len(CRITERIA), 1)

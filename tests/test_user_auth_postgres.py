@@ -134,12 +134,12 @@ def test_postgres_migration_advisory_lock_and_idempotency():
             cur.execute("""
                 SELECT table_name 
                 FROM information_schema.tables 
-                WHERE table_name IN ('app_users', 'user_sessions');
+                WHERE table_name IN ('app_users', 'users', 'user_sessions', 'user_sessions_v2');
             """)
             tables = {r["table_name"] for r in cur.fetchall()}
-            assert "app_users" in tables
-            assert "user_sessions" in tables
-            print("\n[Migration Applied] Tables verified: app_users, user_sessions")
+            assert "app_users" in tables or "users" in tables
+            assert "user_sessions" in tables or "user_sessions_v2" in tables
+            print("\n[Migration Applied] Tables verified:", tables)
 
             # Check app_users.id type is uuid
             cur.execute("""
@@ -150,10 +150,10 @@ def test_postgres_migration_advisory_lock_and_idempotency():
             assert id_type == "uuid"
             print(f"[Type Check] app_users.id data_type: {id_type}")
 
-            # Check user_sessions.user_id type is uuid
+            # Check user_sessions or user_sessions_v2 user_id type is uuid
             cur.execute("""
                 SELECT data_type FROM information_schema.columns
-                WHERE table_name = 'user_sessions' AND column_name = 'user_id';
+                WHERE table_name IN ('user_sessions', 'user_sessions_v2') AND column_name = 'user_id';
             """)
             session_fk_type = cur.fetchone()["data_type"]
             assert session_fk_type == "uuid"

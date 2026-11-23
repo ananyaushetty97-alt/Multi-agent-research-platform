@@ -42,6 +42,8 @@ from admin_backend.models.traces import (
 from admin_backend.models.safety import GuardCheckType
 from admin_backend.models.audit import UserActivityAction
 from gateway.llm_gateway import start_llm_request_session, get_llm_request_telemetry
+from agents.sanitizer import sanitize_report
+from user_auth.storage import get_user_auth_storage
 
 log = logging.getLogger("api")
 app = FastAPI(
@@ -50,6 +52,35 @@ app = FastAPI(
     version="0.3.0",
 )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.on_event("startup")
+def startup_checks():
+    """Verify system prerequisites and warn prominently if email or dependencies are unconfigured."""
+    if not user_auth_settings.email_configured:
+        log.warning(
+            "\n" + "!" * 70 + "\n"
+            "[WARNING] Email delivery is not configured in .env!\n"
+            "Real email delivery is disabled. In development mode (ENV=development),\n"
+            "OTP verification codes will be printed directly to the server console.\n"
+            "To send real emails, configure Gmail SMTP or an HTTPS Email API:\n"
+            "  Option A (Gmail SMTP):\n"
+            "    SMTP_HOST=smtp.gmail.com\n"
+            "    SMTP_PORT=587\n"
+            "    SMTP_TLS=true\n"
+            "    SMTP_USER=your_email@gmail.com\n"
+            "    SMTP_PASSWORD=your_16_digit_app_password\n"
+            "    SMTP_FROM=your_email@gmail.com\n"
+            "  Option B (HTTPS API - works when ports 587/465 are ISP blocked):\n"
+            "    RESEND_API_KEY=re_your_api_key\n"
+            "    BREVO_API_KEY=your_brevo_key\n"
+            + "!" * 70 + "\n"
+        )
+    else:
+        log.info("Email delivery configured: SMTP=%s, RESEND=%s, BREVO=%s",
+                 bool(user_auth_settings.smtp_host),
+                 bool(user_auth_settings.resend_api_key),
+                 bool(user_auth_settings.brevo_api_key))
 
 
 @app.middleware("http")
@@ -144,6 +175,7 @@ def generate(
     caller_email = current_user.email if current_user else None
 
     client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent")
     if not check_rate_limit(client_ip):
         raise HTTPException(
             status_code=429,
@@ -168,6 +200,19 @@ def generate(
         log.warning(f"history load failed, treating as a new session: {e}")
         history = []
     is_followup = any(h.get("role") == "report" for h in history)
+
+    # Log research_started for authenticated user
+    if current_user:
+        try:
+            get_user_auth_storage().log_activity(
+                user_id=user_id_val,
+                event_type="research_started",
+                metadata={"topic": req.topic, "session_id": session_id, "is_followup": is_followup},
+                ip_address=client_ip,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            log.warning(f"Failed to log research_started: {e}")
 
     # 1. Input guardrail (follow-ups skip the off-topic check)
     ok, reason = check_input(req.topic, is_followup=is_followup)
@@ -241,6 +286,13 @@ def generate(
                         seconds=round(time.time() - start, 2),
                         cached=True,
                     )
+                    get_user_auth_storage().log_activity(
+                        user_id=user_id_val,
+                        event_type="messages_sent",
+                        metadata={"topic": req.topic, "session_id": session_id, "cached": True},
+                        ip_address=client_ip,
+                        user_agent=request.headers.get("user-agent"),
+                    )
                 except Exception as e:
                     log.warning(f"Could not persist server chat turn on cache hit: {e}")
             trace.complete(
@@ -309,16 +361,55 @@ def generate(
             completion_tokens=telemetry.get("completion_tokens", 0),
             total_tokens=telemetry.get("total_tokens", 0),
         )
-        if status_code == 503:
-            raise HTTPException(status_code=503, detail=f"LLM unavailable: {e}")
+        err_str = str(e).lower()
+        if "rate limit" in err_str or "too many requests" in err_str or "429" in err_str:
+            raise HTTPException(
+                status_code=429,
+                detail="All AI research models are currently rate-limited. Please wait a moment before trying again."
+            )
+        if "both groq and ollama failed" in err_str or status_code == 503:
+            raise HTTPException(
+                status_code=503,
+                detail="All AI research models are currently unavailable. Please try again shortly."
+            )
         log.exception("pipeline failed")
+        if current_user:
+            try:
+                get_user_auth_storage().log_activity(
+                    user_id=user_id_val,
+                    event_type="research_failed",
+                    metadata={"topic": req.topic, "session_id": session_id, "error": str(e)},
+                    ip_address=client_ip,
+                    user_agent=user_agent,
+                )
+            except Exception:
+                pass
         raise HTTPException(status_code=500, detail=f"Pipeline error: {e}")
 
-    report = parts.report_to_text(result)
+    raw_report = parts.report_to_text(result)
+    report = sanitize_report(raw_report)
     is_dict = isinstance(result, dict)
     intent = (result.get("intent") if is_dict else None) or "new_research"
     search_results = result.get("search_results") if is_dict else None
     verified = result.get("is_verified", True) if is_dict else True
+
+    # Log report_generated for authenticated user
+    if current_user:
+        try:
+            get_user_auth_storage().log_activity(
+                user_id=user_id_val,
+                event_type="report_generated",
+                metadata={
+                    "topic": req.topic,
+                    "session_id": session_id,
+                    "intent": intent,
+                    "sources_count": len(search_results or []),
+                },
+                ip_address=client_ip,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            log.warning(f"Failed to log report_generated: {e}")
 
     # 4. Output guardrail (short answers are fine for questions)
     ok, reason = check_output(report, min_len=10 if intent == "question" else MIN_REPORT_LEN)
@@ -360,6 +451,35 @@ def generate(
     score = None
     if req.grade and intent != "question":
         score = grade_report(original_topic, report)
+        if current_user:
+            try:
+                if score and "error" not in score:
+                    get_user_auth_storage().log_activity(
+                        user_id=user_id_val,
+                        event_type="grading_completed",
+                        metadata={
+                            "topic": original_topic,
+                            "session_id": session_id,
+                            "overall": score.get("overall"),
+                            "score": score,
+                        },
+                        ip_address=client_ip,
+                        user_agent=user_agent,
+                    )
+                elif score and "error" in score:
+                    get_user_auth_storage().log_activity(
+                        user_id=user_id_val,
+                        event_type="grading_failed",
+                        metadata={
+                            "topic": original_topic,
+                            "session_id": session_id,
+                            "error": score.get("error"),
+                        },
+                        ip_address=client_ip,
+                        user_agent=user_agent,
+                    )
+            except Exception as e:
+                log.warning(f"Failed to log grading activity: {e}")
 
     # 6. Memory: always keep the conversation; cache and archive verified NEW research only
     _remember(scoped_session_id, req.topic, report, search_results,
@@ -580,6 +700,26 @@ def generate(
                 topic=req.topic,
                 status="success",
                 client_ip=client_ip,
+                user_agent=user_agent,
+            )
+        if current_user:
+            get_user_auth_storage().log_activity(
+                user_id=str(current_user.id),
+                event_type="messages_sent",
+                metadata={"topic": req.topic, "session_id": session_id, "cached": False, "intent": intent},
+                ip_address=client_ip,
+                user_agent=user_agent,
+            )
+            get_user_auth_storage().log_activity(
+                user_id=str(current_user.id),
+                event_type="research_completed",
+                metadata={
+                    "topic": req.topic,
+                    "session_id": session_id,
+                    "intent": intent,
+                    "overall_score": score.get("overall") if isinstance(score, dict) else None,
+                },
+                ip_address=client_ip,
                 user_agent=user_agent,
             )
     except Exception as e:

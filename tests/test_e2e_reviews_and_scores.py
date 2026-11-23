@@ -19,6 +19,16 @@ from user_auth.chat_storage import InMemoryChatReviewStorage
 import user_auth.chat_routes as chat_routes
 
 
+from user_auth.config import settings
+
+
+@pytest.fixture(autouse=True)
+def reset_email_for_tests(monkeypatch):
+    monkeypatch.setattr(settings, "smtp_host", None)
+    monkeypatch.setattr(settings, "resend_api_key", None)
+    monkeypatch.setattr(settings, "brevo_api_key", None)
+
+
 @pytest.fixture
 def client():
     return TestClient(app)
@@ -43,7 +53,13 @@ def test_user(client):
         headers=headers,
     )
     assert reg_resp.status_code == 200, reg_resp.text
-    cookies = reg_resp.cookies
+    from user_auth.storage import get_user_auth_storage
+    storage = get_user_auth_storage()
+    u = storage.get_user_by_email(email)
+    if u:
+        storage.update_user(u["id"], {"email_verified": True})
+    login_resp = client.post("/api/auth/login", json={"email": email, "password": password}, headers=headers)
+    cookies = login_resp.cookies
     return {"username": username, "email": email, "cookies": cookies, "headers": headers}
 
 
@@ -229,10 +245,10 @@ def test_postgres_storage_upsert_and_retrieve():
 
     try:
         conn = psycopg.connect(settings.postgres_dsn, connect_timeout=3)
-        row = conn.execute("SELECT id FROM public.app_users LIMIT 1").fetchone()
+        row = conn.execute("SELECT id FROM public.users LIMIT 1").fetchone()
         conn.close()
         if not row:
-            pytest.skip("No users in app_users to test FK")
+            pytest.skip("No users in users to test FK")
         user_id = str(row[0])
     except Exception as e:
         pytest.skip(f"PostgreSQL not accessible: {e}")

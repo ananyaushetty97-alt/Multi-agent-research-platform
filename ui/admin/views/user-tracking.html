@@ -1,0 +1,277 @@
+<div class="space-y-6">
+  <!-- Section Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-[var(--outline-variant,#bec9c8)]/40">
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-[var(--on-surface,#111d28)] flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[26px]">group</span>
+        User Tracking &amp; Activity Monitoring
+      </h2>
+      <p class="text-sm text-[var(--on-surface-variant,#3f4948)] mt-0.5">
+        Real-time visibility into registered users, data isolation, conversation volume, and security event logs.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btnRefreshUserTracking" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--surface-container-high,#dde9f9)] hover:bg-[var(--surface-variant,#d7e4f3)] text-[var(--on-surface,#111d28)] transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">sync</span>
+        Refresh Data
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Metric Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5" id="userTrackingStatsGrid">
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>Total Users</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">people</span>
+      </div>
+      <div class="mt-2 text-2xl font-bold text-[var(--on-surface,#111d28)] font-mono" id="statTotalUsers">—</div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]" id="statActiveRatio">— active</div>
+    </div>
+
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>New Signups</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
+      </div>
+      <div class="mt-2 text-2xl font-bold text-primary font-mono" id="statSignupsToday">—</div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]" id="statSignups7d">— in 7d</div>
+    </div>
+
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>Conversations</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">chat</span>
+      </div>
+      <div class="mt-2 text-2xl font-bold text-[var(--on-surface,#111d28)] font-mono" id="statTotalConversations">—</div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]">Isolated per-user</div>
+    </div>
+
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>Total Messages</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">forum</span>
+      </div>
+      <div class="mt-2 text-2xl font-bold text-[var(--on-surface,#111d28)] font-mono" id="statTotalMessages">—</div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]">Research monographs</div>
+    </div>
+
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>Google vs Email</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">passkey</span>
+      </div>
+      <div class="mt-2 text-xl font-bold text-[var(--on-surface,#111d28)] font-mono flex items-center gap-1.5" id="statProviderBreakdown">
+        <span>—</span>
+      </div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]">Verified providers</div>
+    </div>
+
+    <div class="bg-[var(--surface-container-low,#edf4ff)] p-4 rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm flex flex-col justify-between">
+      <div class="text-xs uppercase tracking-wider text-[var(--on-surface-variant,#3f4948)] font-semibold flex items-center justify-between">
+        <span>Account Status</span>
+        <span class="material-symbols-outlined text-[18px] text-primary">verified_user</span>
+      </div>
+      <div class="mt-2 text-xl font-bold text-[var(--on-surface,#111d28)] font-mono flex items-center gap-2" id="statStatusBreakdown">
+        <span class="text-emerald-700 dark:text-emerald-400" id="statActiveUsersCount">—</span>
+        <span class="text-xs text-[var(--on-surface-variant,#3f4948)]">/</span>
+        <span class="text-rose-700 dark:text-rose-400" id="statSuspendedUsersCount">—</span>
+      </div>
+      <div class="mt-1 text-[11px] text-[var(--on-surface-variant,#3f4948)]">Active / Suspended</div>
+    </div>
+  </div>
+
+  <!-- Main Tabs: Users Directory vs Global Activity Stream -->
+  <div class="border-b border-[var(--outline-variant,#bec9c8)]/40 flex items-center gap-4 text-sm font-semibold">
+    <button id="subtabUsersList" class="pb-2.5 border-b-2 border-primary text-primary flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-[18px]">badge</span>
+      Users Directory (<span id="userCountBadge">0</span>)
+    </button>
+    <button id="subtabActivityLogs" class="pb-2.5 border-b-2 border-transparent text-[var(--on-surface-variant,#3f4948)] hover:text-[var(--on-surface,#111d28)] flex items-center gap-1.5 transition-colors">
+      <span class="material-symbols-outlined text-[18px]">manage_history</span>
+      Global Activity Feed
+    </button>
+  </div>
+
+  <!-- Pane 1: Users Directory -->
+  <div id="paneUsersList" class="space-y-4">
+    <!-- Filters & Search Toolbar -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-[var(--surface-container-lowest,#ffffff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm">
+      <div class="flex-1 relative flex items-center">
+        <span class="material-symbols-outlined text-[18px] text-[var(--on-surface-variant,#3f4948)] absolute left-3">search</span>
+        <input type="text" id="filterUserSearch" placeholder="Search by name, email, or user ID..." class="w-full bg-transparent pl-9 pr-3 py-1.5 text-xs text-[var(--on-surface,#111d28)] outline-none border border-[var(--outline-variant,#bec9c8)]/60 rounded-lg focus:border-primary transition-colors" />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select id="filterUserStatus" class="bg-[var(--surface-container-low,#edf4ff)] text-xs text-[var(--on-surface,#111d28)] border border-[var(--outline-variant,#bec9c8)]/60 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary">
+          <option value="">Status: All</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
+
+        <select id="filterUserProvider" class="bg-[var(--surface-container-low,#edf4ff)] text-xs text-[var(--on-surface,#111d28)] border border-[var(--outline-variant,#bec9c8)]/60 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary">
+          <option value="">Provider: All</option>
+          <option value="email">Email</option>
+          <option value="google">Google</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-[var(--surface-container-lowest,#ffffff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-[var(--surface-container-low,#edf4ff)]/80 text-[var(--on-surface-variant,#3f4948)] uppercase tracking-wider font-semibold border-b border-[var(--outline-variant,#bec9c8)]/50">
+              <th class="py-3 px-4">User</th>
+              <th class="py-3 px-3">Auth Provider</th>
+              <th class="py-3 px-3">Verification</th>
+              <th class="py-3 px-3">Status</th>
+              <th class="py-3 px-3">Signed Up</th>
+              <th class="py-3 px-3">Last Login</th>
+              <th class="py-3 px-3 text-center">Chats</th>
+              <th class="py-3 px-3 text-center">Messages</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody" class="divide-y divide-[var(--outline-variant,#bec9c8)]/30 font-mono">
+            <tr>
+              <td colspan="9" class="py-8 text-center text-[var(--on-surface-variant,#3f4948)]">
+                Loading users directory...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-4 py-3 bg-[var(--surface-container-low,#edf4ff)]/40 border-t border-[var(--outline-variant,#bec9c8)]/40 text-xs text-[var(--on-surface-variant,#3f4948)]">
+        <div id="userPaginationInfo">Showing 0 of 0 users</div>
+        <div class="flex items-center gap-1.5">
+          <button id="btnUserPrevPage" class="px-2.5 py-1 rounded border border-[var(--outline-variant,#bec9c8)]/60 bg-[var(--surface-container-lowest,#ffffff)] disabled:opacity-40" disabled>Previous</button>
+          <button id="btnUserNextPage" class="px-2.5 py-1 rounded border border-[var(--outline-variant,#bec9c8)]/60 bg-[var(--surface-container-lowest,#ffffff)] disabled:opacity-40" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pane 2: Global Activity Stream -->
+  <div id="paneActivityLogs" class="space-y-4" style="display: none;">
+    <!-- Filter Bar -->
+    <div class="flex items-center justify-between gap-3 p-3 bg-[var(--surface-container-lowest,#ffffff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm">
+      <div class="flex items-center gap-2">
+        <select id="filterActivityEvent" class="bg-[var(--surface-container-low,#edf4ff)] text-xs text-[var(--on-surface,#111d28)] border border-[var(--outline-variant,#bec9c8)]/60 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary">
+          <option value="">Event Type: All</option>
+          <option value="login_success">login_success</option>
+          <option value="login_failure">login_failure</option>
+          <option value="signup">signup</option>
+          <option value="email_verified">email_verified</option>
+          <option value="google_login">google_login</option>
+          <option value="conversation_created">conversation_created</option>
+          <option value="conversation_deleted">conversation_deleted</option>
+          <option value="messages_sent">messages_sent</option>
+          <option value="password_reset_requested">password_reset_requested</option>
+          <option value="password_reset_completed">password_reset_completed</option>
+          <option value="account_status_changed">account_status_changed</option>
+          <option value="logout">logout</option>
+        </select>
+      </div>
+      <button id="btnRefreshActivity" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--outline-variant,#bec9c8)]/60 hover:bg-[var(--surface-container-low,#edf4ff)] transition-colors">
+        <span class="material-symbols-outlined text-[15px]">refresh</span>
+        Reload Feed
+      </button>
+    </div>
+
+    <!-- Activity Stream Table -->
+    <div class="bg-[var(--surface-container-lowest,#ffffff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/50 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-[var(--surface-container-low,#edf4ff)]/80 text-[var(--on-surface-variant,#3f4948)] uppercase tracking-wider font-semibold border-b border-[var(--outline-variant,#bec9c8)]/50">
+              <th class="py-3 px-4">Timestamp (IST)</th>
+              <th class="py-3 px-3">Event Type</th>
+              <th class="py-3 px-3">User</th>
+              <th class="py-3 px-3">IP Address</th>
+              <th class="py-3 px-4">Metadata</th>
+            </tr>
+          </thead>
+          <tbody id="activityTableBody" class="divide-y divide-[var(--outline-variant,#bec9c8)]/30 font-mono">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-[var(--on-surface-variant,#3f4948)]">
+                Loading activity feed...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Detail Modal (Conversations, Messages & Timeline) -->
+  <div id="userDetailModalBackdrop" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+    <div class="bg-[var(--surface-container-lowest,#ffffff)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-[var(--outline-variant,#bec9c8)]/60 flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-[var(--outline-variant,#bec9c8)]/40 flex items-center justify-between bg-[var(--surface-container-low,#edf4ff)]/50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg" id="modalUserInitial">U</div>
+          <div>
+            <h3 class="font-bold text-base text-[var(--on-surface,#111d28)]" id="modalUserName">—</h3>
+            <p class="text-xs text-[var(--on-surface-variant,#3f4948)] font-mono" id="modalUserEmail">—</p>
+          </div>
+        </div>
+        <button id="btnCloseUserDetailModal" class="p-1.5 text-[var(--on-surface-variant,#3f4948)] hover:text-[var(--on-surface,#111d28)] rounded-lg hover:bg-[var(--surface-container-high,#dde9f9)] transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Overview Badges -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 bg-[var(--surface-container-low,#edf4ff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/40">
+            <div class="text-[var(--on-surface-variant,#3f4948)] font-semibold uppercase tracking-wider text-[10px]">User ID</div>
+            <div class="mt-1 font-mono text-[11px] truncate text-[var(--on-surface,#111d28)]" id="modalUserId">—</div>
+          </div>
+          <div class="p-3 bg-[var(--surface-container-low,#edf4ff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/40">
+            <div class="text-[var(--on-surface-variant,#3f4948)] font-semibold uppercase tracking-wider text-[10px]">Provider &amp; Verified</div>
+            <div class="mt-1 font-semibold flex items-center gap-1.5" id="modalUserProviderBadge">—</div>
+          </div>
+          <div class="p-3 bg-[var(--surface-container-low,#edf4ff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/40">
+            <div class="text-[var(--on-surface-variant,#3f4948)] font-semibold uppercase tracking-wider text-[10px]">Account Status</div>
+            <div class="mt-1 font-semibold" id="modalUserStatusBadge">—</div>
+          </div>
+          <div class="p-3 bg-[var(--surface-container-low,#edf4ff)] rounded-xl border border-[var(--outline-variant,#bec9c8)]/40">
+            <div class="text-[var(--on-surface-variant,#3f4948)] font-semibold uppercase tracking-wider text-[10px]">Signed Up</div>
+            <div class="mt-1 font-mono text-[11px] text-[var(--on-surface,#111d28)]" id="modalUserCreated">—</div>
+          </div>
+        </div>
+
+        <!-- User Conversations (Read-Only) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-[var(--outline-variant,#bec9c8)]/30 pb-2">
+            <h4 class="font-bold text-sm text-[var(--on-surface,#111d28)] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">forum</span>
+              Conversations &amp; Research Dossiers (<span id="modalUserConvCount">0</span>)
+            </h4>
+          </div>
+          <div id="modalUserConversationsContainer" class="space-y-3">
+            <div class="text-xs text-[var(--on-surface-variant,#3f4948)] py-4 text-center">No conversations recorded.</div>
+          </div>
+        </div>
+
+        <!-- User Activity Timeline -->
+        <div class="space-y-3">
+          <div class="border-b border-[var(--outline-variant,#bec9c8)]/30 pb-2">
+            <h4 class="font-bold text-sm text-[var(--on-surface,#111d28)] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
+              Activity Timeline
+            </h4>
+          </div>
+          <div id="modalUserTimelineContainer" class="space-y-2 text-xs font-mono">
+            <!-- Timeline events -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

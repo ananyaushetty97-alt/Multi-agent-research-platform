@@ -8,9 +8,16 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from user_auth.dependencies import get_current_user, get_optional_user, require_csrf_protection
+from user_auth.dependencies import (
+    get_current_user,
+    require_verified_user,
+    get_optional_user,
+    require_csrf_protection,
+)
 from user_auth.models import UserResponse
 from user_auth.chat_storage import get_chat_review_storage
+from user_auth.storage import get_user_auth_storage
+from user_auth.security import get_client_ip
 from user_auth.config import settings
 
 log = logging.getLogger("user_auth.chat_routes")
@@ -41,7 +48,7 @@ class ReviewCreateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 @router.get("/chats", response_model=List[Dict[str, Any]])
 def list_user_chats(
-    user: UserResponse = Depends(get_current_user),
+    user: UserResponse = Depends(require_verified_user),
 ):
     """List all saved chat sessions for the authenticated user, newest first."""
     storage = get_chat_review_storage()
@@ -56,18 +63,35 @@ def list_user_chats(
 )
 def create_user_chat(
     req: ChatCreateRequest,
-    user: UserResponse = Depends(get_current_user),
+    request: Request,
+    user: UserResponse = Depends(require_verified_user),
 ):
     """Create a new chat session owned by the authenticated user."""
     storage = get_chat_review_storage()
     title = (req.title or "New Research").strip()
-    return storage.create_chat_session(user_id=str(user.id), title=title)
+    session = storage.create_chat_session(user_id=str(user.id), title=title)
+    
+    # Log activity
+    try:
+        client_ip = get_client_ip(request)
+        user_agent = request.headers.get("user-agent")
+        get_user_auth_storage().log_activity(
+            user_id=str(user.id),
+            event_type="conversation_created",
+            metadata={"conversation_id": session["id"], "title": title},
+            ip_address=client_ip,
+            user_agent=user_agent,
+        )
+    except Exception as e:
+        log.warning(f"Could not log conversation_created: {e}")
+        
+    return session
 
 
 @router.get("/chats/{chat_id}", response_model=Dict[str, Any])
 def get_user_chat(
     chat_id: str,
-    user: UserResponse = Depends(get_current_user),
+    user: UserResponse = Depends(require_verified_user),
 ):
     """Retrieve a specific chat session and all its messages. Enforces ownership."""
     storage = get_chat_review_storage()
@@ -88,7 +112,7 @@ def get_user_chat(
 def rename_user_chat(
     chat_id: str,
     req: ChatRenameRequest,
-    user: UserResponse = Depends(get_current_user),
+    user: UserResponse = Depends(require_verified_user),
 ):
     """Rename a chat session owned by the authenticated user."""
     storage = get_chat_review_storage()
@@ -110,7 +134,8 @@ def rename_user_chat(
 )
 def delete_user_chat(
     chat_id: str,
-    user: UserResponse = Depends(get_current_user),
+    request: Request,
+    user: UserResponse = Depends(require_verified_user),
 ):
     """Delete a chat session owned by the authenticated user."""
     storage = get_chat_review_storage()
@@ -120,6 +145,21 @@ def delete_user_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found or access denied",
         )
+
+    # Log activity
+    try:
+        client_ip = get_client_ip(request)
+        user_agent = request.headers.get("user-agent")
+        get_user_auth_storage().log_activity(
+            user_id=str(user.id),
+            event_type="conversation_deleted",
+            metadata={"conversation_id": chat_id},
+            ip_address=client_ip,
+            user_agent=user_agent,
+        )
+    except Exception as e:
+        log.warning(f"Could not log conversation_deleted: {e}")
+
     return {"status": "deleted", "id": chat_id}
 
 

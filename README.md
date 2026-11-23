@@ -247,3 +247,112 @@ python -m evaluation.langsmith_eval --local      # same, printed in the terminal
 ```
 
 `check_judge_real` grades one good report and three broken on purpose (off-topic, wrong facts, jumbled). Real scores must rank the good one clearly higher, give the low score on the right criterion, and stay similar when the same report is graded again. It also lists any values typed into the code (hardcoded scores, dashboard sample data) that look measured but aren't.
+
+
+---
+
+## 🔐 User Authentication & Data Isolation
+
+### Architecture & Security Model
+The platform implements production-grade user authentication and strict per-user data isolation while keeping **Admin Authentication 100% separate and protected**:
+
+1. **Strict Privilege Segregation**:
+   - **Admin Authentication**: Handled via `/admin/auth/login` issuing HMAC-signed JWTs, checked via `require_admin_role`. Admin credentials (`admin` / `admin123`) and login workflows are completely protected and unchanged.
+   - **User Authentication**: Handled via `/api/auth/*` issuing HTTP-only, `SameSite=Lax` session cookies with CSRF double-submit token protection.
+   - **Authorization Guard**: Normal users receive `403 Forbidden` on all `/admin/*` endpoints.
+
+2. **Three User Access Paths**:
+   - **Email + Password Login**: Constant-time password verification with bcrypt, brute-force lockout after repeated failures, generic error messages preventing email enumeration.
+   - **Email + Password Registration**: Enforces password complexity (min 8 chars, letter + digit, common password dictionary check), and triggers multi-layered email verification.
+   - **"Continue with Google"**: Google Identity Services integration with server-side ID token verification (cryptographic signature, audience matching `GOOGLE_CLIENT_ID`, issuer validation, and `email_verified=true`). Supports automatic account creation, returning logins, and seamless account linking with existing email/password accounts.
+
+3. **Multi-Layered Email Validity & Verification**:
+   - **Layer 1 (Syntax)**: Strict RFC-compliant regex validation on client and server.
+   - **Layer 2 (DNS MX)**: Live DNS query checks domain for valid MX (or fallback A) records.
+   - **Layer 3 (Disposable Email Blocking)**: Rejects throwaway domains (e.g. Mailinator, GuerrillaMail, 10minutemail).
+   - **Layer 4 (Ownership Proof)**: 6-digit verification OTP (10 min expiry, max 5 attempts, stored securely hashed via SHA-256) and signed one-click magic link. Unverified accounts cannot access research features or chat endpoints. Resend endpoint includes a 60-second cooldown timer.
+
+4. **Per-User Data Isolation (Zero IDOR)**:
+   - Database schema isolates all data by `user_id` across `users`, `conversations`, `messages`, and `activity_logs`.
+   - Every chat query derives user identity strictly from the cryptographically verified session cookie, never from client-supplied IDs. Direct access attempts to another user's conversation ID return `404 Not Found` / `403 Forbidden`.
+
+5. **Activity Audit Logging**:
+   - Key security events (`signup`, `email_verified`, `login_success`, `login_failure`, `logout`, `google_login`, `password_reset_requested`, `password_reset_completed`, `conversation_created`, `conversation_deleted`, `messages_sent`, `account_status_changed`) are automatically recorded in `activity_logs` with timestamp, user ID, IP address, and user agent.
+   - Passwords, tokens, and OTP codes are strictly excluded from logs.
+
+6. **Admin Observability & User Tracking Dashboard**:
+   - Access at `/admin` -> **User Tracking** tab (behind existing admin guard).
+   - **Summary Metrics**: Total Users, New Signups (24h / 7d / 30d), Active Users, Total Conversations, Total Messages, Google vs. Email breakdown.
+   - **Users Directory**: Searchable, filterable list with pagination showing provider, verification status, activity counts, and action buttons to suspend or reactivate accounts.
+   - **User Dossier Modal**: Read-only conversation transcripts, messages, and user activity timelines.
+   - **Global Activity Feed**: Real-time cross-platform audit trail filterable by user, event type, and date range.
+
+---
+
+### Google Cloud Console OAuth Setup Instructions
+
+To enable "Continue with Google":
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project or select an existing one (e.g., `multi-agent-research-platform`).
+3. Navigate to **APIs & Services** > **OAuth consent screen**:
+   - User Type: **External**.
+   - App name: `Research Hub`.
+   - User support email & Developer contact info: your contact email.
+   - Scopes: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`.
+   - Test users (if in Testing mode): Add your testing Gmail address.
+4. Navigate to **APIs & Services** > **Credentials**:
+   - Click **Create Credentials** > **OAuth client ID**.
+   - Application type: **Web application**.
+   - Name: `Research Hub Web Client`.
+   - **Authorized JavaScript origins**:
+     - Localhost: `http://localhost:8000`, `http://127.0.0.1:8000`
+     - Production: `https://your-production-domain.com`
+   - **Authorized redirect URIs**:
+     - Localhost: `http://localhost:8000/api/auth/google/callback`, `http://localhost:8000`
+     - Production: `https://your-production-domain.com/api/auth/google/callback`
+5. Copy your **Client ID** and **Client Secret**.
+6. Set in your `.env` file:
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   ```
+
+---
+
+### SMTP Configuration
+
+Email verification OTPs and password reset links use SMTP with STARTTLS. In development mode without an SMTP server, emails are safely logged to console output and captured in memory.
+
+To configure live email delivery (e.g. Gmail App Password):
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-16-char-app-password
+SMTP_FROM="Research Hub <noreply@platform.ai>"
+SMTP_TLS=true
+APP_BASE_URL=http://localhost:8000
+```
+
+---
+
+### Database Migrations
+
+Apply the user authentication and activity tracking schema to PostgreSQL:
+```bash
+psql -U postgres -d research_platform -f user_auth/migrations/004_user_auth_tracking_schema.sql
+```
+
+The migration automatically creates:
+- `users`, `conversations`, `messages`, `activity_logs`, `user_sessions`, `otp_verifications`, `password_resets`
+- Performance indexes on `(user_id, created_at)`, `conversation_id`, and `token_hash`
+- Discards / neutralizes demo-user hardcoded credentials (`user@platform.ai` / `user123`)
+
+---
+
+### Running Tests
+
+Run the full end-to-end authentication, data isolation, and admin tracking test suite (16 comprehensive test scenarios):
+```bash
+pytest tests/test_full_auth_and_tracking.py -v
+```

@@ -39,6 +39,9 @@ def setup_isolation_env(monkeypatch):
     settings.auth_storage_backend = "memory"
     settings.neutralize_demo_users = True
     settings.require_login = False
+    monkeypatch.setattr(settings, "smtp_host", None)
+    monkeypatch.setattr(settings, "resend_api_key", None)
+    monkeypatch.setattr(settings, "brevo_api_key", None)
 
     class _TestAuditStorage:
         def __init__(self):
@@ -67,7 +70,13 @@ def _register_and_login(client: TestClient, name: str, email: str, password: str
         headers=headers,
     )
     assert r.status_code == 200, f"Registration failed: {r.text}"
-    cookie = r.cookies.get(settings.session_cookie_name)
+    from user_auth.storage import get_user_auth_storage
+    storage = get_user_auth_storage()
+    u = storage.get_user_by_email(email)
+    if u:
+        storage.update_user(u["id"], {"email_verified": True})
+    login_resp = client.post("/api/auth/login", json={"email": email, "password": password}, headers=headers)
+    cookie = login_resp.cookies.get(settings.session_cookie_name)
     assert cookie is not None
     return cookie
 

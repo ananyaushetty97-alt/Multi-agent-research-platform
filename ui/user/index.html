@@ -738,7 +738,10 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="login-password">Password</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" for="login-password" style="margin-bottom: 0;">Password</label>
+              <a href="#" id="link-forgot-password" class="auth-helper-link" style="font-size: 0.75rem; color: var(--primary, #006688); text-decoration: none;">Forgot password?</a>
+            </div>
             <div class="form-input-wrapper">
               <span class="material-symbols-outlined form-input-icon">key</span>
               <input class="form-input" id="login-password" type="password" placeholder="Enter your password" required autocomplete="current-password" />
@@ -753,6 +756,12 @@
               <span class="material-symbols-outlined text-[18px]" id="btn-login-icon">login</span>
               <span id="btn-login-text">Sign In</span>
             </button>
+          </div>
+
+          <!-- Quick link: Don't have an account? Create one -->
+          <div class="auth-switch-prompt" id="prompt-to-signup" style="text-align: center; margin-top: 0.75rem; font-size: 0.8125rem; color: var(--on-surface-variant, #666);">
+            <span>Don't have an account?</span>
+            <a href="#" id="link-goto-register" style="color: var(--primary, #006688); font-weight: 600; text-decoration: none; margin-left: 4px;">Create one</a>
           </div>
         </form>
 
@@ -803,6 +812,12 @@
               <span>Create Account</span>
             </button>
           </div>
+
+          <!-- Quick link: Already have an account? Log in -->
+          <div class="auth-switch-prompt" id="prompt-to-signin" style="text-align: center; margin-top: 0.75rem; font-size: 0.8125rem; color: var(--on-surface-variant, #666);">
+            <span>Already have an account?</span>
+            <a href="#" id="link-goto-login" style="color: var(--primary, #006688); font-weight: 600; text-decoration: none; margin-left: 4px;">Log in</a>
+          </div>
         </form>
 
         <!-- Google Sign-In Container (Regular Users Only: Sign In & Create Account) -->
@@ -825,6 +840,179 @@
           <span class="material-symbols-outlined text-[15px]">info</span>
           <span>Demo Admin ID: <code>admin@platform.ai</code> (<code>admin123</code>)</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       EMAIL OTP VERIFICATION MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="verify-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">mark_email_read</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Verify Your Email</h3>
+            <p class="login-modal-subtitle">Enter the 6-digit code sent to your email address</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-verify-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="verify-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="verify-error-text">Verification code invalid or expired.</span>
+        </div>
+        <div class="login-success-banner" id="verify-success-banner" style="display: none; background: #e6f4ea; color: #137333; padding: 8px 12px; border-radius: 6px; font-size: 0.8125rem; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span id="verify-success-text">Verification code resent successfully!</span>
+        </div>
+
+        <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #666); margin-bottom: 12px; line-height: 1.45;">
+          A 6-digit verification code was dispatched to <strong id="verify-email-display" style="color: var(--on-surface, #111);">your email</strong>. It is valid for 10 minutes.
+        </p>
+
+        <form class="login-form" id="verify-form" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="verify-otp-input">6-Digit Verification Code</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">pin</span>
+              <input class="form-input" id="verify-otp-input" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required autocomplete="one-time-code" style="letter-spacing: 4px; font-weight: 600; font-size: 1.125rem; text-align: center;" />
+            </div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-verify-otp" type="submit">
+              <span class="material-symbols-outlined text-[18px]">verified</span>
+              <span>Verify &amp; Continue</span>
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.8125rem;">
+            <button type="button" id="btn-resend-otp" style="background: none; border: none; color: var(--primary, #006688); cursor: pointer; font-size: 0.8125rem; padding: 0; font-weight: 500;">
+              Resend Code
+            </button>
+            <span id="resend-cooldown-timer" style="color: var(--on-surface-variant, #888); font-size: 0.75rem; display: none;">Wait <span id="cooldown-seconds">60</span>s</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       FORGOT PASSWORD MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="forgot-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">lock_reset</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Reset Password</h3>
+            <p class="login-modal-subtitle">Enter your email to receive a password reset link</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-forgot-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="forgot-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="forgot-error-text"></span>
+        </div>
+        <div class="login-success-banner" id="forgot-success-banner" style="display: none; background: #e6f4ea; color: #137333; padding: 10px 12px; border-radius: 6px; font-size: 0.8125rem; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span id="forgot-success-text">If that email exists in our system, a password reset link has been dispatched.</span>
+        </div>
+
+        <form class="login-form" id="forgot-form" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Account Email Address</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">mail</span>
+              <input class="form-input" id="forgot-email" type="email" placeholder="name@example.com" required autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-forgot" type="submit">
+              <span class="material-symbols-outlined text-[18px]">send</span>
+              <span>Send Reset Link</span>
+            </button>
+          </div>
+
+          <div style="text-align: center; margin-top: 14px; font-size: 0.8125rem;">
+            <a href="#" id="link-back-to-login" style="color: var(--primary, #006688); text-decoration: none; font-weight: 500;">Back to Sign In</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       NEW PASSWORD ENTRY MODAL (Triggered via link / query param)
+       ====================================================================== -->
+  <div class="modal-backdrop" id="reset-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">password</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Create New Password</h3>
+            <p class="login-modal-subtitle">Choose a new secure password for your account</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-reset-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="reset-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="reset-error-text"></span>
+        </div>
+
+        <form class="login-form" id="reset-password-form" onsubmit="return false;">
+          <input type="hidden" id="reset-token-input" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="reset-new-password">New Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">key</span>
+              <input class="form-input" id="reset-new-password" type="password" placeholder="At least 8 chars with letter &amp; number" required autocomplete="new-password" />
+            </div>
+            <div class="form-field-error" id="reset-new-password-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reset-confirm-password">Confirm New Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">check_circle</span>
+              <input class="form-input" id="reset-confirm-password" type="password" placeholder="Re-enter new password" required autocomplete="new-password" />
+            </div>
+            <div class="form-field-error" id="reset-confirm-password-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-reset-password" type="submit">
+              <span class="material-symbols-outlined text-[18px]">lock_reset</span>
+              <span>Update Password</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

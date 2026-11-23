@@ -36,6 +36,9 @@ def setup_in_memory_auth(monkeypatch):
     settings.auth_storage_backend = "memory"
     settings.neutralize_demo_users = True
     settings.require_login = False
+    monkeypatch.setattr(settings, "smtp_host", None)
+    monkeypatch.setattr(settings, "resend_api_key", None)
+    monkeypatch.setattr(settings, "brevo_api_key", None)
 
     try:
         import psycopg
@@ -168,10 +171,8 @@ def test_register_success(client):
     assert data["role"] == "user"
     assert not data["email_verified"]
 
-    # Cookie must be set
-    assert settings.session_cookie_name in resp.cookies
-    cookie = resp.cookies[settings.session_cookie_name]
-    assert len(cookie) > 20
+    # In email verification flow, NO session cookie is issued until OTP is verified
+    assert settings.session_cookie_name not in resp.cookies
 
 
 def test_register_duplicate_email_rejected(client):
@@ -226,13 +227,52 @@ def test_login_success(client):
         "confirm_password": "Password123"
     }, headers=headers)
 
-    # Login
+    # Unverified user cannot log in
+    unverified_resp = client.post("/api/auth/login", json={
+        "email": "BOB@example.com",
+        "password": "Password123"
+    }, headers=headers)
+    assert unverified_resp.status_code == 403
+    assert "verification" in unverified_resp.json()["detail"].lower()
+
+    # Manually mark verified or verify via OTP
+    storage = auth_service.storage
+    user = storage.get_user_by_email("bob@example.com")
+    storage.update_user(user["id"], {"email_verified": True})
+
+    # Verified login succeeds
     resp = client.post("/api/auth/login", json={
         "email": "BOB@example.com",
         "password": "Password123"
     }, headers=headers)
     assert resp.status_code == 200
     assert settings.session_cookie_name in resp.cookies
+
+
+def test_verify_otp_issues_session_cookie(client):
+    headers = {"X-Requested-With": "XMLHttpRequest"}
+    client.post("/api/auth/register", json={
+        "name": "Cara Scholar",
+        "email": "cara@example.com",
+        "password": "Password123",
+        "confirm_password": "Password123"
+    }, headers=headers)
+
+    from user_auth.email_service import email_service
+    sent = email_service.sent_emails[-1]
+    import re
+    otp_match = re.search(r"\b(\d{6})\b", sent["text"])
+    assert otp_match
+    otp = otp_match.group(1)
+
+    v_resp = client.post("/api/auth/verify-otp", json={
+        "email": "cara@example.com",
+        "otp": otp
+    }, headers=headers)
+    assert v_resp.status_code == 200
+    assert settings.session_cookie_name in v_resp.cookies
+    cookie = v_resp.cookies[settings.session_cookie_name]
+    assert len(cookie) > 20
 
 
 def test_login_wrong_password_generic_error(client):
@@ -374,13 +414,19 @@ def test_lockout_after_repeated_failures(client):
 # ---------------------------------------------------------------------------
 def test_get_current_user_profile(client):
     headers = {"X-Requested-With": "XMLHttpRequest"}
-    reg_resp = client.post("/api/auth/register", json={
+    client.post("/api/auth/register", json={
         "name": "Dana Scholar",
         "email": "dana@example.com",
         "password": "Password123",
         "confirm_password": "Password123"
     }, headers=headers)
-    cookie = reg_resp.cookies[settings.session_cookie_name]
+
+    from user_auth.email_service import email_service
+    sent = email_service.sent_emails[-1]
+    import re
+    otp = re.search(r"\b(\d{6})\b", sent["text"]).group(1)
+    v_resp = client.post("/api/auth/verify-otp", json={"email": "dana@example.com", "otp": otp}, headers=headers)
+    cookie = v_resp.cookies[settings.session_cookie_name]
 
     # Call /api/auth/me with cookie
     me_resp = client.get("/api/auth/me", headers={"Cookie": f"{settings.session_cookie_name}={cookie}"})
@@ -391,13 +437,19 @@ def test_get_current_user_profile(client):
 
 def test_logout_revokes_session(client):
     headers = {"X-Requested-With": "XMLHttpRequest"}
-    reg_resp = client.post("/api/auth/register", json={
+    client.post("/api/auth/register", json={
         "name": "Dana Scholar",
         "email": "dana@example.com",
         "password": "Password123",
         "confirm_password": "Password123"
     }, headers=headers)
-    cookie = reg_resp.cookies[settings.session_cookie_name]
+
+    from user_auth.email_service import email_service
+    sent = email_service.sent_emails[-1]
+    import re
+    otp = re.search(r"\b(\d{6})\b", sent["text"]).group(1)
+    v_resp = client.post("/api/auth/verify-otp", json={"email": "dana@example.com", "otp": otp}, headers=headers)
+    cookie = v_resp.cookies[settings.session_cookie_name]
 
     # Logout
     logout_resp = client.post("/api/auth/logout", headers={
@@ -447,14 +499,28 @@ def test_google_login_links_existing_and_revokes_sessions(client, setup_in_memor
     settings.google_client_id = "test-client-id"
     headers = {"X-Requested-With": "XMLHttpRequest"}
 
-    # Register user with password
+    # Register user with password (starts as unverified account)
     reg_resp = client.post("/api/auth/register", json={
         "name": "Eve PreReg",
         "email": "eve@example.com",
         "password": "Password123",
         "confirm_password": "Password123"
     }, headers=headers)
-    old_cookie = reg_resp.cookies[settings.session_cookie_name]
+    assert reg_resp.status_code == 200
+    user_id = reg_resp.json()["id"]
+
+    # Issue an old active session to simulate pre-existing session
+    from user_auth.security import hash_session_token
+    raw_token = "old-session-token-eve"
+    setup_in_memory_auth.create_session({
+        "id": "old-sess-1",
+        "user_id": user_id,
+        "token_hash": hash_session_token(raw_token),
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": datetime.now(timezone.utc) + timedelta(days=1),
+        "revoked_at": None,
+    })
+    old_cookie = raw_token
 
     # Verify old session works
     assert client.get("/api/auth/me", headers={"Cookie": f"{settings.session_cookie_name}={old_cookie}"}).status_code == 200

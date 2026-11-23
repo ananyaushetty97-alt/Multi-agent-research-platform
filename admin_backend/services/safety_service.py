@@ -78,15 +78,9 @@ class SafetyService:
 
         try:
             with open(self.redteam_file, "r", encoding="utf-8") as f:
-                document = json.load(f)
+                rows = json.load(f)
 
-            if isinstance(document, list):
-                rows = document
-                envelope = {}
-            elif isinstance(document, dict) and isinstance(document.get("results"), list):
-                rows = document["results"]
-                envelope = document
-            else:
+            if not isinstance(rows, list):
                 return None
 
             attacks: List[RedTeamAttackRecord] = []
@@ -122,17 +116,12 @@ class SafetyService:
             defense_rate = round((defended / total * 100), 1) if total > 0 else 0.0
 
             file_mtime = os.path.getmtime(self.redteam_file)
-            recorded_at = str(
-                envelope.get("recorded_at")
-                or datetime.fromtimestamp(file_mtime, tz=timezone.utc).isoformat()
-            )
+            recorded_at = datetime.fromtimestamp(file_mtime, tz=timezone.utc).isoformat()
 
             summary = RedTeamRunSummary(
-                run_id=str(envelope.get("run_id") or f"redteam-{int(file_mtime)}"),
+                run_id=f"redteam-{int(file_mtime)}",
                 recorded_at=recorded_at,
                 source_file=self.redteam_file,
-                mode=envelope.get("mode"),
-                defense_enabled=bool(envelope["defense_enabled"]) if "defense_enabled" in envelope else None,
                 total_attacks=total,
                 attacks_defended=defended,
                 attacks_reached_user=reached_count,
@@ -182,3 +171,4 @@ safety_service = SafetyService()
 # Sample events are no longer loaded at startup: the Safety page now shows only
 # real guardrail blocks and real sanitizer actions (see guardrails.checks.guarded_search).
 # To fill it with demo data on purpose, call _seed_default_safety_events(safety_service).
+

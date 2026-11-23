@@ -66,7 +66,9 @@ const RP = (() => {
       throw Object.assign(new Error(msg), { status: res.status });
     }
     sessionId = data.session_id;
-    saveTurn(text, data);
+    // Convert File objects to serializable attachment info
+    const attachmentInfo = files.map(f => ({ name: f.name, type: 'file', size: f.size }));
+    saveTurn(text, data, attachmentInfo);
     return data;
   }
 
@@ -89,15 +91,21 @@ const RP = (() => {
   function persist(chats) {
     try { localStorage.setItem(KEY, JSON.stringify(chats)); } catch (e) {}
   }
-  function saveTurn(userText, data) {
+  function saveTurn(userText, data, attachments = []) {
     const chats = load();
     let chat = chats.find(c => c.id === data.session_id);
     if (!chat) {
-      chat = { id: data.session_id, title: userText.slice(0, 80), created: Date.now(), updated: 0, turns: [] };
+      // For file uploads, don't use the prompt as title - use first file name or generic title
+      let title = userText.slice(0, 80);
+      if (attachments.length > 0 && (!userText || userText.includes('Analyze and summarize'))) {
+        // File upload without meaningful prompt - use file name as title
+        title = attachments[0].name || 'File Analysis';
+      }
+      chat = { id: data.session_id, title, created: Date.now(), updated: 0, turns: [] };
       chats.unshift(chat);
     }
     chat.updated = Date.now();
-    chat.turns.push({ user: userText, intent: data.intent, report: data.report, sources: data.sources || [], cached: !!data.cached, score: data.score || null, seconds: data.seconds });
+    chat.turns.push({ user: userText, intent: data.intent, report: data.report, sources: data.sources || [], cached: !!data.cached, score: data.score || null, seconds: data.seconds, attachments });
     persist(chats);
   }
   function listChats() { return load().sort((a, b) => b.updated - a.updated); }

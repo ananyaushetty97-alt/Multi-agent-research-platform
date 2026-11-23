@@ -14,7 +14,7 @@ from admin_backend.models.metrics import (
     MetricsSummary,
     RequestMetric,
 )
-from admin_backend.storage.in_memory import InMemoryMetricStorage
+from admin_backend.storage.persistent import PersistentMetricStorage
 from admin_backend.storage.interfaces import MetricStorageInterface
 
 
@@ -170,6 +170,6 @@ class MetricsService:
 
 
 # No seeding - only real data from actual API requests
-metrics_service = MetricsService()
+metrics_service = MetricsService(storage=PersistentMetricStorage())
 
 

@@ -67,16 +67,8 @@
   let activeTraceOutcomeFilter = "all";
   let pendingDestructiveAction = null; // { type: 'cache_clear' | 'cache_entry' | 'ltm_report', targetId: string, title: string }
   let isBackendConnected = false;
+  let redteamRunInProgress = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
-
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
 
   // Indian Standard Time (IST) formatting helper
   function formatIST(isoStr, includeDate = true) {
@@ -298,9 +290,9 @@
       ]);
 
       if (eventsRes.ok) state.safety.events = await eventsRes.json();
-      if (redteamRes.ok) {
+      if (!redteamRunInProgress && redteamRes.ok) {
         state.safety.redteam = await redteamRes.json();
-      } else if (redteamRes.status === 404) {
+      } else if (!redteamRunInProgress && redteamRes.status === 404) {
         state.safety.redteam = null;
       }
       renderSafetyView();
@@ -454,6 +446,7 @@
         );
         if (!confirmed) return;
         redteamButton.disabled = true;
+        redteamRunInProgress = true;
         const statusEl = document.getElementById("safetyRedteamRunStatus");
         state.safety.redteam = null;
         if (statusEl) statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
@@ -474,6 +467,7 @@
           if (statusEl) statusEl.textContent = "Run failed.";
           showToast(error.message || "Live platform test failed", "error");
         } finally {
+          redteamRunInProgress = false;
           redteamButton.disabled = false;
         }
       });

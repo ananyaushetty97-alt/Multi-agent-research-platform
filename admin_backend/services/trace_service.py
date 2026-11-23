@@ -20,7 +20,7 @@ from admin_backend.models.traces import (
     RequestTrace,
     TraceFilter,
 )
-from admin_backend.storage.in_memory import InMemoryTraceStorage
+from admin_backend.storage.persistent import PersistentTraceStorage
 from admin_backend.storage.interfaces import TraceStorageInterface
 
 EMAIL_REGEX = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
@@ -497,4 +497,4 @@ def _seed_default_traces(svc: TraceService):
 
 
 # No seeding - only real data from actual pipeline requests
-trace_service = TraceService()
+trace_service = TraceService(storage=PersistentTraceStorage())

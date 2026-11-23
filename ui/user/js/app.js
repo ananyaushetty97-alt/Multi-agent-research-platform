@@ -1233,8 +1233,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const effectiveTopic = hasText
       ? text
       : (hasFiles
-        ? 'Analyze and summarize the uploaded documents'
-        : 'Uploaded File Research');
+        ? 'Analyze and summarize the uploaded documents to provide a comprehensive research report'
+        : 'Research the uploaded file content');
 
     if (welcomeScreen.style.display !== 'none') {
       runPipeline(effectiveTopic, attachments);

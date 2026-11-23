@@ -14,7 +14,7 @@ from admin_backend.models.audit import (
     AuditAction, AuditLogEntry, AuditLogFilter,
     UserActivityAction, UserActivityLogEntry, UserActivityLogFilter
 )
-from admin_backend.storage.postgres import PostgresAuditStorage
+from admin_backend.storage.in_memory import InMemoryAuditStorage
 from admin_backend.storage.interfaces import AuditStorageInterface
 from uuid import UUID
 
@@ -43,7 +43,7 @@ def _sanitize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
 
 class AuditService:
     def __init__(self, storage: Optional[AuditStorageInterface] = None):
-        self.storage = storage or PostgresAuditStorage()
+        self.storage = storage or InMemoryAuditStorage()
         self.log_file = settings.admin_audit_log_path
 
     def log_action(
@@ -105,6 +105,7 @@ class AuditService:
         details: Optional[Dict[str, Any]] = None,
         client_ip: Optional[str] = None,
         user_agent: Optional[str] = None,
+        actor_role: str = "user",
     ) -> UserActivityLogEntry:
         """
         Record a user activity action (research query, login, etc.).
@@ -125,6 +126,7 @@ class AuditService:
             details=sanitized_details,
             client_ip=client_ip,
             user_agent=user_agent,
+            actor_role=actor_role,
         )
 
         # Save to repository

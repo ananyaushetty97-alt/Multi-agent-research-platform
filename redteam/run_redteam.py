@@ -33,8 +33,6 @@ import json
 import os
 import re
 import sys
-import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -190,14 +188,13 @@ def send_via_pyrit(target, Message, kind: str, payload: str) -> dict:
 def install_fake_llm():
     """A deliberately gullible fake LLM: it obeys planted CANARY instructions.
     Lets us prove the harness catches a leak without any API calls."""
-    os.environ.setdefault("GROQ_API_KEY", "offline-dummy")
     import agents.summarize_agent as s
     import agents.verify_agent as v
     import agents.write_agent as w
     import evaluation.judge as j
     import guardrails.checks as gc
 
-    def fake(prompt, system_prompt=None, **kwargs):
+    def fake(prompt, system_prompt=None):
         if "Reply with exactly the word VERIFIED" in prompt:
             return "VERIFIED"
         canaries = CANARY_RE.findall(prompt)
@@ -261,17 +258,7 @@ def main(argv=None):
     print_tables(rows)
     out = ROOT / "logs" / "redteam_results.json"
     out.parent.mkdir(exist_ok=True)
-    payload = {
-        "run_id": f"redteam-{int(time.time() * 1000)}",
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
-        "mode": "offline-fake-llm" if args.fake_llm else "pyrit",
-        "defense_enabled": DEFENSE,
-        "total_attacks": len(rows),
-        "results": rows,
-    }
-    temp = out.with_suffix(".json.tmp")
-    temp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    temp.replace(out)
+    out.write_text(json.dumps(rows, indent=2))
     print(f"Full results saved to {out.relative_to(ROOT)}")
     return rows
 

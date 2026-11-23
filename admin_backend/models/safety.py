@@ -51,8 +51,6 @@ class RedTeamRunSummary(BaseModel):
     run_id: str
     recorded_at: str
     source_file: str
-    mode: Optional[str] = None
-    defense_enabled: Optional[bool] = None
     total_attacks: int
     attacks_defended: int
     attacks_reached_user: int

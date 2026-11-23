@@ -642,7 +642,8 @@ async def generate_with_files(
 
     # 1. Input guardrail (follow-ups skip the off-topic check)
     # Only check the user's actual query/topic, not the file content which is just data being analyzed
-    ok, reason = check_input(topic, is_followup=is_followup)
+    # Pass has_files=True to skip OFF_TOPIC check when files provide research context
+    ok, reason = check_input(topic, is_followup=is_followup, has_files=len(files) > 0)
     if not ok:
         safety_service.record_blocked_event(
             check_type=GuardCheckType.INPUT_RULE,

@@ -130,7 +130,7 @@ def mask_pii(text: str) -> tuple[str, int]:
     return text, (n1 + n2 + n3 + n4)
 
 # --- Public API ------------------------------------------------------------
-def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: bool = False) -> tuple[bool, str]:
+def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: bool = False, has_files: bool = False) -> tuple[bool, str]:
     topic = (topic or "").strip()
     if len(topic) < MIN_TOPIC_LEN:
         return False, "Topic is too short."
@@ -150,7 +150,8 @@ def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: 
             return False, "Blocked by LLM guard: jailbreak attempt."
         if label == "HARMFUL":
             return False, "Blocked by LLM guard: harmful request."
-        if label == "OFF_TOPIC" and not is_followup:
+        # Skip OFF_TOPIC check for follow-ups or when files are uploaded (file content provides research context)
+        if label == "OFF_TOPIC" and not is_followup and not has_files:
             return False, "Blocked by LLM guard: not a research topic."
     return True, "ok"
 

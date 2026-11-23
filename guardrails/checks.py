@@ -131,13 +131,24 @@ def mask_pii(text: str) -> tuple[str, int]:
 
 # --- Public API ------------------------------------------------------------
 def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: bool = False, has_files: bool = False) -> tuple[bool, str]:
+    log = logging.getLogger("guardrails")
+    log.info(f"check_input called: topic='{topic[:50]}', is_followup={is_followup}, has_files={has_files}, USE_LLM_GUARDS={USE_LLM_GUARDS}")
+
     topic = (topic or "").strip()
     if len(topic) < MIN_TOPIC_LEN:
         return False, "Topic is too short."
     if len(topic) > MAX_TOPIC_LEN:
         return False, f"Topic is too long (max {MAX_TOPIC_LEN} characters)."
-    if (hit := _match_any(topic, JAILBREAK_PATTERNS)):
-        return False, "Blocked: looks like a jailbreak / prompt-injection attempt."
+
+    # When files are uploaded, skip regex-based jailbreak pattern matching on the user's query.
+    # The user may be asking about content in the uploaded files that happens to contain
+    # instruction-like text (e.g., "analyze this document for prompt injection attacks").
+    # The LLM classifier (layer 2) is smarter and can understand this context.
+    # We still check for harmful keywords and toxic words as those are clear safety issues.
+    if not has_files:
+        if (hit := _match_any(topic, JAILBREAK_PATTERNS)):
+            return False, "Blocked: looks like a jailbreak / prompt-injection attempt."
+
     if (hit := _contains_any(topic, HARMFUL_KEYWORDS)):
         return False, "Blocked: harmful request."
     if _contains_any(topic, TOXIC_WORDS):
@@ -146,6 +157,7 @@ def check_input(topic: str, llm=None, use_llm: bool | None = None, is_followup: 
     if use_llm if use_llm is not None else USE_LLM_GUARDS:
         prompt = FOLLOWUP_CLASSIFIER_PROMPT if is_followup else INPUT_CLASSIFIER_PROMPT
         label = _llm_label(prompt.format(text=topic), llm or _default_llm())
+        log.info(f"LLM guard label: {label}")
         if label == "JAILBREAK":
             return False, "Blocked by LLM guard: jailbreak attempt."
         if label == "HARMFUL":

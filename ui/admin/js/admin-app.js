@@ -331,6 +331,12 @@
 
   // ---------- ROUTING & VIEW NAVIGATION ----------
   function initRouting() {
+    const panels = document.querySelectorAll(".admin-view-panel");
+    if (!panels || panels.length === 0) {
+      // In standalone views (ui/admin/views/*.html), let standard links navigate natively
+      return;
+    }
+
     const hash = window.location.hash.replace("#", "");
     const validTabs = [
       "overview-health",
@@ -759,8 +765,7 @@
       if (statusPill && dep.status) {
         const isHealthy = dep.status === "healthy";
         const icon = isHealthy ? "check_circle" : "warning";
-        const colorClass = isHealthy ? "bg-primary/10 text-primary" : "bg-error/10 text-error";
-        statusPill.className = `inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${colorClass} font-label-sm text-label-sm font-semibold`;
+        statusPill.className = isHealthy ? "probe-status-badge" : "probe-status-badge error";
         statusPill.innerHTML = `
           <span class="material-symbols-outlined text-[13px]">${icon}</span>
           <span class="capitalize">${dep.status}</span>
@@ -2004,13 +2009,21 @@
     let authErrorDetail = null;
 
     for (const base of origins) {
-      const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
+      const endpoints = [
+        `${base}/api/auth/login`,
+        `${base}/api/admin/auth/login`,
+        `${base}/admin/auth/login`
+      ];
       for (const ep of endpoints) {
         try {
+          const isUserAuth = ep.includes("/api/auth/login");
+          const payload = isUserAuth
+            ? { email: email, password: password }
+            : { username: email, password: password };
           const resp = await fetch(ep, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({ username: email, password: password })
+            body: JSON.stringify(payload)
           });
           if (resp.ok) {
             loginSucceeded = true;

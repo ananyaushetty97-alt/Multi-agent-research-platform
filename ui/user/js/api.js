@@ -348,6 +348,57 @@ const RP = (() => {
     return listChats();
   }
 
+  // Reconstruct UI turns from server chat messages
+  function turnsFromMessages(messages) {
+    const turns = [];
+    let currentUserText = "";
+    for (const m of (messages || [])) {
+      if (m.role === "user") {
+        currentUserText = m.content || "";
+      } else if (m.role === "assistant" || m.role === "report" || m.role === "answer") {
+        turns.push({
+          user: currentUserText || "Research Inquiry",
+          intent: m.intent || "research",
+          report: m.content || "",
+          sources: m.search_results || [],
+          cached: !!m.cached,
+          score: m.score || null,
+          seconds: m.seconds || 0
+        });
+        currentUserText = "";
+      }
+    }
+    return turns;
+  }
+
+  // Fetch full turn history from server for a specific chat
+  async function fetchChatDetails(id) {
+    if (!currentUser || !currentUser.id) return null;
+    try {
+      const data = await _fetchAuth(`/api/chats/${encodeURIComponent(id)}`, "GET");
+      if (data && Array.isArray(data.messages)) {
+        const localChats = load();
+        let chat = localChats.find(c => c.id === id);
+        if (!chat) {
+          chat = {
+            id,
+            title: data.title || "Research Topic",
+            created: new Date(data.created_at).getTime(),
+            updated: new Date(data.updated_at).getTime(),
+            turns: []
+          };
+          localChats.unshift(chat);
+        }
+        chat.turns = turnsFromMessages(data.messages);
+        persist(localChats);
+        return chat;
+      }
+    } catch (e) {
+      console.warn("Could not fetch server chat details:", e);
+    }
+    return null;
+  }
+
   return {
     baseUrl: API_BASE,
     currentId: () => sessionId,
@@ -357,6 +408,7 @@ const RP = (() => {
     openChat,
     listChats,
     getChat,
+    fetchChatDetails,
     renameChat,
     deleteChat,
     search,

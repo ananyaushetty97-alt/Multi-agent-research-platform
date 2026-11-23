@@ -145,13 +145,17 @@ def test_reviews_isolation_and_guest_rejection():
     client_b = TestClient(app)
     headers = {"X-Requested-With": "XMLHttpRequest"}
 
-    # 1. Unauthenticated guest tries to submit review -> 401
-    guest_rev = client_guest.post(
-        "/api/reviews",
-        json={"report_id": "rep-101", "relevance": 8, "accuracy": 8, "clarity": 8},
-        headers=headers,
-    )
-    assert guest_rev.status_code == 401
+    # 1. Unauthenticated guest tries to submit review when login is required -> 401
+    settings.require_login = True
+    try:
+        guest_rev = client_guest.post(
+            "/api/reviews",
+            json={"report_id": "rep-101", "relevance": 8, "accuracy": 8, "clarity": 8},
+            headers=headers,
+        )
+        assert guest_rev.status_code == 401
+    finally:
+        settings.require_login = False
 
     # 2. Register users
     _register_and_login(client_a, "Alice", "alice_rev@example.com")

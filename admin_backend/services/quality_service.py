@@ -217,7 +217,21 @@ class QualityService:
                         """, (valid_uuid_expert_ids,))
                         uuid_overlap_count = cur.fetchone()[0] or 0
 
-            deduped_total = db_valid_count + (len(unique_expert_ids) - uuid_overlap_count)
+            # If in-memory review storage is active in test mode, include any valid in-memory reviews
+            mem_valid_count = 0
+            try:
+                from user_auth.chat_storage import get_chat_review_storage, InMemoryChatReviewStorage
+                c_storage = get_chat_review_storage()
+                if isinstance(c_storage, InMemoryChatReviewStorage):
+                    mem_revs = c_storage.list_all_reviews()
+                    mem_valid_count = sum(
+                        1 for r in mem_revs
+                        if _is_valid_score(r.get("relevance")) and _is_valid_score(r.get("accuracy")) and _is_valid_score(r.get("clarity"))
+                    )
+            except Exception:
+                pass
+
+            deduped_total = (db_valid_count if db_valid_count > 0 else mem_valid_count) + (len(unique_expert_ids) - uuid_overlap_count)
             self._cached_human_reviews_count = deduped_total
             self._count_cache_expires_at = time.monotonic() + self._count_cache_ttl_seconds
             return deduped_total
@@ -376,6 +390,38 @@ class QualityService:
                         db_reviews.append(item)
         except Exception as e:
             raise RuntimeError(f"Database unavailable to retrieve human reviews: {e}")
+
+        # In-memory storage integration (for offline / unit-test modes using InMemoryChatReviewStorage)
+        try:
+            from user_auth.chat_storage import get_chat_review_storage, InMemoryChatReviewStorage
+            c_storage = get_chat_review_storage()
+            if isinstance(c_storage, InMemoryChatReviewStorage):
+                mem_revs = c_storage.list_all_reviews()
+                for mr in mem_revs:
+                    rel = mr.get("relevance")
+                    acc = mr.get("accuracy")
+                    cla = mr.get("clarity")
+                    if not _is_valid_score(rel) or not _is_valid_score(acc) or not _is_valid_score(cla):
+                        continue
+                    overall = round((rel + acc + cla) / 3.0, 1)
+                    masked_ident = _mask_reviewer_identity(mr.get("reviewer_email"), mr.get("reviewer_username"))
+                    reviewer_display = f"{masked_ident} (user)"
+                    db_reviews.append(HumanReviewScore(
+                        review_id=str(mr["id"]),
+                        report_id=str(mr.get("report_id") or ""),
+                        topic=str(mr.get("topic") or "Research Monograph"),
+                        reviewer_username=reviewer_display,
+                        review_timestamp=str(mr.get("created_at") or ""),
+                        relevance=rel,
+                        accuracy=acc,
+                        clarity=cla,
+                        overall=overall,
+                        feedback_notes=mr.get("comment"),
+                        flagged_for_rerun=False,
+                        is_expert=False,
+                    ))
+        except Exception as e:
+            log.debug(f"In-memory chat storage inspection skipped: {e}")
 
         seen_ids = set()
         merged: List[HumanReviewScore] = []

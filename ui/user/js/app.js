@@ -774,6 +774,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (profileRoleTag) profileRoleTag.textContent = 'User';
 
       RP.switchUser(user);
+      // Sync persisted server chats from PostgreSQL so history displays immediately
+      RP.syncServerChats().then(() => {
+        renderHistory();
+        const lastActiveId = RP.getLastActiveChatId();
+        if (lastActiveId && lastActiveId !== 'new' && RP.getChat(lastActiveId)) {
+          loadDossier(lastActiveId);
+        }
+      }).catch(err => {
+        console.warn('Failed to sync server chats on auth change:', err);
+        renderHistory();
+      });
     } else {
       state.currentUser = null;
       if (btnHeaderSignin) btnHeaderSignin.style.display = 'inline-flex';
@@ -795,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistory();
     const lastActiveId = RP.getLastActiveChatId();
     if (lastActiveId && lastActiveId !== 'new' && RP.getChat(lastActiveId)) {
-      showSavedChat(RP.getChat(lastActiveId));
+      loadDossier(lastActiveId);
     } else {
       showWelcomeScreen();
     }
@@ -1285,6 +1296,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showSavedChat(chat) {
+    if (!chat || !chat.turns || !chat.turns.length) {
+      showWelcomeScreen();
+      return;
+    }
     RP.openChat(chat.id);
     RP.setLastActiveChatId(chat.id);
     const first = chat.turns[0];
@@ -1341,11 +1356,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Open a saved chat, or start real research for a suggested topic ---
-  function loadDossier(key) {
-    const chat = RP.getChat(key);
-    if (chat && chat.turns.length) return showSavedChat(chat);
+  async function loadDossier(key) {
+    let chat = RP.getChat(key);
+    if (chat && chat.turns && chat.turns.length) return showSavedChat(chat);
+    if (chat && (!chat.turns || !chat.turns.length) && RP.getCurrentUser()) {
+      try {
+        const fullChat = await RP.fetchChatDetails(key);
+        if (fullChat && fullChat.turns && fullChat.turns.length) {
+          return showSavedChat(fullChat);
+        }
+      } catch (e) {
+        console.warn('Could not fetch turns for server chat:', e);
+      }
+    }
     const reg = DOSSIER_REGISTRY[key];
-    runPipeline(reg ? reg.query : key);
+    if (reg) {
+      runPipeline(reg.query);
+    } else if (chat && chat.title) {
+      runPipeline(chat.title);
+    } else {
+      runPipeline(key);
+    }
   }
 
   // --- Show Welcome Screen for New Inquiry ---

@@ -20,15 +20,7 @@ import user_auth.chat_routes as chat_routes
 
 
 @pytest.fixture
-def mock_review_storage():
-    """Isolated in-memory storage for test isolation."""
-    store = InMemoryChatReviewStorage()
-    with patch.object(chat_routes, "get_chat_review_storage", return_value=store):
-        yield store
-
-
-@pytest.fixture
-def client(mock_review_storage):
+def client():
     return TestClient(app)
 
 
@@ -162,7 +154,7 @@ def test_user_can_submit_review_and_visible_in_admin_dashboard(client, test_user
     matching_hr = [r for r in human_reviews if r.get("report_id") == rep_id_1 or r.get("topic") == topic_1]
     assert len(matching_hr) > 0, f"Review not found in admin quality human reviews: {human_reviews}"
     assert matching_hr[0]["overall"] == 9.0  # round((9+8+10)/3, 1) = 9.0
-    assert matching_hr[0]["reviewer_username"] in (test_user["username"], test_user["email"])
+    assert "(user)" in matching_hr[0]["reviewer_username"]
     assert matching_hr[0]["feedback_notes"] == "Clear explanations of molecular simulation algorithms."
 
     # Admin retrieves Quality Summary
@@ -308,7 +300,7 @@ def test_guest_user_can_submit_review_and_visible_in_admin(client, admin_headers
     assert q_resp.status_code == 200
     matching = [r for r in q_resp.json() if r.get("report_id") == rep_id]
     assert len(matching) > 0
-    assert matching[0]["reviewer_username"] == "guest"
+    assert "(user)" in matching[0]["reviewer_username"]
 
     # Check admin user activity journal
     act_resp = client.get("/api/admin/audit/user-activity", headers=admin_headers)

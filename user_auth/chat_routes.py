@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from user_auth.dependencies import get_current_user, get_optional_user, require_csrf_protection
 from user_auth.models import UserResponse
 from user_auth.chat_storage import get_chat_review_storage
+from user_auth.config import settings
 
 log = logging.getLogger("user_auth.chat_routes")
 
@@ -140,6 +141,12 @@ def create_or_update_review(
     Rate and review a research monograph (1-10 scores, optional <= 1000 char comment).
     One review per user per report via upsert. Supports both logged-in and guest user mode.
     """
+    if settings.require_login and user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required to submit reviews.",
+        )
+
     DEFAULT_GUEST_USER_ID = "be7bb556-cc84-4d2d-b6e9-792bc0bc9881"
     user_id = str(user.id) if user else DEFAULT_GUEST_USER_ID
     username = (user.username or user.email) if user else "guest"

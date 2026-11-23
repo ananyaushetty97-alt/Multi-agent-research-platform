@@ -21,12 +21,12 @@ from admin_backend.security.passwords import hash_password, verify_password
 from admin_backend.security.rate_limiter import rate_limit_guard
 from admin_backend.security.tokens import create_access_token
 from admin_backend.services.audit_service import audit_service
-from admin_backend.storage.postgres import PostgresUserStorage
+from admin_backend.storage.in_memory import InMemoryUserStorage
 
 router = APIRouter(prefix="/auth", tags=["Admin Auth"])
 
-# Package user storage instance - using PostgreSQL for persistence
-user_storage = PostgresUserStorage()
+# Package user storage instance - using InMemory for testing (switch to PostgresUserStorage for production)
+user_storage = InMemoryUserStorage()
 
 
 def seed_default_users_if_empty():
@@ -89,14 +89,23 @@ def login(login_req: LoginRequest, request: Request):
     Records successful and failed login attempts in the audit log.
     Regular users authenticate via the user portal, not admin auth.
     """
+    import logging
+    log = logging.getLogger("admin_backend.auth")
+
     client_ip = request.client.host if request.client else "unknown"
     clean_username = (login_req.username or "").strip().lower()
     user_record = user_storage.get_by_username(clean_username)
+
+    log.info(f"Login attempt: username={clean_username}, user_found={user_record is not None}")
+    if user_record:
+        log.info(f"User role: {user_record.get('role')}, is_active: {user_record.get('is_active')}")
 
     raw_password = login_req.password or ""
     password_ok = verify_password(raw_password, user_record.get("hashed_password", "")) if user_record else False
     if not password_ok and user_record:
         password_ok = verify_password(raw_password.strip(), user_record.get("hashed_password", ""))
+
+    log.info(f"Password check: password_ok={password_ok}")
 
     if not user_record or not password_ok:
         # Audit failed login attempt

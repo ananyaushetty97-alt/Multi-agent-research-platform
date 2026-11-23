@@ -761,7 +761,7 @@ async def generate_with_files(
     # 5. Grading
     original_topic = next((h["content"] for h in history if h.get("role") == "user"), combined_topic)
     score = None
-    if req.grade and intent != "question":
+    if grade and intent != "question":
         score = grade_report(original_topic, report)
 
     # 6. Memory

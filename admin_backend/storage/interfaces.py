@@ -6,7 +6,10 @@ mocking in unit tests, and safe future PostgreSQL integration.
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict, Any
 
-from admin_backend.models.audit import AuditLogEntry, AuditLogFilter
+from admin_backend.models.audit import (
+    AuditLogEntry, AuditLogFilter,
+    UserActivityLogEntry, UserActivityLogFilter
+)
 from admin_backend.models.traces import RequestTrace, TraceFilter
 from admin_backend.models.safety import SafetyEvent, SafetyEventFilter
 from admin_backend.models.metrics import RequestMetric
@@ -38,6 +41,17 @@ class AuditStorageInterface(ABC):
     @abstractmethod
     def query_audit_entries(self, filter_opts: AuditLogFilter) -> List[AuditLogEntry]:
         """Query audit log records matching criteria."""
+        pass
+
+    # User Activity Logs
+    @abstractmethod
+    def append_user_activity_entry(self, entry: UserActivityLogEntry) -> None:
+        """Append a user activity log record."""
+        pass
+
+    @abstractmethod
+    def query_user_activity_entries(self, filter_opts: UserActivityLogFilter) -> List[UserActivityLogEntry]:
+        """Query user activity log records matching criteria."""
         pass
 
 

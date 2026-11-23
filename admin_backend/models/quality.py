@@ -14,16 +14,6 @@ class JudgeScoreRecord(BaseModel):
     clarity: Optional[int] = Field(None, ge=1, le=10)
     overall: Optional[float] = Field(None, ge=1.0, le=10.0)
     comment: Optional[str] = None
-    is_failed_grading: bool = False
-    error_message: Optional[str] = None
-    suspected_truncated: bool = Field(
-        False,
-        description="Heuristic indicator that the generated report was cut short"
-    )
-    truncation_reason: Optional[str] = Field(
-        None,
-        description="Non-definitive heuristic reason (e.g. comment noted text was cut off)"
-    )
 
 
 class HumanReviewScore(BaseModel):
@@ -38,13 +28,12 @@ class HumanReviewScore(BaseModel):
     overall: float = Field(..., ge=1.0, le=10.0)
     feedback_notes: Optional[str] = Field(None, max_length=1000)
     flagged_for_rerun: bool = False
+    reviewed: bool = True  # Indicates this human review has been submitted/reviewed
 
 
 class QualityFilter(BaseModel):
     min_overall: Optional[float] = None
     max_overall: Optional[float] = None
-    only_failed: bool = False
-    only_suspected_truncated: bool = False
     search_topic: Optional[str] = None
     limit: int = Field(50, ge=1, le=500)
     offset: int = Field(0, ge=0)
@@ -59,5 +48,4 @@ class QualitySummary(BaseModel):
     average_accuracy: Optional[float] = None
     average_clarity: Optional[float] = None
     low_scoring_count: int  # e.g., overall < 7.0
-    suspected_truncated_count: int
     human_reviews_count: int

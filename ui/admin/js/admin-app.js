@@ -32,7 +32,8 @@
         average_relevance: 0,
         average_accuracy: 0,
         average_clarity: 0,
-        suspected_truncated_count: 0
+        low_scoring_count: 0,
+        human_reviews_count: 0
       },
       scores: [],
       human_reviews: []
@@ -1295,7 +1296,8 @@
       average_relevance: null,
       average_accuracy: null,
       average_clarity: null,
-      suspected_truncated_count: 0
+      low_scoring_count: 0,
+      human_reviews_count: 0
     };
 
     const totalEl = document.getElementById("qualityTotalGraded");
@@ -1303,16 +1305,16 @@
     const avgRelEl = document.getElementById("qualityAvgRelevance");
     const avgAccEl = document.getElementById("qualityAvgAccuracy");
     const avgClaEl = document.getElementById("qualityAvgClarity");
-    const truncCountEl = document.getElementById("qualityTruncatedCount");
-    const failedCountEl = document.getElementById("qualityFailedCount");
+    const lowScoreEl = document.getElementById("qualityLowScoreCount");
+    const humanCountEl = document.getElementById("qualityHumanReviewsCount");
 
     if (totalEl) totalEl.textContent = (q.total_records || 0).toLocaleString();
     if (avgOverallEl) avgOverallEl.textContent = (q.average_overall !== null && q.average_overall !== undefined && q.average_overall > 0) ? `${Number(q.average_overall).toFixed(1)} / 10` : "—";
     if (avgRelEl) avgRelEl.textContent = (q.average_relevance !== null && q.average_relevance !== undefined && q.average_relevance > 0) ? `${Number(q.average_relevance).toFixed(1)}` : "—";
     if (avgAccEl) avgAccEl.textContent = (q.average_accuracy !== null && q.average_accuracy !== undefined && q.average_accuracy > 0) ? `${Number(q.average_accuracy).toFixed(1)}` : "—";
     if (avgClaEl) avgClaEl.textContent = (q.average_clarity !== null && q.average_clarity !== undefined && q.average_clarity > 0) ? `${Number(q.average_clarity).toFixed(1)}` : "—";
-    if (truncCountEl) truncCountEl.textContent = `${q.suspected_truncated_count || 0}`;
-    if (failedCountEl) failedCountEl.textContent = `${q.failed_grades || 0}`;
+    if (lowScoreEl) lowScoreEl.textContent = `${q.low_scoring_count || 0}`;
+    if (humanCountEl) humanCountEl.textContent = `${q.human_reviews_count || 0}`;
 
     const tableBody = document.getElementById("qualityScoresTableBody");
     if (!tableBody) return;
@@ -1333,14 +1335,12 @@
         tr.className = "border-b border-surface-container hover:bg-surface-container-high/60 transition-colors cursor-pointer";
         tr.title = "Click to inspect execution trace & process tokens for this topic";
 
-        let statusBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold">Valid</span>';
-        if (item.is_failed_grading) {
-          statusBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold">Grading Failed</span>';
-        } else if (item.suspected_truncated) {
-          statusBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold" title="' + (item.truncation_reason || "") + '">Truncation Suspected</span>';
-        }
-
         const scoreVal = item.overall !== null && item.overall !== undefined ? `${Number(item.overall).toFixed(1)}` : "—";
+
+        let statusBadge = '<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold">Valid</span>';
+        if (item.overall === null || item.overall === undefined) {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold">Failed</span>';
+        }
 
         tr.innerHTML = `
           <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate hover:text-primary transition-colors" title="${item.topic}">${item.topic}</td>
@@ -1349,8 +1349,8 @@
           <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
           <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
           <td class="px-space-md py-3">${statusBadge}</td>
-          <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.comment || item.error_message || ''}">
-            ${item.comment || item.error_message || "—"}
+          <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.comment || ''}">
+            ${item.comment || "—"}
           </td>
         `;
 
@@ -1375,6 +1375,52 @@
     const openReviewBtn = document.getElementById("open-human-modal-btn");
     if (openReviewBtn) {
       openReviewBtn.onclick = openHumanReviewModal;
+    }
+
+    // Render Human Reviews Table
+    const humanTableBody = document.getElementById("qualityHumanReviewsTableBody");
+    if (humanTableBody) {
+      humanTableBody.innerHTML = "";
+      const humanReviews = state.quality.human_reviews || [];
+      if (humanReviews.length === 0) {
+        humanTableBody.innerHTML = `
+          <tr>
+            <td colspan="10" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
+              No human evaluation reviews recorded. Click "Add Human Review" to submit a manual evaluation.
+            </td>
+          </tr>
+        `;
+      } else {
+        humanReviews.forEach((review) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/60 transition-colors";
+
+          const reviewedBadge = review.reviewed
+            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold"><span class="material-symbols-outlined text-[13px]">check_circle</span>Reviewed</span>'
+            : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 font-label-sm font-semibold"><span class="material-symbols-outlined text-[13px]">pending</span>Pending</span>';
+
+          const rerunBadge = review.flagged_for_rerun
+            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold"><span class="material-symbols-outlined text-[13px]">refresh</span>Yes</span>'
+            : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm font-semibold"><span class="material-symbols-outlined text-[13px]">check</span>No</span>';
+
+          const overall = review.overall !== null && review.overall !== undefined ? `${Number(review.overall).toFixed(1)}` : "—";
+
+          tr.innerHTML = `
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${review.topic}">${review.topic}</td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-on-surface-variant">${review.reviewer_username}</td>
+            <td class="px-space-md py-3 font-mono font-bold text-primary">${overall}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${review.relevance ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${review.accuracy ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${review.clarity ?? "—"}</td>
+            <td class="px-space-md py-3">${reviewedBadge}</td>
+            <td class="px-space-md py-3 text-center">${rerunBadge}</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${review.feedback_notes || ''}">${review.feedback_notes || "—"}</td>
+            <td class="px-space-md py-3 text-outline whitespace-nowrap font-mono text-[12px]">${formatIST(review.review_timestamp)}</td>
+          `;
+
+          humanTableBody.appendChild(tr);
+        });
+      }
     }
   }
 
@@ -1429,7 +1475,7 @@
           if (!state.quality.human_reviews) state.quality.human_reviews = [];
           state.quality.human_reviews.unshift(createdReview);
           state.quality.summary.human_reviews_count++;
-          showToast(`Human review saved to database (${overall}/10 recorded)`, "success");
+          showToast(`Human review submitted and marked as reviewed (${overall}/10 recorded)`, "success");
           fetchAudit();
         } else {
           throw new Error("Server rejected review submission");
@@ -1449,7 +1495,8 @@
         clarity: cla,
         overall,
         feedback_notes: feedbackNotes,
-        flagged_for_rerun: flaggedForRerun
+        flagged_for_rerun: flaggedForRerun,
+        reviewed: true
       };
       if (!state.quality.human_reviews) state.quality.human_reviews = [];
       state.quality.human_reviews.unshift(fallbackReview);
@@ -1463,7 +1510,7 @@
         details: { topic, overall, flagged_for_rerun: flaggedForRerun }
       });
 
-      showToast(`Human review recorded (${overall}/10 recorded)`, "success");
+      showToast(`Human review submitted and marked as reviewed (${overall}/10 recorded)`, "success");
     }
 
     closeAllModals();
@@ -1687,12 +1734,14 @@
 
   // 7. Audit Logs View - Admin Logs & User Activity Logs
   function renderAuditView() {
-    // Render Admin Audit Logs
+    // Render Admin Audit Logs - Only admin actions
     const adminTableBody = document.getElementById("auditLogsTableBody");
     if (adminTableBody) {
       adminTableBody.innerHTML = "";
       const adminLogs = state.audit.logs || [];
-      if (adminLogs.length === 0) {
+      // Filter to only show admin actions (actor_role === "admin")
+      const filteredAdminLogs = adminLogs.filter(log => log.actor_role === "admin");
+      if (filteredAdminLogs.length === 0) {
         adminTableBody.innerHTML = `
           <tr>
             <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
@@ -1701,7 +1750,7 @@
           </tr>
         `;
       } else {
-        adminLogs.forEach((log) => {
+        filteredAdminLogs.forEach((log) => {
           const tr = document.createElement("tr");
           tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
 
@@ -1728,12 +1777,14 @@
       }
     }
 
-    // Render User Activity Logs
+    // Render User Activity Logs - Only user actions
     const userTableBody = document.getElementById("userActivityTableBody");
     if (userTableBody) {
       userTableBody.innerHTML = "";
       const userLogs = state.audit.user_activity || [];
-      if (userLogs.length === 0) {
+      // Filter to only show user actions (actor_role === "user" or no actor_role in user_activity)
+      const filteredUserLogs = userLogs.filter(log => log.actor_role !== "admin");
+      if (filteredUserLogs.length === 0) {
         userTableBody.innerHTML = `
           <tr>
             <td colspan="7" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
@@ -1742,7 +1793,7 @@
           </tr>
         `;
       } else {
-        userLogs.forEach((log) => {
+        filteredUserLogs.forEach((log) => {
           const tr = document.createElement("tr");
           tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
 

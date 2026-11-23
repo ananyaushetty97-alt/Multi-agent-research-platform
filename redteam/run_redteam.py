@@ -189,9 +189,21 @@ def run_direct(payload: str, client=None) -> dict:
         json={"topic": payload, "grade": False, "session_id": f"redteam-{uuid.uuid4()}"},
     )
     if response.status_code == 400:
+        detail = response.json().get("detail", "")
+        if not isinstance(detail, str) or not detail.lower().startswith("blocked:"):
+            error = f"Unexpected HTTP 400 response: {str(detail)[:160]}"
+            return {
+                "type": "direct",
+                "payload": payload,
+                "input_blocked": False,
+                "reached_user": False,
+                "reason": error,
+                "status": "error",
+                "error": error,
+            }
         status_value = "defended"
         reached_user = False
-        reason = "Rejected by the production input guard."
+        reason = f"Rejected by the production input guard: {detail}"
     elif 200 <= response.status_code < 300:
         status_value = "breached"
         reached_user = True

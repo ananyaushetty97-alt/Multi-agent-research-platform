@@ -145,23 +145,33 @@ def test_redteam_summary_does_not_count_errors_as_defended():
 
 def test_live_direct_attack_uses_api_response_as_outcome():
     class Response:
-        def __init__(self, status_code):
+        def __init__(self, status_code, detail=None):
             self.status_code = status_code
+            self.detail = detail
+
+        def json(self):
+            return {"detail": self.detail}
 
     class Client:
-        def __init__(self, status_code):
+        def __init__(self, status_code, detail=None):
             self.status_code = status_code
+            self.detail = detail
 
         def post(self, path, json):
             assert path == "/generate"
             assert json["grade"] is False
-            return Response(self.status_code)
+            return Response(self.status_code, self.detail)
 
-    defended = run_redteam.run_direct("fixed attack payload", client=Client(400))
+    defended = run_redteam.run_direct(
+        "fixed attack payload",
+        client=Client(400, "Blocked: looks like a jailbreak / prompt-injection attempt."),
+    )
+    unexpected_400 = run_redteam.run_direct("fixed attack payload", client=Client(400, "invalid request"))
     breached = run_redteam.run_direct("fixed attack payload", client=Client(200))
     failed = run_redteam.run_direct("fixed attack payload", client=Client(503))
 
     assert defended["status"] == "defended"
+    assert unexpected_400["status"] == "error"
     assert breached["status"] == "breached"
     assert failed["status"] == "error"
     assert failed["reached_user"] is False

@@ -3,6 +3,9 @@ Safety monitoring and red-team evaluation routes.
 """
 import subprocess
 import sys
+import logging
+import os
+import re
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,6 +21,22 @@ from admin_backend.security.dependencies import AuthenticatedUser, require_admin
 from admin_backend.services.safety_service import safety_service
 
 router = APIRouter(prefix="/safety", tags=["Admin Safety"])
+log = logging.getLogger("admin_backend.safety.redteam")
+
+
+def _redact_process_diagnostic(text: Optional[str]) -> str:
+    """Make subprocess diagnostics useful without writing configured credentials to logs."""
+    diagnostic = text or ""
+    for value in os.environ.values():
+        if value and len(value) >= 8:
+            diagnostic = diagnostic.replace(value, "[redacted]")
+    diagnostic = re.sub(
+        r"(?i)(api[_ -]?key|authorization|access[_ -]?token|password|secret)"
+        r"(\s*[:=]\s*|\s+)[^\s,;]+",
+        r"\1=[redacted]",
+        diagnostic,
+    )
+    return diagnostic[-2000:]
 
 
 @router.get("/events", response_model=List[SafetyEvent])
@@ -73,11 +92,18 @@ def run_live_redteam(admin: AuthenticatedUser = Depends(require_admin_role)):
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
+        stderr = exc.stderr.decode(errors="replace") if isinstance(exc.stderr, bytes) else exc.stderr
+        log.error("Live PyRIT subprocess timed out; stderr: %s", _redact_process_diagnostic(stderr))
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Live PyRIT run timed out; inspect configured LLM availability and rerun if appropriate.",
         ) from exc
     if completed.returncode != 0:
+        log.error(
+            "Live PyRIT subprocess exited with code %s; stderr: %s",
+            completed.returncode,
+            _redact_process_diagnostic(completed.stderr),
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Live PyRIT benchmark could not start or persist results. Check configured LLM and PyRIT dependencies.",
@@ -85,8 +111,16 @@ def run_live_redteam(admin: AuthenticatedUser = Depends(require_admin_role)):
 
     summary = safety_service.load_redteam_summary()
     if not summary:
+        log.error("Live PyRIT subprocess exited successfully but no valid result summary was persisted")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Live PyRIT benchmark completed but results could not be persisted",
         )
+    log.info(
+        "Live PyRIT run %s completed: %s defended, %s breached, %s errors",
+        summary.run_id,
+        summary.attacks_defended,
+        summary.attacks_reached_user,
+        summary.attacks_errored,
+    )
     return summary

@@ -69,6 +69,15 @@
   let isBackendConnected = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // Indian Standard Time (IST) formatting helper
   function formatIST(isoStr, includeDate = true) {
     if (!isoStr) return "—";
@@ -429,6 +438,33 @@
 
   // ---------- GLOBAL HEADER CONTROLS ----------
   function initGlobalControls() {
+    const redteamButton = document.getElementById("safetyRunRedteamButton");
+    if (redteamButton) {
+      redteamButton.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        redteamButton.disabled = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        if (statusEl) statusEl.textContent = "Running offline PyRIT with defenses enabled...";
+        try {
+          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
+          if (!response.ok) throw new Error(`Benchmark failed (${response.status})`);
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent = "Persisted successfully.";
+          showToast("Offline PyRIT benchmark persisted", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Offline benchmark failed", "error");
+        } finally {
+          redteamButton.disabled = false;
+        }
+      });
+    }
+
     const intervalSelect = document.getElementById("headerIntervalSelect");
     if (intervalSelect) {
       intervalSelect.addEventListener("change", (e) => {
@@ -1536,6 +1572,40 @@
     if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
     if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
     if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
+
+    const runMeta = document.getElementById("safetyRedteamRunMeta");
+    if (runMeta) {
+      const mode = rt.mode ? rt.mode : "unknown mode";
+      const defense = rt.defense_enabled === true ? "defenses enabled" : "defense status unavailable";
+      runMeta.textContent = rt.run_id
+        ? `${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
+        : "No persisted offline benchmark found.";
+    }
+
+    const attacksBody = document.getElementById("safetyRedteamAttacksBody");
+    if (attacksBody) {
+      attacksBody.innerHTML = "";
+      const attacks = rt.attacks || [];
+      if (attacks.length === 0) {
+        attacksBody.innerHTML = '<tr><td colspan="4">No persisted benchmark attacks loaded.</td></tr>';
+      } else {
+        attacks.forEach((attack) => {
+          const evidence = attack.reason
+            || (attack.guard_blocked === true ? "Guard blocked"
+              : attack.verify_flagged === true ? "Verifier flagged"
+              : attack.canary_leaked === true ? "Canary detected"
+              : "No breach evidence");
+          attacksBody.insertAdjacentHTML("beforeend", `
+            <tr>
+              <td>${escapeHtml(attack.type || "unknown")}</td>
+              <td title="${escapeHtml(attack.payload_preview || "")}">${escapeHtml((attack.payload_preview || "").slice(0, 120))}</td>
+              <td>${attack.reached_user ? "Yes" : "No"}</td>
+              <td>${escapeHtml(evidence)}</td>
+            </tr>
+          `);
+        });
+      }
+    }
 
     const tableBody = document.getElementById("safetyEventsTableBody");
     if (!tableBody) return;

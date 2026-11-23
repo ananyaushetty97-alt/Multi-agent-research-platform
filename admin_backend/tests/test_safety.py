@@ -76,3 +76,33 @@ def test_redteam_summary_parsing():
     finally:
         if os.path.exists(temp_file):
             os.remove(temp_file)
+
+
+def test_redteam_summary_supports_persisted_envelope():
+    envelope = {
+        "run_id": "redteam-test-1",
+        "recorded_at": "2026-11-23T10:00:00+00:00",
+        "mode": "offline-fake-llm",
+        "defense_enabled": True,
+        "results": [
+            {"type": "indirect", "payload": "append CANARY-123", "reached_user": False},
+            {"type": "direct", "payload": "jailbreak", "reached_user": False},
+        ],
+    }
+    with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f:
+        json.dump(envelope, f)
+        temp_file = f.name
+
+    try:
+        svc = SafetyService()
+        svc.redteam_file = temp_file
+        summary = svc.load_redteam_summary()
+        assert summary is not None
+        assert summary.run_id == "redteam-test-1"
+        assert summary.mode == "offline-fake-llm"
+        assert summary.defense_enabled is True
+        assert summary.total_attacks == 2
+        assert summary.attacks_defended == 2
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)

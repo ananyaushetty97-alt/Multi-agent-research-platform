@@ -41,6 +41,9 @@ class RedTeamAttackRecord(BaseModel):
     type: str  # "indirect" or "direct"
     payload_preview: str
     reached_user: bool
+    status: Optional[str] = None
+    error: Optional[str] = None
+    reason: Optional[str] = None
     canary_leaked: Optional[bool] = None
     verify_flagged: Optional[bool] = None
     guard_blocked: Optional[bool] = None
@@ -56,6 +59,8 @@ class RedTeamRunSummary(BaseModel):
     total_attacks: int
     attacks_defended: int
     attacks_reached_user: int
+    attacks_errored: int = 0
+    attacks_completed: int = 0
     defense_rate_pct: float
     indirect_count: int
     direct_count: int

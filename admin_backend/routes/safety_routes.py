@@ -44,49 +44,49 @@ def list_safety_events(
 @router.get("/redteam", response_model=RedTeamRunSummary)
 def get_redteam_summary(admin: AuthenticatedUser = Depends(require_admin_role)):
     """
-    Retrieve offline PyRIT red-team security attack simulation results.
+    Retrieve the latest fixed-vector PyRIT red-team run.
     Strictly isolated from live production events.
     """
     summary = safety_service.load_redteam_summary()
     if not summary:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No red-team evaluation results found at logs/redteam_results.json. Run 'python -m redteam.run_redteam' to generate results.",
+            detail="No red-team results found. Run the authenticated admin benchmark to create them.",
         )
     return summary
 
 
 @router.post("/redteam/run", response_model=RedTeamRunSummary)
-def run_offline_redteam(admin: AuthenticatedUser = Depends(require_admin_role)):
+def run_live_redteam(admin: AuthenticatedUser = Depends(require_admin_role)):
     """
-    Execute the existing PyRIT offline fake-LLM benchmark with defenses enabled.
-    This endpoint never exposes or toggles production defense settings.
+    Execute bounded, fixed-vector tests against this application's request guard and
+    LangGraph agents using the configured LLM provider. No defenses are disabled.
     """
     root = Path(__file__).resolve().parents[2]
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "redteam.run_redteam",
-            "--all",
-            "--fake-llm",
-        ],
-        cwd=str(root),
-        capture_output=True,
-        text=True,
-        timeout=300,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-m", "redteam.run_redteam", "--all"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Live PyRIT run timed out; inspect configured LLM availability and rerun if appropriate.",
+        ) from exc
     if completed.returncode != 0:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Offline PyRIT benchmark failed",
+            detail="Live PyRIT benchmark could not start or persist results. Check configured LLM and PyRIT dependencies.",
         )
 
     summary = safety_service.load_redteam_summary()
     if not summary:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Offline PyRIT benchmark completed but results could not be persisted",
+            detail="Live PyRIT benchmark completed but results could not be persisted",
         )
     return summary

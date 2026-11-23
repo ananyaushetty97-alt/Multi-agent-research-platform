@@ -1,6 +1,9 @@
 """
 Safety monitoring and red-team evaluation routes.
 """
+import subprocess
+import sys
+from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -49,5 +52,41 @@ def get_redteam_summary(admin: AuthenticatedUser = Depends(require_admin_role)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No red-team evaluation results found at logs/redteam_results.json. Run 'python -m redteam.run_redteam' to generate results.",
+        )
+    return summary
+
+
+@router.post("/redteam/run", response_model=RedTeamRunSummary)
+def run_offline_redteam(admin: AuthenticatedUser = Depends(require_admin_role)):
+    """
+    Execute the existing PyRIT offline fake-LLM benchmark with defenses enabled.
+    This endpoint never exposes or toggles production defense settings.
+    """
+    root = Path(__file__).resolve().parents[2]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "redteam.run_redteam",
+            "--all",
+            "--fake-llm",
+        ],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Offline PyRIT benchmark failed",
+        )
+
+    summary = safety_service.load_redteam_summary()
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Offline PyRIT benchmark completed but results could not be persisted",
         )
     return summary

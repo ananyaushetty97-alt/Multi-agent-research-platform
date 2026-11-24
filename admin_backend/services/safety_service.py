@@ -9,6 +9,7 @@ import logging
 import os
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 from admin_backend.config import settings
@@ -26,11 +27,15 @@ from admin_backend.storage.interfaces import SafetyStorageInterface
 
 log = logging.getLogger("admin_backend.safety")
 
+# Resolve project root (two levels up from admin_backend/services/)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 class SafetyService:
     def __init__(self, storage: Optional[SafetyStorageInterface] = None):
         self.storage = storage or InMemorySafetyStorage()
-        self.redteam_file = settings.redteam_results_path
+        # Resolve redteam file path relative to project root to avoid CWD issues
+        self.redteam_file = str(PROJECT_ROOT / settings.redteam_results_path)
         self._redteam_runs: List[RedTeamRunSummary] = []
 
     def record_blocked_event(
@@ -81,6 +86,7 @@ class SafetyService:
             with open(self.redteam_file, "r", encoding="utf-8") as f:
                 document = json.load(f)
 
+            # Handle both envelope format (from run_redteam.py) and flat list format
             if isinstance(document, list):
                 rows = document
                 envelope = {}
@@ -88,6 +94,9 @@ class SafetyService:
                 rows = document["results"]
                 envelope = document
             else:
+                return None
+
+            if not isinstance(rows, list):
                 return None
 
             attacks: List[RedTeamAttackRecord] = []
@@ -127,7 +136,7 @@ class SafetyService:
                         status=status_value,
                         canary_leaked=r.get("canary_leaked"),
                         verify_flagged=r.get("verify_flagged"),
-                        guard_blocked=r.get("guard_blocked") or r.get("input_blocked"),
+                        guard_blocked=bool(r.get("guard_blocked", False)) or bool(r.get("input_blocked", False)),
                         reason=r.get("reason") or r.get("guard_reason"),
                         error=(
                             str(r.get("error") or "Unrecognized result status")[:300]

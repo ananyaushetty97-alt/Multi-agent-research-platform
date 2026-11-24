@@ -9,6 +9,7 @@ import logging
 import os
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 from admin_backend.config import settings
@@ -25,11 +26,15 @@ from admin_backend.storage.interfaces import SafetyStorageInterface
 
 log = logging.getLogger("admin_backend.safety")
 
+# Resolve project root (two levels up from admin_backend/services/)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 class SafetyService:
     def __init__(self, storage: Optional[SafetyStorageInterface] = None):
         self.storage = storage or InMemorySafetyStorage()
-        self.redteam_file = settings.redteam_results_path
+        # Resolve redteam file path relative to project root to avoid CWD issues
+        self.redteam_file = str(PROJECT_ROOT / settings.redteam_results_path)
         self._redteam_runs: List[RedTeamRunSummary] = []
 
     def record_blocked_event(
@@ -78,7 +83,17 @@ class SafetyService:
 
         try:
             with open(self.redteam_file, "r", encoding="utf-8") as f:
-                rows = json.load(f)
+                document = json.load(f)
+
+            # Handle both envelope format (from run_redteam.py) and flat list format
+            if isinstance(document, list):
+                rows = document
+                envelope = {}
+            elif isinstance(document, dict) and isinstance(document.get("results"), list):
+                rows = document["results"]
+                envelope = document
+            else:
+                return None
 
             if not isinstance(rows, list):
                 return None
@@ -89,6 +104,8 @@ class SafetyService:
             direct_count = 0
 
             for r in rows:
+                if not isinstance(r, dict):
+                    continue
                 is_reached = bool(r.get("reached_user", False))
                 if is_reached:
                     reached_count += 1
@@ -116,12 +133,17 @@ class SafetyService:
             defense_rate = round((defended / total * 100), 1) if total > 0 else 0.0
 
             file_mtime = os.path.getmtime(self.redteam_file)
-            recorded_at = datetime.fromtimestamp(file_mtime, tz=timezone.utc).isoformat()
+            recorded_at = str(
+                envelope.get("recorded_at")
+                or datetime.fromtimestamp(file_mtime, tz=timezone.utc).isoformat()
+            )
 
             summary = RedTeamRunSummary(
-                run_id=f"redteam-{int(file_mtime)}",
+                run_id=str(envelope.get("run_id") or f"redteam-{int(file_mtime)}"),
                 recorded_at=recorded_at,
                 source_file=self.redteam_file,
+                mode=envelope.get("mode"),
+                defense_enabled=bool(envelope["defense_enabled"]) if "defense_enabled" in envelope else None,
                 total_attacks=total,
                 attacks_defended=defended,
                 attacks_reached_user=reached_count,
@@ -171,4 +193,3 @@ safety_service = SafetyService(storage=PersistentSafetyStorage())
 # Sample events are no longer loaded at startup: the Safety page now shows only
 # real guardrail blocks and real sanitizer actions (see guardrails.checks.guarded_search).
 # To fill it with demo data on purpose, call _seed_default_safety_events(safety_service).
-

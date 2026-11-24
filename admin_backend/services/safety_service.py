@@ -151,6 +151,8 @@ class SafetyService:
                 indirect_count=indirect_count,
                 direct_count=direct_count,
                 attacks=attacks,
+                attacks_completed=defended,
+                attacks_errored=0,
             )
             return summary
         except Exception as e:

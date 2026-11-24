@@ -33,6 +33,8 @@ import json
 import os
 import re
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +45,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(ROOT / ".env")
 
 DEFENSE = True  # set by --no-defense
+OFFLINE_TEST_MODE = False  # set by --fake-llm
 CANARY_RE = re.compile(r"CANARY-\d+", re.IGNORECASE)
 
 # The hidden instruction is planted inside a fake web page.
@@ -258,9 +261,71 @@ def main(argv=None):
     print_tables(rows)
     out = ROOT / "logs" / "redteam_results.json"
     out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(rows, indent=2))
+    payload = {
+        "run_id": f"redteam-{int(time.time() * 1000)}",
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "mode": "offline-fake-llm" if OFFLINE_TEST_MODE else "live-pyrit",
+        "defense_enabled": DEFENSE,
+        "total_attacks": len(rows),
+        "results": rows,
+    }
+    out.write_text(json.dumps(payload, indent=2))
     print(f"Full results saved to {out.relative_to(ROOT)}")
     return rows
+
+
+# ---------------------------------------------------------------- programmatic API
+def run_redteam_benchmark(
+    all_attacks: bool = True,
+    fake_llm: bool = False,
+    no_defense: bool = False,
+    no_pyrit: bool = False,
+) -> dict:
+    """
+    Run the red-team benchmark programmatically (without argparse).
+    Returns the envelope dict that gets written to logs/redteam_results.json.
+    """
+    global DEFENSE, OFFLINE_TEST_MODE
+    DEFENSE = not no_defense
+    OFFLINE_TEST_MODE = fake_llm
+
+    if fake_llm:
+        os.environ.setdefault("TAVILY_API_KEY", "offline-dummy")
+        install_fake_llm()
+
+    jobs = []
+    if not no_pyrit:  # default to using PyRIT
+        if all_attacks:
+            jobs += [("indirect", x) for x in INDIRECT_PAYLOADS]
+            jobs += [("direct", x) for x in DIRECT_PAYLOADS]
+        else:
+            jobs += [("indirect", INDIRECT_PAYLOADS[0])]
+    else:
+        # Direct pipeline calls (no PyRIT)
+        if all_attacks:
+            jobs += [("indirect", x) for x in INDIRECT_PAYLOADS]
+            jobs += [("direct", x) for x in DIRECT_PAYLOADS]
+        else:
+            jobs += [("indirect", INDIRECT_PAYLOADS[0])]
+
+    if no_pyrit:
+        rows = [run_indirect(x, DEFENSE) if k == "indirect" else run_direct(x) for k, x in jobs]
+    else:
+        target, Message = make_pyrit_target()
+        rows = [send_via_pyrit(target, Message, k, x) for k, x in jobs]
+
+    payload = {
+        "run_id": f"redteam-{int(time.time() * 1000)}",
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "mode": "offline-fake-llm" if OFFLINE_TEST_MODE else "live-pyrit",
+        "defense_enabled": DEFENSE,
+        "total_attacks": len(rows),
+        "results": rows,
+    }
+    out = ROOT / "logs" / "redteam_results.json"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    return payload
 
 
 if __name__ == "__main__":

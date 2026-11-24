@@ -4,6 +4,17 @@
 (function () {
   "use strict";
 
+  // Utility: escape HTML for safe DOM insertion
+  function escapeHtml(text) {
+    if (typeof text !== "string") return "";
+    return text
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """)
+      .replace(/'/g, "&#039;");
+  }
+
   // Reactive Live State (Directly connected to FastAPI backend)
   const state = {
     health: {
@@ -473,6 +484,119 @@
             refreshBtn.disabled = false;
           }, 450);
         }
+      });
+    }
+
+    // Safety Red-Team Controls
+    const safetyRunOfflineBtn = document.getElementById("safetyRunRedteamButton");
+    if (safetyRunOfflineBtn) {
+      safetyRunOfflineBtn.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        const confirmed = window.confirm(
+          "Run fixed adversarial cases against this platform? The indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+        );
+        if (!confirmed) return;
+        safetyRunOfflineBtn.disabled = true;
+        redteamRunInProgress = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        state.safety.redteam = null;
+        if (statusEl) {
+          statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
+          statusEl.classList.remove("hidden");
+        }
+        renderSafetyView();
+        try {
+          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Live platform test results saved", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Live platform test failed", "error");
+        } finally {
+          redteamRunInProgress = false;
+          safetyRunOfflineBtn.disabled = false;
+        }
+      });
+    }
+
+    const safetyTriggerRedteamBtn = document.getElementById("safetyTriggerRedteamBtn");
+    if (safetyTriggerRedteamBtn) {
+      safetyTriggerRedteamBtn.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        const confirmed = window.confirm(
+          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+        );
+        if (!confirmed) return;
+        safetyTriggerRedteamBtn.disabled = true;
+        redteamRunInProgress = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        state.safety.redteam = null;
+        if (statusEl) {
+          statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
+          statusEl.classList.remove("hidden");
+        }
+        renderSafetyView();
+        try {
+          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Live platform test results saved", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Live platform test failed", "error");
+        } finally {
+          redteamRunInProgress = false;
+          safetyTriggerRedteamBtn.disabled = false;
+        }
+      });
+    }
+
+    const safetyDownloadDatasetBtn = document.getElementById("safetyDownloadDatasetBtn");
+    if (safetyDownloadDatasetBtn) {
+      safetyDownloadDatasetBtn.addEventListener("click", () => {
+        if (!state.safety.redteam || !state.safety.redteam.attacks) {
+          showToast("No benchmark results to download. Run the benchmark first.", "warning");
+          return;
+        }
+        const data = JSON.stringify(state.safety.redteam.attacks, null, 2);
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `redteam_results_${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Dataset downloaded", "success");
+      });
+    }
+
+    const safetyConfigureSuiteBtn = document.getElementById("safetyConfigureSuiteBtn");
+    if (safetyConfigureSuiteBtn) {
+      safetyConfigureSuiteBtn.addEventListener("click", () => {
+        showToast("Suite configuration panel - coming soon", "info");
       });
     }
 
@@ -1531,11 +1655,103 @@
     const totalAttacksEl = document.getElementById("safetyTotalAttacks");
     const indirectEl = document.getElementById("safetyIndirectAttacks");
     const directEl = document.getElementById("safetyDirectAttacks");
+    const safetyRedteamRunMetaEl = document.getElementById("safetyRedteamRunMeta");
+    const safetyRedteamLastRunEl = document.getElementById("safetyRedteamLastRun");
+    const safetyRedteamSeedDetailEl = document.getElementById("safetyRedteamSeedDetail");
+    const safetyRedteamCorpusEl = document.getElementById("safetyRedteamCorpus");
+    const safetyDirectMitigatedEl = document.getElementById("safetyDirectMitigated");
+    const safetyDirectAttacksEl = document.getElementById("safetyDirectAttacks");
+    const safetyDirectBarEl = document.getElementById("safetyDirectBar");
+    const safetyIndirectMitigatedEl = document.getElementById("safetyIndirectMitigated");
+    const safetyIndirectDetailEl = document.getElementById("safetyIndirectDetail");
+    const safetyIndirectBreachedEl = document.getElementById("safetyIndirectBreached");
+    const safetyIndirectBarPrimaryEl = document.getElementById("safetyIndirectBarPrimary");
+    const safetyIndirectBarTertiaryEl = document.getElementById("safetyIndirectBarTertiary");
+    const safetyRedteamSeedEl = document.getElementById("safetyRedteamSeed");
+    const safetyDefenseRateBarEl = document.getElementById("safetyDefenseRateBar");
+    const safetyRunStatusEl = document.getElementById("safetyRedteamRunStatus");
+    const attacksBodyEl = document.getElementById("safetyRedteamAttacksBody");
 
     if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "—";
     if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
     if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
     if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
+
+    if (safetyDefenseRateBarEl) safetyDefenseRateBarEl.style.width = `${rt.defense_rate_pct || 100}%`;
+
+    if (safetyRedteamRunMetaEl) {
+      if (rt.run_id) {
+        const mode = rt.mode || "unknown mode";
+        const defense = rt.defense_enabled === true ? "defenses enabled" : (rt.defense_enabled === false ? "defenses disabled" : "defense status unavailable");
+        const recorded = rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable";
+        safetyRedteamRunMetaEl.textContent = `Previously saved run: ${rt.run_id} | ${mode} | ${defense} | ${recorded}`;
+        safetyRedteamRunMetaEl.classList.remove("hidden");
+      } else {
+        safetyRedteamRunMetaEl.textContent = "No persisted benchmark found.";
+        safetyRedteamRunMetaEl.classList.remove("hidden");
+      }
+    }
+    if (safetyRedteamLastRunEl) safetyRedteamLastRunEl.textContent = rt.recorded_at ? formatIST(rt.recorded_at) : "—";
+    if (safetyRedteamSeedDetailEl) safetyRedteamSeedDetailEl.textContent = rt.run_id ? rt.run_id.replace("redteam-", "#RT-") : "—";
+    if (safetyRedteamCorpusEl) safetyRedteamCorpusEl.textContent = rt.total_attacks > 0 ? `${rt.total_attacks} Canonical Vectors` : "—";
+    if (safetyRedteamSeedEl) safetyRedteamSeedEl.textContent = rt.run_id ? `Seed ${rt.run_id.replace("redteam-", "#RT-")}` : "—";
+
+    const directRate = rt.total_attacks > 0 && rt.direct_count > 0 ? Math.round((rt.direct_count - (rt.attacks_reached_user || 0)) / rt.direct_count * 100) : 100;
+    const indirectRate = rt.total_attacks > 0 && rt.indirect_count > 0 ? Math.round((rt.indirect_count - (rt.attacks_reached_user || 0)) / rt.indirect_count * 100) : 100;
+
+    if (safetyDirectMitigatedEl) safetyDirectMitigatedEl.textContent = `${directRate}% Mitigated`;
+    if (safetyDirectAttacksEl) safetyDirectAttacksEl.textContent = `${rt.direct_count || 0} / ${rt.direct_count || 0}`;
+    if (safetyDirectBarEl) safetyDirectBarEl.style.width = `${directRate}%`;
+
+    if (safetyIndirectMitigatedEl) safetyIndirectMitigatedEl.textContent = `${indirectRate}% Mitigated`;
+    if (safetyIndirectDetailEl) safetyIndirectDetailEl.textContent = `${rt.indirect_count || 0} / ${rt.indirect_count || 0}`;
+    const breachedIndirect = Math.max(0, (rt.indirect_count || 0) - Math.round((rt.indirect_count || 0) * indirectRate / 100));
+    if (safetyIndirectBreachedEl) safetyIndirectBreachedEl.textContent = `${breachedIndirect} breached`;
+    if (safetyIndirectBarPrimaryEl) safetyIndirectBarPrimaryEl.style.width = `${indirectRate}%`;
+    if (safetyIndirectBarTertiaryEl) safetyIndirectBarTertiaryEl.style.width = `${100 - indirectRate}%`;
+
+    if (safetyRunStatusEl && !redteamRunInProgress) {
+      if (rt.run_id) {
+        safetyRunStatusEl.textContent = `Last run: ${rt.attacks_completed} completed, ${rt.attacks_errored} errors.`;
+        safetyRunStatusEl.classList.remove("hidden");
+      } else {
+        safetyRunStatusEl.classList.add("hidden");
+      }
+    }
+
+    // Populate attack details table
+    if (attacksBodyEl) {
+      attacksBodyEl.innerHTML = "";
+      const attacks = rt.attacks || [];
+      if (attacks.length === 0) {
+        attacksBodyEl.innerHTML = '<tr><td colspan="4" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">No benchmark results loaded. Click "Trigger New Run" to execute.</td></tr>';
+      } else {
+        attacks.forEach((attack) => {
+          const tr = document.createElement("tr");
+          const evidence = attack.error || attack.reason
+            || (attack.guard_blocked === true ? "Guard blocked"
+              : attack.verify_flagged === true ? "Verifier flagged"
+              : attack.canary_leaked === true ? "Canary detected"
+              : "No breach evidence");
+          const status = attack.status || (attack.reached_user ? "breached" : "defended");
+          tr.innerHTML = `
+            <td class="px-space-md py-3 font-label-sm text-label-sm">${escapeHtml(attack.type || "unknown")}</td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-on-surface-variant max-w-xs truncate" title="${escapeHtml(attack.payload_preview || "")}">${escapeHtml((attack.payload_preview || "").slice(0, 120))}</td>
+            <td class="px-space-md py-3">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded ${status === "breached" ? "bg-error/10 text-error" : "bg-primary/10 text-primary"} font-label-sm font-semibold">
+                ${status === "breached"
+                  ? '<span class="material-symbols-outlined text-[12px]">report</span>Breached'
+                  : status === "error"
+                    ? '<span class="material-symbols-outlined text-[12px]">error</span>Error'
+                    : '<span class="material-symbols-outlined text-[12px]">check_circle</span>Defended'}
+              </span>
+            </td>
+            <td class="px-space-md py-3 text-on-surface-variant max-w-md truncate" title="${escapeHtml(evidence)}">${escapeHtml(evidence)}</td>
+          `;
+          attacksBodyEl.appendChild(tr);
+        });
+      }
+    }
 
     const tableBody = document.getElementById("safetyEventsTableBody");
     if (!tableBody) return;

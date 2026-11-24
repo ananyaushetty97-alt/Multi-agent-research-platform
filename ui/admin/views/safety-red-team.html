@@ -48,7 +48,7 @@
 <button class="px-space-sm py-1 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">JSON</button>
 <button class="px-space-sm py-1 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">CSV</button>
 </div>
-<button class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary/90 transition-all shadow-md" type="button">
+<button id="safetyRunRedteamButton" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary/90 transition-all shadow-md" type="button">
 <span class="material-symbols-outlined text-[18px]">play_circle</span>
 <span>Run Offline Benchmark</span>
 </button>
@@ -96,24 +96,24 @@
 </div>
 </div>
 <!-- KPI 3 -->
-<div class="relative overflow-hidden rounded bg-surface-container-low p-space-lg shadow-sm">
+<div class="relative overflow-hidden rounded bg-surface-container-low p-space-lg shadow-sm" id="safetyDefenseRateCard">
 <div class="flex items-center justify-between text-on-surface-variant mb-space-xs">
 <span class="font-label-sm text-label-sm uppercase tracking-wider">Offline Benchmark Defense</span>
 <span class="material-symbols-outlined text-[18px] text-primary">verified</span>
 </div>
 <div class="flex items-baseline gap-space-xs">
-<span class="font-metric-lg text-metric-lg text-on-surface font-semibold tracking-tight">96.0%</span>
-<span class="font-label-sm text-label-sm text-primary">Seed #X4</span>
+<span class="font-metric-lg text-metric-lg text-on-surface font-semibold tracking-tight" id="safetyDefenseRate">—</span>
+<span class="font-label-sm text-label-sm text-primary" id="safetyRedteamSeed">—</span>
 </div>
 <div class="mt-space-sm flex items-center justify-between text-on-surface-variant">
-<span class="font-body-sm text-body-sm text-primary flex items-center gap-1">
+<span class="font-body-sm text-body-sm text-primary flex items-center gap-1" id="safetyTotalAttacks">
 <span class="material-symbols-outlined text-[14px]">shield</span>
-          48 / 50 attacks mitigated
+          —
         </span>
-<span class="font-label-sm text-label-sm text-tertiary">2 leaks</span>
+<span class="font-label-sm text-label-sm text-tertiary" id="safetyIndirectAttacks">—</span>
 </div>
 <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-primary/20">
-<div class="h-full bg-primary w-[96%]"></div>
+<div class="h-full bg-primary w-[96%]" id="safetyDefenseRateBar"></div>
 </div>
 </div>
 <!-- KPI 4 -->
@@ -188,7 +188,7 @@
 <th class="py-space-sm px-space-md font-semibold text-center">Actions</th>
 </tr>
 </thead>
-<tbody class="font-body-sm text-body-sm divide-y-0">
+<tbody id="safetyEventsTableBody" class="font-body-sm text-body-sm divide-y-0">
 <!-- Row 1 -->
 <tr class="hover:bg-surface-container transition-colors">
 <td class="py-space-sm px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">14:22:08.109</td>
@@ -368,20 +368,22 @@
         </p>
 </div>
 <div class="flex flex-wrap items-center gap-space-xs shrink-0">
-<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+<button id="safetyDownloadDatasetBtn" class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
 <span class="material-symbols-outlined text-[16px]">file_download</span>
 <span>Download Dataset (.jsonl)</span>
 </button>
-<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+<button id="safetyConfigureSuiteBtn" class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
 <span class="material-symbols-outlined text-[16px]">tune</span>
 <span>Configure Suite</span>
 </button>
-<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm" type="button">
+<button id="safetyTriggerRedteamBtn" class="flex items-center gap-space-xs px-space-sm py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm" type="button">
 <span class="material-symbols-outlined text-[16px]">restart_alt</span>
 <span>Trigger New Run</span>
 </button>
 </div>
 </div>
+<!-- Red-team Run Status -->
+<div id="safetyRedteamRunStatus" class="mt-space-md p-space-md bg-surface-container rounded text-on-surface-variant font-body-sm text-body-sm hidden"></div>
 <!-- Benchmark Metrics Inner Grid -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md my-space-lg">
 <!-- Metric: Overall Defense Rate -->
@@ -412,10 +414,10 @@
 <div>
 <div class="flex items-center justify-between">
 <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Direct Injection Attacks</span>
-<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold">100% Mitigated</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold" id="safetyDirectMitigated">100% Mitigated</span>
 </div>
 <div class="flex items-baseline gap-space-xs mt-space-xs">
-<span class="font-metric-lg text-metric-lg text-on-surface font-semibold">20 / 20</span>
+<span class="font-metric-lg text-metric-lg text-on-surface font-semibold" id="safetyDirectAttacks">20 / 20</span>
 <span class="font-label-sm text-label-sm text-on-surface-variant">vectors neutralized</span>
 </div>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
@@ -423,7 +425,7 @@
           </p>
 </div>
 <div class="w-full bg-surface-container-high rounded h-1.5 overflow-hidden mt-space-md">
-<div class="h-full bg-primary w-full"></div>
+<div class="h-full bg-primary w-full" id="safetyDirectBar"></div>
 </div>
 </div>
 <!-- Metric: Indirect Injection (XPIA) -->
@@ -431,11 +433,11 @@
 <div>
 <div class="flex items-center justify-between">
 <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Indirect Injection (XPIA)</span>
-<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-semibold">93.3% Mitigated</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-semibold" id="safetyIndirectMitigated">93.3% Mitigated</span>
 </div>
 <div class="flex items-baseline gap-space-xs mt-space-xs">
-<span class="font-metric-lg text-metric-lg text-on-surface font-semibold">28 / 30</span>
-<span class="font-label-sm text-label-sm text-tertiary font-semibold">2 breached tokenizer</span>
+<span class="font-metric-lg text-metric-lg text-on-surface font-semibold" id="safetyIndirectDetail">28 / 30</span>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold" id="safetyIndirectBreached">2 breached tokenizer</span>
 </div>
 <p class="font-body-sm text-body-sm text-tertiary mt-1 flex items-center justify-between">
 <span>Critical: 2 reached output pipeline</span>
@@ -443,20 +445,43 @@
 </p>
 </div>
 <div class="w-full bg-surface-container-high rounded h-1.5 overflow-hidden mt-space-md flex">
-<div class="h-full bg-primary w-[93.3%]"></div>
-<div class="h-full bg-tertiary w-[6.7%]"></div>
+<div class="h-full bg-primary w-[93.3%]" id="safetyIndirectBarPrimary"></div>
+<div class="h-full bg-tertiary w-[6.7%]" id="safetyIndirectBarTertiary"></div>
 </div>
 </div>
 </div>
 <!-- Timestamp hash strip -->
-<div class="flex items-center justify-between flex-wrap gap-space-sm p-space-sm bg-surface-container rounded mb-space-lg text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center justify-between flex-wrap gap-space-sm p-space-sm bg-surface-container rounded mb-space-lg text-on-surface-variant font-label-sm text-label-sm" id="safetyRedteamRunMeta">
 <div class="flex items-center gap-space-sm">
 <span class="material-symbols-outlined text-[16px] text-primary">schedule</span>
-<span>Last benchmark run: <strong class="text-on-surface font-mono">Today 13:45 UTC</strong></span>
-<span>Seed: <code class="text-primary">#RT-2026-X4</code></span>
+<span>Last benchmark run: <strong class="text-on-surface font-mono" id="safetyRedteamLastRun">—</strong></span>
+<span>Seed: <code class="text-primary" id="safetyRedteamSeedDetail">—</code></span>
 </div>
 <div>
-<span>Adversarial Corpus: <strong class="text-on-surface">50 Canonical Vectors</strong></span>
+<span>Adversarial Corpus: <strong class="text-on-surface" id="safetyRedteamCorpus">—</strong></span>
+</div>
+</div>
+<!-- Red-team Attack Details Table -->
+<div class="rounded bg-surface-container-low shadow-sm mb-space-xl">
+<div class="px-space-md py-space-sm bg-surface-container border-b border-outline-variant/30">
+<h3 class="font-title-sm text-title-sm text-on-surface">Attack Vectors Tested</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-space-sm px-space-md font-semibold">Type</th>
+<th class="py-space-sm px-space-md font-semibold">Payload Preview</th>
+<th class="py-space-sm px-space-md font-semibold">Status</th>
+<th class="py-space-sm px-space-md font-semibold">Evidence</th>
+</tr>
+</thead>
+<tbody id="safetyRedteamAttacksBody" class="font-body-sm text-body-sm divide-y-0">
+<tr>
+<td colspan="4" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">No benchmark results loaded. Click "Trigger New Run" to execute.</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <!-- Structured Sample Vectors Tested List -->

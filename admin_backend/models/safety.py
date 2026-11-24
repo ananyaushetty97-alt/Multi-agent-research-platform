@@ -58,6 +58,11 @@ class RedTeamRunSummary(BaseModel):
     indirect_count: int
     direct_count: int
     attacks: List[RedTeamAttackRecord] = Field(default_factory=list)
+    # Additional fields for frontend status display
+    attacks_completed: Optional[int] = None
+    attacks_errored: Optional[int] = None
+    mode: Optional[str] = None
+    defense_enabled: Optional[bool] = None
 
 
 class SafetyEventFilter(BaseModel):

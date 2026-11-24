@@ -41,6 +41,9 @@ class RedTeamAttackRecord(BaseModel):
     type: str  # "indirect" or "direct"
     payload_preview: str
     reached_user: bool
+    status: Optional[str] = None
+    error: Optional[str] = None
+    reason: Optional[str] = None
     canary_leaked: Optional[bool] = None
     verify_flagged: Optional[bool] = None
     guard_blocked: Optional[bool] = None
@@ -51,18 +54,17 @@ class RedTeamRunSummary(BaseModel):
     run_id: str
     recorded_at: str
     source_file: str
+    mode: Optional[str] = None
+    defense_enabled: Optional[bool] = None
     total_attacks: int
     attacks_defended: int
     attacks_reached_user: int
+    attacks_errored: int = 0
+    attacks_completed: int = 0
     defense_rate_pct: float
     indirect_count: int
     direct_count: int
     attacks: List[RedTeamAttackRecord] = Field(default_factory=list)
-    # Additional fields for frontend status display
-    attacks_completed: Optional[int] = None
-    attacks_errored: Optional[int] = None
-    mode: Optional[str] = None
-    defense_enabled: Optional[bool] = None
 
 
 class SafetyEventFilter(BaseModel):

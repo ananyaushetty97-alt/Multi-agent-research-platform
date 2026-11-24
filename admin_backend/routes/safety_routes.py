@@ -2,6 +2,9 @@
 Safety monitoring and red-team evaluation routes.
 """
 import asyncio
+import logging
+import os
+import re
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -16,6 +19,22 @@ from admin_backend.security.dependencies import AuthenticatedUser, require_admin
 from admin_backend.services.safety_service import safety_service
 
 router = APIRouter(prefix="/safety", tags=["Admin Safety"])
+log = logging.getLogger("admin_backend.safety.redteam")
+
+
+def _redact_process_diagnostic(text: Optional[str]) -> str:
+    """Make subprocess diagnostics useful without writing configured credentials to logs."""
+    diagnostic = text or ""
+    for value in os.environ.values():
+        if value and len(value) >= 8:
+            diagnostic = diagnostic.replace(value, "[redacted]")
+    diagnostic = re.sub(
+        r"(?i)(api[_ -]?key|authorization|access[_ -]?token|password|secret)"
+        r"(\s*[:=]\s*|\s+)[^\s,;]+",
+        r"\1=[redacted]",
+        diagnostic,
+    )
+    return diagnostic[-2000:]
 
 
 @router.get("/events", response_model=List[SafetyEvent])
@@ -42,14 +61,14 @@ def list_safety_events(
 @router.get("/redteam", response_model=RedTeamRunSummary)
 def get_redteam_summary(admin: AuthenticatedUser = Depends(require_admin_role)):
     """
-    Retrieve offline PyRIT red-team security attack simulation results.
+    Retrieve the latest fixed-vector PyRIT red-team run.
     Strictly isolated from live production events.
     """
     summary = safety_service.load_redteam_summary()
     if not summary:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No red-team evaluation results found at logs/redteam_results.json. Run 'python -m redteam.run_redteam' to generate results.",
+            detail="No red-team results found. Run the authenticated admin benchmark to create them.",
         )
     return summary
 

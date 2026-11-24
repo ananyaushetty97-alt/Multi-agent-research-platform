@@ -52,7 +52,7 @@
     safety: {
       events: [],
       redteam: {
-        defense_rate_pct: 100.0,
+        defense_rate_pct: 0,
         attacks_defended: 0,
         total_attacks: 0,
         indirect_count: 0,
@@ -78,6 +78,7 @@
   let activeTraceOutcomeFilter = "all";
   let pendingDestructiveAction = null; // { type: 'cache_clear' | 'cache_entry' | 'ltm_report', targetId: string, title: string }
   let isBackendConnected = false;
+  let redteamRunInProgress = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
 
   // Indian Standard Time (IST) formatting helper
@@ -300,7 +301,11 @@
       ]);
 
       if (eventsRes.ok) state.safety.events = await eventsRes.json();
-      if (redteamRes.ok) state.safety.redteam = await redteamRes.json();
+      if (!redteamRunInProgress && redteamRes.ok) {
+        state.safety.redteam = await redteamRes.json();
+      } else if (!redteamRunInProgress && redteamRes.status === 404) {
+        state.safety.redteam = null;
+      }
       renderSafetyView();
     } catch (e) {
       // Preserve authentic dataset in state
@@ -487,7 +492,7 @@
       });
     }
 
-    // Safety Red-Team Controls
+    // Safety Red-Team Controls - Run Offline Benchmark (uses fake LLM)
     const safetyRunOfflineBtn = document.getElementById("safetyRunRedteamButton");
     if (safetyRunOfflineBtn) {
       safetyRunOfflineBtn.addEventListener("click", async () => {
@@ -496,10 +501,53 @@
           return;
         }
         const confirmed = window.confirm(
-          "Run fixed adversarial cases against this platform? The indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+          "Run 11 fixed adversarial cases OFFLINE (fake LLM, no API quota consumed)? This runs fast with simulated responses."
         );
         if (!confirmed) return;
         safetyRunOfflineBtn.disabled = true;
+        redteamRunInProgress = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        state.safety.redteam = null;
+        if (statusEl) {
+          statusEl.textContent = "Offline run in progress. Counts will appear when this run finishes.";
+          statusEl.classList.remove("hidden");
+        }
+        renderSafetyView();
+        try {
+          const response = await apiRequest("/safety/redteam/run?fake_llm=true", { method: "POST" });
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Offline benchmark results saved", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Offline benchmark failed", "error");
+        } finally {
+          redteamRunInProgress = false;
+          safetyRunOfflineBtn.disabled = false;
+        }
+      });
+    }
+
+    // Safety Red-Team Controls - Trigger New Run (live LLM)
+    const safetyTriggerRedteamBtn = document.getElementById("safetyTriggerRedteamBtn");
+    if (safetyTriggerRedteamBtn) {
+      safetyTriggerRedteamBtn.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        const confirmed = window.confirm(
+          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+        );
+        if (!confirmed) return;
+        safetyTriggerRedteamBtn.disabled = true;
         redteamRunInProgress = true;
         const statusEl = document.getElementById("safetyRedteamRunStatus");
         state.safety.redteam = null;
@@ -525,7 +573,7 @@
           showToast(error.message || "Live platform test failed", "error");
         } finally {
           redteamRunInProgress = false;
-          safetyRunOfflineBtn.disabled = false;
+          safetyTriggerRedteamBtn.disabled = false;
         }
       });
     }
@@ -1644,7 +1692,7 @@
   // 5. Safety & Red-Team View
   function renderSafetyView() {
     const rt = state.safety.redteam || {
-      defense_rate_pct: 100.0,
+      defense_rate_pct: 0,
       attacks_defended: 0,
       total_attacks: 0,
       indirect_count: 0,
@@ -1655,6 +1703,7 @@
     const totalAttacksEl = document.getElementById("safetyTotalAttacks");
     const indirectEl = document.getElementById("safetyIndirectAttacks");
     const directEl = document.getElementById("safetyDirectAttacks");
+    const errorsEl = document.getElementById("safetyRedteamErrors");
     const safetyRedteamRunMetaEl = document.getElementById("safetyRedteamRunMeta");
     const safetyRedteamLastRunEl = document.getElementById("safetyRedteamLastRun");
     const safetyRedteamSeedDetailEl = document.getElementById("safetyRedteamSeedDetail");
@@ -1672,10 +1721,45 @@
     const safetyRunStatusEl = document.getElementById("safetyRedteamRunStatus");
     const attacksBodyEl = document.getElementById("safetyRedteamAttacksBody");
 
-    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${(rt.defense_rate_pct || 100).toFixed(1)}%` : "—";
+    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${Number(rt.defense_rate_pct ?? 0).toFixed(1)}%` : "—";
     if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
     if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
     if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
+    if (errorsEl) errorsEl.textContent = `${rt.attacks_errored || 0}`;
+
+    const runMeta = document.getElementById("safetyRedteamRunMeta");
+    if (runMeta) {
+      const mode = rt.mode ? rt.mode : "unknown mode";
+      const defense = rt.defense_enabled === true ? "defenses enabled" : "defense status unavailable";
+      runMeta.textContent = rt.run_id
+        ? `Previously saved run: ${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
+        : "No persisted benchmark found.";
+    }
+
+    const attacksBody = document.getElementById("safetyRedteamAttacksBody");
+    if (attacksBody) {
+      attacksBody.innerHTML = "";
+      const attacks = rt.attacks || [];
+      if (attacks.length === 0) {
+        attacksBody.innerHTML = '<tr><td colspan="4">No persisted benchmark attacks loaded.</td></tr>';
+      } else {
+        attacks.forEach((attack) => {
+          const evidence = attack.error || attack.reason
+            || (attack.guard_blocked === true ? "Guard blocked"
+              : attack.verify_flagged === true ? "Verifier flagged"
+              : attack.canary_leaked === true ? "Canary detected"
+              : "No breach evidence");
+          attacksBody.insertAdjacentHTML("beforeend", `
+            <tr>
+              <td>${escapeHtml(attack.type || "unknown")}</td>
+              <td title="${escapeHtml(attack.payload_preview || "")}">${escapeHtml((attack.payload_preview || "").slice(0, 120))}</td>
+              <td>${escapeHtml(attack.status || (attack.reached_user ? "breached" : "defended"))}</td>
+              <td>${escapeHtml(evidence)}</td>
+            </tr>
+          `);
+        });
+      }
+    }
 
     if (safetyDefenseRateBarEl) safetyDefenseRateBarEl.style.width = `${rt.defense_rate_pct || 100}%`;
 

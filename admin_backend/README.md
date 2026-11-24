@@ -20,7 +20,7 @@ This module allows authorized platform administrators to answer four fundamental
    - Distinctly isolates automated evaluation scores from human reviewer submissions.
 3. **Is the system safe?**
    - Stores and audits blocked inputs/outputs, jailbreak attempts, toxic language detections, and indirect prompt-injection sanitizations (XPIA).
-   - Ingests offline PyRIT red-team results (`logs/redteam_results.json`) while maintaining strict separation from live production telemetry.
+   - Ingests fixed-vector PyRIT integration results (`logs/redteam_results.json`) while maintaining strict separation from live production telemetry. The admin-triggered run sends direct cases through `/generate` and indirect cases through LangGraph agents using the configured LLM; provider quota may be consumed. Execution is admin-authenticated, bounded, and limited to this application.
    - Enforces privacy-conscious excerpt limits and PII masking.
 4. **What data is stored?**
    - Provides safe management interfaces for PostgreSQL long-term memory (LTM), Redis semantic cache entries, and short-term conversation sessions.

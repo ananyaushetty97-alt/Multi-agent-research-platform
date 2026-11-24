@@ -775,4 +775,5 @@ def root():
 # ---------------------------------------------------------------------------
 UI_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ui")
 if os.path.isdir(UI_DIR):
+    app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui_prefix")
     app.mount("/", StaticFiles(directory=UI_DIR, html=True), name="ui")

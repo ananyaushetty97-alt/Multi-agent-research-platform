@@ -465,23 +465,19 @@ document.addEventListener('DOMContentLoaded', () => {
       loginTabAdmin?.classList.add('active');
       loginTabUser?.classList.remove('active');
       if (userAuthModeToggle) userAuthModeToggle.style.display = 'none';
-      if (loginForm) loginForm.style.display = 'flex';
+      if (loginForm) loginForm.style.display = 'none';
       if (registerForm) registerForm.style.display = 'none';
-      if (loginAdminHint) loginAdminHint.style.display = 'flex';
+      if (loginAdminHint) loginAdminHint.style.display = 'none';
       if (googleAuthContainer) googleAuthContainer.style.display = 'none';
-      if (loginEmailLabel) loginEmailLabel.textContent = 'Admin Username or Email';
-      if (loginEmail) {
-        loginEmail.value = '';
-        loginEmail.placeholder = 'admin@yourcompany.com';
-      }
-      if (loginPassword) loginPassword.placeholder = 'Enter password';
-      if (btnLoginText) btnLoginText.textContent = 'Sign In as Admin';
-      if (btnLoginIcon) btnLoginIcon.textContent = 'admin_panel_settings';
-      if (loginModalTitle) loginModalTitle.textContent = 'Admin Sign In';
-      if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in with administrator credentials';
+      const adminSection = document.getElementById('user-modal-admin-section');
+      if (adminSection) adminSection.style.display = 'flex';
+      if (loginModalTitle) loginModalTitle.textContent = 'Admin Portal Access';
+      if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in with an authorized Google account via the Admin Portal';
     } else {
       loginTabUser?.classList.add('active');
       loginTabAdmin?.classList.remove('active');
+      const adminSection = document.getElementById('user-modal-admin-section');
+      if (adminSection) adminSection.style.display = 'none';
       if (userAuthModeToggle) userAuthModeToggle.style.display = 'grid';
       if (loginAdminHint) loginAdminHint.style.display = 'none';
       updateGoogleVisibility();
@@ -751,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
           hasClientError = true;
         }
 
-        const emailRegex = /^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$/;
+        const emailRegex = /^[\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
         if (!email) {
           if (registerEmailError) {
             registerEmailError.textContent = 'Please enter your email.';

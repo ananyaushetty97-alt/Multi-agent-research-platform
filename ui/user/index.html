@@ -765,6 +765,20 @@
           </div>
         </form>
 
+        <!-- Google Admin Authentication Container (shown on Admin tab) -->
+        <div id="user-modal-admin-section" style="display: none; flex-direction: column; align-items: center; gap: 12px; margin: 16px 0; text-align: center;">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #fff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+            <span class="material-symbols-outlined text-[24px]">admin_panel_settings</span>
+          </div>
+          <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #666); margin: 0; max-width: 300px;">
+            Administrative access is restricted to verified administrators and requires an authorized Google Admin account.
+          </p>
+          <a href="../admin/index.html" class="btn-primary-login" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 0.625rem 1.25rem; margin-top: 4px; border-radius: 8px; font-weight: 500;">
+            <span class="material-symbols-outlined text-[18px]">launch</span>
+            <span>Open Admin Observability Portal</span>
+          </a>
+        </div>
+
         <!-- Clean User Registration Form (Regular Users Only) -->
         <form class="login-form" id="register-form" style="display: none;" onsubmit="return false;">
           <div class="form-group">

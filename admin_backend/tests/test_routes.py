@@ -95,3 +95,73 @@ def test_export_scores_csv(client, admin_token):
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/csv")
         assert "id,topic" in resp.text
+
+
+def test_redteam_routes_require_admin(client, user_token):
+    headers = {"Authorization": f"Bearer {user_token}"}
+    resp = client.get("/admin/safety/redteam", headers=headers)
+    assert resp.status_code == 403
+
+    resp = client.post("/admin/safety/redteam/run", headers=headers)
+    assert resp.status_code == 403
+
+
+def test_admin_can_trigger_live_redteam(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    with patch("admin_backend.routes.safety_routes.subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        with patch("admin_backend.routes.safety_routes.safety_service.load_redteam_summary") as mock_load:
+            from admin_backend.models.safety import RedTeamRunSummary
+            mock_load.return_value = RedTeamRunSummary(
+                run_id="redteam-test",
+                recorded_at="2026-11-23T10:00:00+00:00",
+                source_file="logs/redteam_results.json",
+                mode="live-pyrit",
+                defense_enabled=True,
+                total_attacks=11,
+                attacks_defended=11,
+                attacks_reached_user=0,
+                defense_rate_pct=100.0,
+                indirect_count=6,
+                direct_count=5,
+            )
+            resp = client.post("/admin/safety/redteam/run", headers=headers)
+            command = mock_run.call_args.args[0]
+
+    assert resp.status_code == 200
+    assert resp.json()["mode"] == "live-pyrit"
+    assert "--all" in command
+    assert "--fake-llm" not in command
+
+
+def test_live_redteam_failure_logs_sanitized_subprocess_diagnostic(client, admin_token, monkeypatch, caplog):
+    import logging
+
+    secret = "provider-secret-value"
+    monkeypatch.setenv("GROQ_API_KEY", secret)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    with patch(
+        "admin_backend.routes.safety_routes.subprocess.run",
+        return_value=MagicMock(returncode=1, stderr=f"ImportError: missing pyrit; key={secret}"),
+    ):
+        with caplog.at_level(logging.ERROR, logger="admin_backend.safety.redteam"):
+            response = client.post("/admin/safety/redteam/run", headers=headers)
+
+    assert response.status_code == 502
+    assert "missing pyrit" in caplog.text
+    assert secret not in caplog.text
+    assert "[redacted]" in caplog.text
+
+
+def test_live_redteam_timeout_returns_gateway_timeout(client, admin_token):
+    import subprocess
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    with patch(
+        "admin_backend.routes.safety_routes.subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd="redteam", timeout=600, stderr="provider timeout"),
+    ):
+        response = client.post("/admin/safety/redteam/run", headers=headers)
+
+    assert response.status_code == 504
+    assert "timed out" in response.json()["detail"]

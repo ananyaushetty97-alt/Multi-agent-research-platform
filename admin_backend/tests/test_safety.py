@@ -8,6 +8,7 @@ import tempfile
 from admin_backend.models.safety import GuardCheckType, SafetyOutcome, SafetyEventFilter
 from admin_backend.services.safety_service import SafetyService
 from admin_backend.storage.in_memory import InMemorySafetyStorage
+from redteam import run_redteam
 
 
 def test_safety_event_recording_and_truncation():
@@ -76,3 +77,110 @@ def test_redteam_summary_parsing():
     finally:
         if os.path.exists(temp_file):
             os.remove(temp_file)
+
+
+def test_redteam_summary_supports_persisted_envelope():
+    envelope = {
+        "run_id": "redteam-test-1",
+        "recorded_at": "2026-11-23T10:00:00+00:00",
+        "mode": "offline-fake-llm",
+        "defense_enabled": True,
+        "results": [
+            {"type": "indirect", "payload": "append CANARY-123", "reached_user": False},
+            {"type": "direct", "payload": "jailbreak", "reached_user": False},
+        ],
+    }
+    with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f:
+        json.dump(envelope, f)
+        temp_file = f.name
+
+    try:
+        svc = SafetyService()
+        svc.redteam_file = temp_file
+        summary = svc.load_redteam_summary()
+        assert summary is not None
+        assert summary.run_id == "redteam-test-1"
+        assert summary.mode == "offline-fake-llm"
+        assert summary.defense_enabled is True
+        assert summary.total_attacks == 2
+        assert summary.attacks_defended == 2
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+
+def test_redteam_summary_does_not_count_errors_as_defended():
+    envelope = {
+        "run_id": "redteam-errors",
+        "recorded_at": "2026-11-23T10:00:00+00:00",
+        "mode": "live-pyrit",
+        "defense_enabled": True,
+        "results": [
+            {"type": "direct", "payload": "blocked attack", "status": "defended", "reached_user": False},
+            {"type": "indirect", "payload": "leaked attack", "status": "breached", "reached_user": True},
+            {"type": "indirect", "payload": "llm error", "status": "error", "reached_user": False, "error": "Provider unavailable"},
+        ],
+    }
+    with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f:
+        json.dump(envelope, f)
+        temp_file = f.name
+
+    try:
+        svc = SafetyService()
+        svc.redteam_file = temp_file
+        summary = svc.load_redteam_summary()
+        assert summary is not None
+        assert summary.total_attacks == 3
+        assert summary.attacks_defended == 1
+        assert summary.attacks_reached_user == 1
+        assert summary.attacks_errored == 1
+        assert summary.attacks_completed == 2
+        assert summary.defense_rate_pct == 33.3
+        assert summary.attacks[2].status == "error"
+        assert summary.attacks[2].error == "Provider unavailable"
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+
+def test_live_direct_attack_uses_api_response_as_outcome():
+    class Response:
+        def __init__(self, status_code, detail=None):
+            self.status_code = status_code
+            self.detail = detail
+
+        def json(self):
+            return {"detail": self.detail}
+
+    class Client:
+        def __init__(self, status_code, detail=None):
+            self.status_code = status_code
+            self.detail = detail
+
+        def post(self, path, json):
+            assert path == "/generate"
+            assert json["grade"] is False
+            return Response(self.status_code, self.detail)
+
+    defended = run_redteam.run_direct(
+        "fixed attack payload",
+        client=Client(400, "Blocked: looks like a jailbreak / prompt-injection attempt."),
+    )
+    unexpected_400 = run_redteam.run_direct("fixed attack payload", client=Client(400, "invalid request"))
+    breached = run_redteam.run_direct("fixed attack payload", client=Client(200))
+    failed = run_redteam.run_direct("fixed attack payload", client=Client(503))
+
+    assert defended["status"] == "defended"
+    assert unexpected_400["status"] == "error"
+    assert breached["status"] == "breached"
+    assert failed["status"] == "error"
+    assert failed["reached_user"] is False
+    assert "HTTP 503" in failed["error"]
+
+
+def test_redteam_error_diagnostics_redact_environment_secrets(monkeypatch):
+    secret = "sample-secret-value"
+    monkeypatch.setenv("TEST_PROVIDER_TOKEN", secret)
+    diagnostic = run_redteam._safe_error(RuntimeError(f"provider rejected {secret}"))
+    assert secret not in diagnostic
+    assert "[redacted]" in diagnostic

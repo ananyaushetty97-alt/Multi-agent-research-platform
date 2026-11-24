@@ -95,10 +95,11 @@ const RP = (() => {
     const chats = load();
     let chat = chats.find(c => c.id === data.session_id);
     if (!chat) {
-      // For file uploads, don't use the prompt as title - use first file name or generic title
+      // For file uploads with generic prompt, use file name as title instead of the prompt
+      const genericPrompt = 'Analyze and summarize the uploaded documents to provide a comprehensive research report';
       let title = userText.slice(0, 80);
-      if (attachments.length > 0 && (!userText || userText.includes('Analyze and summarize'))) {
-        // File upload without meaningful prompt - use file name as title
+      if (attachments.length > 0 && (userText === genericPrompt || userText === 'Research the uploaded file content')) {
+        // File upload without meaningful user prompt - use first file name as title
         title = attachments[0].name || 'File Analysis';
       }
       chat = { id: data.session_id, title, created: Date.now(), updated: 0, turns: [] };

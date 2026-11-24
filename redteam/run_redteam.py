@@ -194,7 +194,7 @@ def install_fake_llm():
     import evaluation.judge as j
     import guardrails.checks as gc
 
-    def fake(prompt, system_prompt=None):
+    def fake(prompt, system_prompt=None, max_tokens=None):
         if "Reply with exactly the word VERIFIED" in prompt:
             return "VERIFIED"
         canaries = CANARY_RE.findall(prompt)

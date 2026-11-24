@@ -106,7 +106,7 @@ class SafetyService:
                         reached_user=is_reached,
                         canary_leaked=r.get("canary_leaked"),
                         verify_flagged=r.get("verify_flagged"),
-                        guard_blocked=r.get("guard_blocked") or r.get("input_blocked"),
+                        guard_blocked=bool(r.get("guard_blocked", False)) or bool(r.get("input_blocked", False)),
                         reason=r.get("reason") or r.get("guard_reason"),
                     )
                 )

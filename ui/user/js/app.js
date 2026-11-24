@@ -917,8 +917,35 @@ document.addEventListener('DOMContentLoaded', () => {
     welcomeScreen.style.display = 'none';
     conversationStream.style.display = 'flex';
     dynamicFollowups.innerHTML = '';
-    const ut = document.querySelector('.chat-turn-user .user-bubble-text'); if (ut) ut.textContent = turn.user;
-    const tm = document.querySelector('.chat-turn-user .user-bubble-time'); if (tm) tm.textContent = fmtTime(when);
+
+    // Update user bubble with text, attachments, and time
+    const userBubble = document.querySelector('.chat-turn-user .user-bubble');
+    if (userBubble) {
+      const textEl = userBubble.querySelector('.user-bubble-text');
+      if (textEl) textEl.textContent = turn.user;
+
+      const timeEl = userBubble.querySelector('.user-bubble-time');
+      if (timeEl) timeEl.textContent = fmtTime(when);
+
+      // Render attachments if any
+      const attachments = turn.attachments || [];
+      if (attachments.length > 0) {
+        let badgeEl = userBubble.querySelector('.user-attachments-badge');
+        if (!badgeEl) {
+          badgeEl = document.createElement('div');
+          badgeEl.className = 'user-attachments-badge';
+          userBubble.insertBefore(badgeEl, textEl);
+        }
+        badgeEl.innerHTML = attachments.map(a =>
+          `<span class="user-attachment-pill"><span class="material-symbols-outlined text-[13px]">${a.type === 'folder' ? 'folder' : 'draft'}</span><span>${escapeHTML(a.name)}</span></span>`
+        ).join('');
+        badgeEl.style.display = 'flex';
+      } else {
+        const badgeEl = userBubble.querySelector('.user-attachments-badge');
+        if (badgeEl) badgeEl.style.display = 'none';
+      }
+    }
+
     document.querySelectorAll('#agent-flow-stepper, .provenance-quick-bar').forEach(e => { e.style.display = 'none'; });
     const art = document.querySelector('.editorial-article');
     const parts = reportParts(turn);

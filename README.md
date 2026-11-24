@@ -257,7 +257,7 @@ python -m evaluation.langsmith_eval --local      # same, printed in the terminal
 The platform implements production-grade user authentication and strict per-user data isolation while keeping **Admin Authentication 100% separate and protected**:
 
 1. **Strict Privilege Segregation**:
-   - **Admin Authentication**: Handled via `/admin/auth/login` issuing HMAC-signed JWTs, checked via `require_admin_role`. Admin credentials (`admin` / `admin123`) and login workflows are completely protected and unchanged.
+   - **Admin Authentication**: Handled via Google OAuth sign-in (`/admin/auth/google`) restricted to authorized administrator emails in `admin_users`, issuing HMAC-signed admin JWTs with distinct audience and checked via `get_current_admin`. Demo admin credentials have been permanently removed.
    - **User Authentication**: Handled via `/api/auth/*` issuing HTTP-only, `SameSite=Lax` session cookies with CSRF double-submit token protection.
    - **Authorization Guard**: Normal users receive `403 Forbidden` on all `/admin/*` endpoints.
 

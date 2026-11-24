@@ -11,6 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from admin_backend.security.dependencies import AuthenticatedUser, require_admin_role
+from admin_backend.models.audit import AuditAction
+from admin_backend.services.audit_service import audit_service
 from user_auth.chat_storage import get_chat_review_storage
 from user_auth.storage import get_user_auth_storage
 from user_auth.models import UserStatusUpdateRequest
@@ -116,6 +118,17 @@ def get_user_detail(
                 m["content"] = sanitize_report(m["content"])
     activity_timeline = storage.query_activity_logs(user_id=uid, limit=100)
 
+    # Log audit entry for viewing user data dossier
+    audit_service.log_action(
+        actor_username=admin.email or admin.username,
+        actor_role="admin",
+        action=AuditAction.USER_DATA_VIEW,
+        resource_type="user_profile",
+        resource_id=uid,
+        status="success",
+        details={"user_email": user.get("email"), "conversations_count": len(conversations)},
+    )
+
     return {
         "profile": {
             "id": uid,
@@ -167,7 +180,7 @@ def update_user_status(
         # Invalidate any active sessions for the suspended user
         storage.revoke_all_user_sessions(user_id)
 
-    # Log status change in activity_logs
+    # Log status change in user activity_logs
     storage.log_activity(
         user_id=user_id,
         event_type="account_status_changed",
@@ -175,6 +188,22 @@ def update_user_status(
             "old_status": user.get("status", "active"),
             "new_status": new_status,
             "changed_by": admin.username,
+        },
+    )
+
+    # Log administrative action in admin audit_logs
+    audit_action = AuditAction.USER_SUSPEND if new_status == "suspended" else AuditAction.USER_REACTIVATE
+    audit_service.log_action(
+        actor_username=admin.email or admin.username,
+        actor_role="admin",
+        action=audit_action,
+        resource_type="user_account",
+        resource_id=user_id,
+        status="success",
+        details={
+            "old_status": user.get("status", "active"),
+            "new_status": new_status,
+            "user_email": user.get("email"),
         },
     )
 

@@ -58,4 +58,4 @@ This UI is **100% self-contained and decoupled from the backend**. It requires n
 - **Double-Confirmation Modal:** Destructive actions (cache wipe, LTM report deletion) strictly require typing `"CONFIRM"` before execution, logging immutable audit events.
 - **Human Expert Reviews:** Submit ground-truth ratings (1-10) with notes to compare against automated judge scores.
 - **Export Registry:** Download real `.csv` or `.json` datasets directly in your browser.
-- **Lock Console:** Click the lock icon in the top header to trigger the Admin Sign-In overlay (`admin` / `admin123`).
+- **Lock Console:** Click the lock icon in the top header to trigger the Admin Sign-In overlay (Sign in with Google).

@@ -29,6 +29,7 @@ class UserRecord(BaseModel):
     id: str
     username: str
     email: Optional[str] = None
+    name: Optional[str] = None
     role: UserRole
     is_active: bool = True
     created_at: datetime

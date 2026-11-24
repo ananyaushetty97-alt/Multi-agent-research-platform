@@ -54,7 +54,11 @@
     },
     audit: {
       logs: [],
-      config_draft: {}
+      config_draft: {},
+      actor_filter: "",
+      action_filter: "",
+      start_date: "",
+      end_date: ""
     },
     userTracking: {
       stats: {
@@ -139,6 +143,30 @@
   });
 
   // ---------- AUTHENTICATION & LIVE API CLIENT ----------
+  let currentAdminUser = null;
+  let googleAdminAuthInitialized = false;
+
+  function updateAdminProfileDisplay(user) {
+    currentAdminUser = user;
+    const nameEl = document.getElementById("profile-user-name");
+    const dropNameEl = document.querySelector(".profile-dropdown-name");
+    const dropEmailEl = document.querySelector(".profile-dropdown-email");
+    const statusText = document.querySelector(".profile-status-pill span:last-child");
+
+    if (user) {
+      const displayName = user.name || user.username || user.email || "Admin";
+      if (nameEl) nameEl.textContent = displayName;
+      if (dropNameEl) dropNameEl.textContent = displayName;
+      if (dropEmailEl) dropEmailEl.textContent = user.email || "—";
+      if (statusText) statusText.textContent = `Active Admin (${user.role || 'admin'})`;
+    } else {
+      if (nameEl) nameEl.textContent = "Sign In Required";
+      if (dropNameEl) dropNameEl.textContent = "Not Authenticated";
+      if (dropEmailEl) dropEmailEl.textContent = "Please sign in";
+      if (statusText) statusText.textContent = "Session Locked";
+    }
+  }
+
   async function apiRequest(endpoint, options = {}) {
     const url = endpoint.startsWith("http") ? endpoint : `${API_ROOT}${endpoint}`;
     const headers = {
@@ -146,19 +174,28 @@
       ...(options.headers || {})
     };
 
+    // Include CSRF protection header on state-changing methods
+    const method = (options.method || "GET").toUpperCase();
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+      headers["X-Requested-With"] = "XMLHttpRequest";
+    }
+
     if (authToken) {
       headers["Authorization"] = `Bearer ${authToken}`;
     }
 
+    // Always include credentials to send httpOnly admin_session cookie
+    options.credentials = options.credentials || "include";
+
     try {
       const response = await fetch(url, { ...options, headers });
 
-      // Handle token expiration / 401
+      // Handle token expiration or unauthenticated 401
       if (response.status === 401 && !options._retried) {
-        const reauthed = await attemptAutoLogin();
-        if (reauthed) {
-          return apiRequest(endpoint, { ...options, _retried: true });
-        }
+        updateBackendStatusBadge(false);
+        updateAdminProfileDisplay(null);
+        openAdminLoginModal("Your session has expired or requires authentication.");
+        return response;
       }
 
       return response;
@@ -170,38 +207,34 @@
     }
   }
 
-  async function attemptAutoLogin(username = "admin", password = "admin123") {
+  async function initAuthAndLiveData() {
     try {
-      const res = await fetch(`${API_ROOT}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ username, password })
+      const meRes = await fetch(`${API_ROOT}/auth/me`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {})
+        }
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        authToken = data.access_token;
-        sessionStorage.setItem("admin_access_token", authToken);
+      if (meRes.ok) {
+        const user = await meRes.json();
+        updateAdminProfileDisplay(user);
         isBackendConnected = true;
         updateBackendStatusBadge(true);
-        return true;
+        await fetchAllLiveTelemetry();
+        return;
       }
     } catch (e) {
-      // Offline fallback
-      isBackendConnected = false;
-      updateBackendStatusBadge(false);
+      console.warn("Auth check probe error:", e);
     }
-    return false;
-  }
 
-  async function initAuthAndLiveData() {
-    if (!authToken) {
-      await attemptAutoLogin();
-    } else {
-      isBackendConnected = true;
-      updateBackendStatusBadge(true);
-    }
-    await fetchAllLiveTelemetry();
+    // Not authenticated: prompt for login
+    isBackendConnected = false;
+    updateBackendStatusBadge(false);
+    updateAdminProfileDisplay(null);
+    openAdminLoginModal();
   }
 
   function updateBackendStatusBadge(connected) {
@@ -633,18 +666,39 @@
       });
     }
 
-    // Modal 3 (Switch to User) Controls
+    // Modal 3 (Switch to User / Admin Login) Controls
     const switchTabUser = document.getElementById("switch-tab-user");
     const switchTabAdmin = document.getElementById("switch-tab-admin");
+    const googleSection = document.getElementById("googleAdminAuthSection");
+    const modalTitle = document.getElementById("switch-user-modal-title");
+    const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+    const btnSubmitText = document.getElementById("btn-switch-user-text");
+    const emailInput = document.getElementById("switchUserEmailInput");
+    const errBanner = document.getElementById("switch-user-error-banner");
+
     if (switchTabUser) {
       switchTabUser.addEventListener("click", () => {
         switchTabUser.classList.add("active");
         switchTabAdmin?.classList.remove("active");
+        if (googleSection) googleSection.style.display = "none";
+        if (modalTitle) modalTitle.textContent = "Sign In as User";
+        if (modalSubtitle) modalSubtitle.textContent = "Enter user credentials to switch to User Mode";
+        if (btnSubmitText) btnSubmitText.textContent = "Sign In as User";
+        if (emailInput) emailInput.value = "user@platform.ai";
+        if (errBanner) errBanner.style.display = "none";
       });
     }
     if (switchTabAdmin) {
       switchTabAdmin.addEventListener("click", () => {
-        showToast("Already operating in Admin Mode. Enter user password to switch to User Mode.", "info");
+        switchTabAdmin.classList.add("active");
+        switchTabUser?.classList.remove("active");
+        if (googleSection) googleSection.style.display = "flex";
+        if (modalTitle) modalTitle.textContent = "Admin Portal Sign In";
+        if (modalSubtitle) modalSubtitle.textContent = "Sign in with an authorized Google account or admin credentials";
+        if (btnSubmitText) btnSubmitText.textContent = "Sign In as Admin";
+        if (emailInput) emailInput.value = "admin@platform.ai";
+        if (errBanner) errBanner.style.display = "none";
+        initGoogleAdminButton();
       });
     }
 
@@ -811,6 +865,58 @@
     if (btnReloadAct) {
       btnReloadAct.addEventListener("click", () => {
         fetchUserTrackingActivity().then(renderUserTrackingView);
+      });
+    }
+
+    // Audit logs filter controls
+    const filterAuditActor = document.getElementById("filterAuditActor");
+    if (filterAuditActor) {
+      let auditDebounce = null;
+      filterAuditActor.addEventListener("input", (e) => {
+        clearTimeout(auditDebounce);
+        auditDebounce = setTimeout(() => {
+          state.audit.actor_filter = e.target.value.trim();
+          renderAuditView();
+        }, 200);
+      });
+    }
+
+    const filterAuditAction = document.getElementById("filterAuditAction");
+    if (filterAuditAction) {
+      filterAuditAction.addEventListener("change", (e) => {
+        state.audit.action_filter = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const filterAuditStartDate = document.getElementById("filterAuditStartDate");
+    if (filterAuditStartDate) {
+      filterAuditStartDate.addEventListener("change", (e) => {
+        state.audit.start_date = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const filterAuditEndDate = document.getElementById("filterAuditEndDate");
+    if (filterAuditEndDate) {
+      filterAuditEndDate.addEventListener("change", (e) => {
+        state.audit.end_date = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const btnResetAuditFilters = document.getElementById("btnResetAuditFilters");
+    if (btnResetAuditFilters) {
+      btnResetAuditFilters.addEventListener("click", () => {
+        state.audit.actor_filter = "";
+        state.audit.action_filter = "";
+        state.audit.start_date = "";
+        state.audit.end_date = "";
+        if (filterAuditActor) filterAuditActor.value = "";
+        if (filterAuditAction) filterAuditAction.value = "";
+        if (filterAuditStartDate) filterAuditStartDate.value = "";
+        if (filterAuditEndDate) filterAuditEndDate.value = "";
+        renderAuditView();
       });
     }
 
@@ -1915,12 +2021,36 @@
     const adminTableBody = document.getElementById("auditLogsTableBody");
     if (adminTableBody) {
       adminTableBody.innerHTML = "";
-      const adminLogs = state.audit.logs || [];
+      let adminLogs = state.audit.logs || [];
+
+      // Apply client-side filters
+      const actorFilter = (state.audit.actor_filter || "").trim().toLowerCase();
+      const actionFilter = (state.audit.action_filter || "").trim();
+      const startDate = (state.audit.start_date || "").trim();
+      const endDate = (state.audit.end_date || "").trim();
+
+      if (actorFilter) {
+        adminLogs = adminLogs.filter(l =>
+          (l.actor_username || "").toLowerCase().includes(actorFilter) ||
+          JSON.stringify(l.details || {}).toLowerCase().includes(actorFilter) ||
+          (l.resource_type || "").toLowerCase().includes(actorFilter)
+        );
+      }
+      if (actionFilter) {
+        adminLogs = adminLogs.filter(l => l.action === actionFilter);
+      }
+      if (startDate) {
+        adminLogs = adminLogs.filter(l => l.timestamp && l.timestamp.slice(0, 10) >= startDate);
+      }
+      if (endDate) {
+        adminLogs = adminLogs.filter(l => l.timestamp && l.timestamp.slice(0, 10) <= endDate);
+      }
+
       if (adminLogs.length === 0) {
         adminTableBody.innerHTML = `
           <tr>
             <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
-              No administrative audit entries recorded. System events and modifications will appear here.
+              No administrative audit entries matching the specified criteria.
             </td>
           </tr>
         `;
@@ -2444,16 +2574,31 @@
     pendingDestructiveAction = null;
   }
 
-  // ---------- USER MODE SWITCHING & AUTHENTICATION ----------
+  // ---------- USER MODE SWITCHING & ADMIN AUTHENTICATION ----------
   function openSwitchUserModal() {
     closeAllModals();
     const modal = document.getElementById("switch-user-modal");
     if (modal) {
       modal.classList.add("active");
+      const tabUser = document.getElementById("switch-tab-user");
+      const tabAdmin = document.getElementById("switch-tab-admin");
+      const googleSection = document.getElementById("googleAdminAuthSection");
+      const modalTitle = document.getElementById("switch-user-modal-title");
+      const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+      const btnSubmitText = document.getElementById("btn-switch-user-text");
       const emailInput = document.getElementById("switchUserEmailInput");
       const passInput = document.getElementById("switchUserPasswordInput");
       const errBanner = document.getElementById("switch-user-error-banner");
-      if (emailInput && !emailInput.value) emailInput.value = "user@platform.ai";
+
+      tabUser?.classList.add("active");
+      tabAdmin?.classList.remove("active");
+      if (googleSection) googleSection.style.display = "none";
+      const switchForm = document.getElementById("switchUserForm");
+      if (switchForm) switchForm.style.display = "flex";
+      if (modalTitle) modalTitle.textContent = "Sign In as User";
+      if (modalSubtitle) modalSubtitle.textContent = "Enter user credentials to switch to User Mode";
+      if (btnSubmitText) btnSubmitText.textContent = "Sign In as User";
+      if (emailInput) emailInput.value = "";
       if (passInput) {
         passInput.value = "";
         setTimeout(() => passInput.focus(), 150);
@@ -2462,7 +2607,135 @@
     }
   }
 
+  function openAdminLoginModal(msg = null) {
+    closeAllModals();
+    const modal = document.getElementById("switch-user-modal");
+    if (modal) {
+      modal.classList.add("active");
+      const tabAdmin = document.getElementById("switch-tab-admin");
+      const tabUser = document.getElementById("switch-tab-user");
+      const googleSection = document.getElementById("googleAdminAuthSection");
+      const switchForm = document.getElementById("switchUserForm");
+      const modalTitle = document.getElementById("switch-user-modal-title");
+      const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+      const btnSubmitText = document.getElementById("btn-switch-user-text");
+      const emailInput = document.getElementById("switchUserEmailInput");
+      const passInput = document.getElementById("switchUserPasswordInput");
+      const errBanner = document.getElementById("switch-user-error-banner");
+      const errText = document.getElementById("switch-user-error-text");
+
+      tabAdmin?.classList.add("active");
+      tabUser?.classList.remove("active");
+      if (googleSection) googleSection.style.display = "flex";
+      if (switchForm) switchForm.style.display = "none";
+      if (modalTitle) modalTitle.textContent = "Admin Portal Sign In";
+      if (modalSubtitle) modalSubtitle.textContent = msg || "Sign in with your authorized Google Admin account";
+      if (btnSubmitText) btnSubmitText.textContent = "Sign In as Admin";
+      if (emailInput) emailInput.value = "";
+      if (passInput) passInput.value = "";
+
+      if (msg && errBanner && errText) {
+        errText.textContent = msg;
+        errBanner.style.display = "flex";
+      } else if (errBanner) {
+        errBanner.style.display = "none";
+      }
+
+      initGoogleAdminButton();
+    }
+  }
+
+  async function initGoogleAdminButton() {
+    try {
+      const res = await fetch(`${API_ROOT}/auth/config`, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const cfg = await res.json();
+      const cid = cfg.google_client_id;
+      if (!cid) {
+        console.warn("No GOOGLE_CLIENT_ID returned from /auth/config");
+        return;
+      }
+
+      function renderGSI() {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          google.accounts.id.initialize({
+            client_id: cid,
+            callback: handleGoogleAdminCredentialResponse,
+            auto_select: false,
+          });
+          const btnContainer = document.getElementById("googleAdminSignInBtn");
+          if (btnContainer) {
+            btnContainer.innerHTML = "";
+            google.accounts.id.renderButton(btnContainer, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              shape: "rectangular",
+              text: "signin_with",
+              logo_alignment: "left",
+              width: 280,
+            });
+          }
+          googleAdminAuthInitialized = true;
+        } else {
+          setTimeout(renderGSI, 200);
+        }
+      }
+      renderGSI();
+    } catch (e) {
+      console.warn("Failed to initialize Google Admin Auth:", e);
+    }
+  }
+
+  async function handleGoogleAdminCredentialResponse(response) {
+    const errBanner = document.getElementById("switch-user-error-banner");
+    const errText = document.getElementById("switch-user-error-text");
+    if (errBanner) errBanner.style.display = "none";
+
+    try {
+      const res = await fetch(`${API_ROOT}/auth/google`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        authToken = data.access_token;
+        sessionStorage.setItem("admin_access_token", authToken);
+        updateAdminProfileDisplay(data.user);
+        closeAllModals();
+        showToast(`Welcome, ${data.user.name || data.user.email}!`, "success");
+        isBackendConnected = true;
+        updateBackendStatusBadge(true);
+        await fetchAllLiveTelemetry();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        const detail = err.detail || "Not authorised.";
+        if (errBanner && errText) {
+          errText.textContent = detail;
+          errBanner.style.display = "flex";
+        }
+        showToast(detail, "error");
+      }
+    } catch (e) {
+      if (errBanner && errText) {
+        errText.textContent = "Connection failed while authenticating with Google.";
+        errBanner.style.display = "flex";
+      }
+      showToast("Authentication failed: network error", "error");
+    }
+  }
+
   async function verifyAndSwitchToUser() {
+    const tabAdmin = document.getElementById("switch-tab-admin");
+    const isAdminTab = tabAdmin && tabAdmin.classList.contains("active");
+
     const emailInput = document.getElementById("switchUserEmailInput");
     const passInput = document.getElementById("switchUserPasswordInput");
     const errBanner = document.getElementById("switch-user-error-banner");
@@ -2473,62 +2746,40 @@
 
     if (!email || !password) {
       if (errBanner && errText) {
-        errText.textContent = "Please enter both user email and password.";
+        errText.textContent = "Please enter both credentials.";
         errBanner.style.display = "flex";
       }
       return false;
     }
 
-    const origins = [];
-    if (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http")) {
-      origins.push(window.location.origin);
+    // If on the Admin Tab: Admin password login is decommissioned
+    if (isAdminTab) {
+      if (errBanner && errText) {
+        errText.textContent = "Admin password login has been decommissioned. Please sign in with your authorized Google Admin account.";
+        errBanner.style.display = "flex";
+      }
+      showToast("Password login decommissioned. Sign in with Google.", "error");
+      return false;
     }
-    origins.push("http://localhost:8000", "http://127.0.0.1:8000");
 
+    // On User Tab: Switch to User Mode
     let loginSucceeded = false;
     let authErrorDetail = null;
 
-    for (const base of origins) {
-      const endpoints = [
-        `${base}/api/auth/login`,
-        `${base}/api/admin/auth/login`,
-        `${base}/admin/auth/login`
-      ];
-      for (const ep of endpoints) {
-        try {
-          const isUserAuth = ep.includes("/api/auth/login");
-          const payload = isUserAuth
-            ? { email: email, password: password }
-            : { username: email, password: password };
-          const resp = await fetch(ep, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          if (resp.ok) {
-            loginSucceeded = true;
-            break;
-          } else if (resp.status === 401 || resp.status === 422) {
-            const errData = await resp.json().catch(() => ({}));
-            // If the server process is still running with the old min_length=8 schema before restart:
-            if (resp.status === 422 && (password === "user123" || password === "user1234" || password === "admin123")) {
-              loginSucceeded = true;
-              authErrorDetail = null;
-              break;
-            }
-            authErrorDetail = Array.isArray(errData.detail)
-              ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(", ")
-              : (errData.detail || "Incorrect username or password");
-          }
-        } catch (e) {
-          // Endpoint unreachable, continue trying next candidate
-        }
+    try {
+      const resp = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ email: email, password: password }),
+      });
+      if (resp.ok) {
+        loginSucceeded = true;
+      } else {
+        const errData = await resp.json().catch(() => ({}));
+        authErrorDetail = errData.detail || "Incorrect user password.";
       }
-      if (loginSucceeded) break;
-    }
-
-    // Graceful offline fallback if server is unreachable
-    if (!loginSucceeded && !authErrorDetail) {
+    } catch (e) {
+      // Offline fallback check
       if (password === "user123" && (email === "user@platform.ai" || email === "user")) {
         loginSucceeded = true;
       }
@@ -2553,17 +2804,31 @@
       }
       passInput?.classList.add("input-error");
       setTimeout(() => passInput?.classList.remove("input-error"), 600);
-      showToast("Verification failed: Invalid user password", "error");
+      showToast(msg, "error");
       return false;
     }
   }
 
-  function lockAdminSession() {
+  async function lockAdminSession() {
+    try {
+      await fetch(`${API_ROOT}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+        },
+      });
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
     authToken = null;
     sessionStorage.removeItem("admin_access_token");
     localStorage.removeItem("admin_access_token");
-    showToast("Admin session locked. Please verify credentials to continue.", "info");
-    openSwitchUserModal();
+    updateAdminProfileDisplay(null);
+    showToast("Admin session locked. Please sign in to continue.", "info");
+    openAdminLoginModal("Admin session locked. Please sign in to resume.");
   }
 
   function closeAllModals() {

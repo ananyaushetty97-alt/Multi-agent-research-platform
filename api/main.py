@@ -82,6 +82,19 @@ def startup_checks():
                  bool(user_auth_settings.resend_api_key),
                  bool(user_auth_settings.brevo_api_key))
 
+    # Verify Admin Auth Configuration
+    from admin_backend.config import settings as admin_settings
+    try:
+        admin_settings.validate_admin_auth_config()
+        log.info("Admin authentication configured: JWT secret valid, Google OAuth configured=%s",
+                 bool(admin_settings.get_google_client_id()))
+    except Exception as e:
+        if getattr(admin_settings, "environment", "production").lower() == "production":
+            log.error("[CRITICAL] Admin authentication startup check failed: %s", e)
+            raise
+        else:
+            log.warning("[WARNING] Admin authentication startup check: %s", e)
+
 
 @app.middleware("http")
 async def add_dev_cache_control_header(request, call_next):

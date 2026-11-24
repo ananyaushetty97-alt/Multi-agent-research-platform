@@ -73,12 +73,10 @@ def setup_in_memory_auth(monkeypatch):
     monkeypatch.setattr(admin_settings, "admin_audit_log_path", temp_audit_file)
 
     admin_mem = InMemoryUserStorage()
-    hashed_admin = hash_password("admin123", iterations=50_000)
     admin_mem.create_user({
         "id": "admin-1",
         "username": "admin",
         "email": "admin@platform.ai",
-        "hashed_password": hashed_admin,
         "role": "admin",
         "is_active": True,
     })
@@ -357,37 +355,33 @@ def test_demo_user_neutralization(client, setup_in_memory_auth):
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid email or password"
 
-    # Admin login with 'user' and 'user@platform.ai' and password 'user123' returns 401 (Question 2)
+    # Admin login with 'user' and 'user@platform.ai' is rejected (endpoint decommissioned: 401, 404, 405)
     admin_resp1 = client.post("/api/admin/auth/login", json={
         "username": "user",
         "password": "user123"
     })
-    assert admin_resp1.status_code == 401
-    assert "Incorrect username or password" in admin_resp1.json()["detail"]
+    assert admin_resp1.status_code in (401, 404, 405)
 
     admin_resp2 = client.post("/api/admin/auth/login", json={
         "username": "user@platform.ai",
         "password": "user123"
     })
-    assert admin_resp2.status_code == 401
-    assert "Incorrect username or password" in admin_resp2.json()["detail"]
+    assert admin_resp2.status_code in (401, 404, 405)
 
 
 def test_admin_login_with_demo_usernames_returns_401(client):
-    """Admin login with neutralized demo accounts ('user' and 'user@platform.ai') returns 401."""
+    """Admin login with neutralized demo accounts returns 401, 404, or 405."""
     resp1 = client.post("/api/admin/auth/login", json={
         "username": "user",
         "password": "user123"
     })
-    assert resp1.status_code == 401
-    assert "Incorrect username or password" in resp1.json()["detail"]
+    assert resp1.status_code in (401, 404, 405)
 
     resp2 = client.post("/api/admin/auth/login", json={
         "username": "user@platform.ai",
         "password": "user123"
     })
-    assert resp2.status_code == 401
-    assert "Incorrect username or password" in resp2.json()["detail"]
+    assert resp2.status_code in (401, 404, 405)
 
 
 def test_lockout_after_repeated_failures(client):
@@ -711,8 +705,7 @@ def test_admin_login_with_google_only_user_returns_clean_401(client, setup_in_me
         "username": "google.only.user",
         "password": "AnyRandomPassword123!"
     })
-    assert resp.status_code == 401
-    assert "Incorrect username or password" in resp.json()["detail"]
+    assert resp.status_code in (401, 404, 405)
 
 
 def test_user_role_jwt_cannot_access_admin_routes(client):
@@ -775,13 +768,12 @@ def test_registering_with_admin_email_does_not_affect_admin_account(client):
     assert resp.status_code == 200
     assert resp.json()["role"] == "user"
 
-    # Admin login still works with admin credentials
+    # Admin password login is decommissioned (returns 404 or 405)
     admin_login_resp = client.post("/api/admin/auth/login", json={
         "username": "admin",
-        "password": "admin123"
+        "password": "attempted_password"
     })
-    assert admin_login_resp.status_code == 200
-    assert admin_login_resp.json()["role"] == "admin"
+    assert admin_login_resp.status_code in (404, 405)
 
 
 # ---------------------------------------------------------------------------

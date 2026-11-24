@@ -20,12 +20,16 @@ class AdminSettings(BaseSettings):
     )
 
     # Security & Auth
-    # If not set in environment, generate an ephemeral secret for this process run.
-    # A persistent ADMIN_SECRET_KEY should be set in production .env.
+    # Persistent ADMIN_JWT_SECRET or ADMIN_SECRET_KEY in production .env.
+    admin_jwt_secret: Optional[str] = None
     admin_secret_key: str = ""
     admin_token_algorithm: str = "HS256"
     admin_token_expire_minutes: int = 60
     admin_rate_limit_per_minute: int = 120
+    admin_cookie_name: str = "admin_session"
+    admin_jwt_issuer: str = "research-platform-admin"
+    admin_jwt_audience: str = "admin-portal"
+    google_client_id: Optional[str] = None
 
     # Storage paths
     admin_audit_log_path: str = os.path.join("logs", "admin_audit.jsonl")
@@ -73,19 +77,46 @@ class AdminSettings(BaseSettings):
     def get_signing_key(self) -> bytes:
         """
         Returns the signing key as bytes.
-        If admin_secret_key is empty, generates an ephemeral random secret.
+        Checks ADMIN_JWT_SECRET, admin_jwt_secret, ADMIN_SECRET_KEY, admin_secret_key.
+        Enforces minimum length of 32 characters in production.
         """
-        key = self.admin_secret_key or os.environ.get("ADMIN_SECRET_KEY", "")
+        key = (
+            self.admin_jwt_secret
+            or os.environ.get("ADMIN_JWT_SECRET")
+            or self.admin_secret_key
+            or os.environ.get("ADMIN_SECRET_KEY")
+            or ""
+        )
         if not key:
-            # Ephemeral fallback to prevent predictable secrets while remaining secure.
+            if getattr(self, "environment", "production").lower() == "production":
+                raise ValueError("ADMIN_JWT_SECRET is required in production and must be at least 32 characters.")
             if not hasattr(self, "_ephemeral_key"):
                 log.warning(
-                    "ADMIN_SECRET_KEY is not set. Generating ephemeral key for this session. "
-                    "Tokens will invalidate if the process restarts. Set ADMIN_SECRET_KEY in production."
+                    "ADMIN_JWT_SECRET is not set. Generating ephemeral key for development session. "
+                    "Tokens will invalidate if the process restarts. Set ADMIN_JWT_SECRET in .env."
                 )
                 self._ephemeral_key = secrets.token_hex(32)
             key = self._ephemeral_key
+        elif len(key) < 32:
+            raise ValueError("ADMIN_JWT_SECRET is too short (must be at least 32 characters).")
         return key.encode("utf-8")
+
+    def get_google_client_id(self) -> str:
+        """Returns the configured Google Client ID."""
+        cid = self.google_client_id or os.environ.get("GOOGLE_CLIENT_ID") or ""
+        return cid.strip()
+
+    def validate_admin_auth_config(self) -> None:
+        """
+        Validates that required administrative authentication configurations are present.
+        Called on application startup.
+        """
+        key = self.get_signing_key()
+        if len(key) < 32:
+            raise ValueError("ADMIN_JWT_SECRET must be at least 32 characters.")
+        cid = self.get_google_client_id()
+        if not cid:
+            log.warning("GOOGLE_CLIENT_ID is not configured. Google admin authentication will be unavailable.")
 
 
 settings = AdminSettings()

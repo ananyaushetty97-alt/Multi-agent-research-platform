@@ -471,10 +471,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (googleAuthContainer) googleAuthContainer.style.display = 'none';
       if (loginEmailLabel) loginEmailLabel.textContent = 'Admin Username or Email';
       if (loginEmail) {
-        loginEmail.value = 'admin@platform.ai';
-        loginEmail.placeholder = 'admin@platform.ai or admin';
+        loginEmail.value = '';
+        loginEmail.placeholder = 'admin@yourcompany.com';
       }
-      if (loginPassword) loginPassword.placeholder = 'Enter password (admin123)';
+      if (loginPassword) loginPassword.placeholder = 'Enter password';
       if (btnLoginText) btnLoginText.textContent = 'Sign In as Admin';
       if (btnLoginIcon) btnLoginIcon.textContent = 'admin_panel_settings';
       if (loginModalTitle) loginModalTitle.textContent = 'Admin Sign In';
@@ -685,14 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
               authData = await resp.json().catch(() => ({}));
               loginSucceeded = true;
               break;
-            } else if (resp.status === 401 || resp.status === 422) {
+            } else if (resp.status === 401 || resp.status === 404 || resp.status === 405 || resp.status === 422) {
               const errData = await resp.json().catch(() => ({}));
-              if (resp.status === 422 && pass === 'admin123') {
-                loginSucceeded = true;
-                authData = { role: 'admin' };
-                authErrorDetail = null;
-                break;
-              }
               authErrorDetail = Array.isArray(errData.detail)
                 ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
                 : (errData.detail || 'Incorrect username or password');
@@ -702,14 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         if (loginSucceeded) break;
-      }
-
-      // Graceful offline fallback if server is unreachable
-      if (!loginSucceeded && !authErrorDetail) {
-        if (selectedLoginRole === 'admin' && (pass === 'admin123') && (email === 'admin@platform.ai' || email === 'admin')) {
-          loginSucceeded = true;
-          authData = { role: 'admin' };
-        }
       }
 
       if (loginSucceeded) {

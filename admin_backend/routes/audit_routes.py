@@ -17,10 +17,12 @@ router = APIRouter(prefix="/audit", tags=["Admin Audit"])
 
 @router.get("/logs", response_model=List[AuditLogEntry])
 def list_audit_logs(
-    actor: Optional[str] = Query(None, description="Filter by actor username"),
+    actor: Optional[str] = Query(None, description="Filter by actor username or email"),
     action: Optional[AuditAction] = Query(None, description="Filter by action"),
     resource_type: Optional[str] = Query(None, description="Filter by target resource"),
     status: Optional[str] = Query(None, description="Filter by status ('success' or 'failure')"),
+    start_date: Optional[str] = Query(None, description="Filter by start date (ISO 8601 or YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Filter by end date (ISO 8601 or YYYY-MM-DD)"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     admin: AuthenticatedUser = Depends(require_admin_role),
@@ -34,6 +36,8 @@ def list_audit_logs(
         action=action,
         resource_type=resource_type,
         status=status,
+        start_date=start_date,
+        end_date=end_date,
         limit=limit,
         offset=offset,
     )

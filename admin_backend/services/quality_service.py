@@ -349,9 +349,12 @@ class QualityService:
             from psycopg.rows import dict_row
             query = """
                 SELECT r.id, r.report_id, r.user_id, r.topic, r.relevance, r.accuracy, r.clarity,
-                       r.comment, r.created_at, u.username, u.email
+                       r.comment, r.created_at,
+                       COALESCE(u.username, u.name, app_u.username) AS username,
+                       COALESCE(u.email, app_u.email) AS email
                 FROM public.report_reviews r
-                LEFT JOIN public.app_users u ON r.user_id = u.id
+                LEFT JOIN public.users u ON r.user_id = u.id
+                LEFT JOIN public.app_users app_u ON r.user_id = app_u.id
                 ORDER BY r.created_at DESC
             """
             with psycopg.connect(dsn, connect_timeout=2, row_factory=dict_row) as conn:

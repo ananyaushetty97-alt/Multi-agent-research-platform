@@ -39,7 +39,28 @@ class InMemoryUserStorage(UserStorageInterface):
 
     def get_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         with self._lock:
-            return self._users_by_id.get(user_id)
+            return self._users_by_id.get(str(user_id))
+
+    def get_admin_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            if not email:
+                return None
+            key = email.strip().lower()
+            for u in self._users_by_id.values():
+                if (u.get("email") or "").strip().lower() == key:
+                    return u
+            return None
+
+    def update_admin_login(self, admin_id: str, google_id: Optional[str] = None) -> None:
+        with self._lock:
+            rec = self._users_by_id.get(str(admin_id))
+            if rec:
+                from datetime import datetime, timezone
+                now = datetime.now(timezone.utc)
+                rec["last_login_at"] = now
+                rec["last_login"] = now
+                if google_id:
+                    rec["google_id"] = google_id
 
     def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         with self._lock:
@@ -70,13 +91,18 @@ class InMemoryAuditStorage(AuditStorageInterface):
             matched = list(self._entries)
 
         if filter_opts.actor:
-            matched = [e for e in matched if e.actor_username.lower() == filter_opts.actor.lower()]
+            a_lower = filter_opts.actor.lower()
+            matched = [e for e in matched if a_lower in e.actor_username.lower() or a_lower in str(e.details.get("admin_email", "")).lower()]
         if filter_opts.action:
             matched = [e for e in matched if e.action == filter_opts.action]
         if filter_opts.resource_type:
             matched = [e for e in matched if e.resource_type == filter_opts.resource_type]
         if filter_opts.status:
             matched = [e for e in matched if e.status == filter_opts.status]
+        if filter_opts.start_date:
+            matched = [e for e in matched if e.timestamp >= filter_opts.start_date]
+        if filter_opts.end_date:
+            matched = [e for e in matched if e.timestamp <= filter_opts.end_date]
 
         # Newest first
         matched = list(reversed(matched))

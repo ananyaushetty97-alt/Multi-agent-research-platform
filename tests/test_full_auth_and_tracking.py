@@ -86,14 +86,12 @@ def setup_test_environment(monkeypatch):
     except ImportError:
         pass
 
-    # Admin Auth Storage (Admin login regression preservation)
+    # Admin Auth Storage (Admin Google Auth & Session isolation)
     admin_mem = InMemoryUserStorage()
-    hashed_admin = hash_password("admin123", iterations=50_000)
     admin_mem.create_user({
         "id": "admin-1",
         "username": "admin",
         "email": "admin@platform.ai",
-        "hashed_password": hashed_admin,
         "role": "admin",
         "is_active": True,
     })
@@ -496,10 +494,9 @@ def test_12_admin_tracking_dashboard_and_stats(client, setup_test_environment):
     auth_store = setup_test_environment["auth_storage"]
     chat_store = setup_test_environment["chat_storage"]
 
-    # Admin Login to obtain Bearer token
-    admin_login_resp = client.post("/api/admin/auth/login", json={"username": "admin", "password": "admin123"})
-    assert admin_login_resp.status_code == 200
-    admin_token = admin_login_resp.json()["access_token"]
+    # Admin Bearer token for tracking access
+    from admin_backend.security.tokens import create_access_token
+    admin_token = create_access_token(user_id="admin-1", username="admin", email="admin@platform.ai", role="admin")
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
     # Register 2 users in storage
@@ -581,8 +578,8 @@ def test_14_suspended_user_cannot_login(client, setup_test_environment):
     client.post("/api/auth/verify-otp", json={"email": "suspended@example.com", "otp": otp}, headers=CSRF_HEADERS)
 
     # Admin suspends user
-    admin_login_resp = client.post("/api/admin/auth/login", json={"username": "admin", "password": "admin123"})
-    admin_token = admin_login_resp.json()["access_token"]
+    from admin_backend.security.tokens import create_access_token
+    admin_token = create_access_token(user_id="admin-1", username="admin", email="admin@platform.ai", role="admin")
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
     user = auth_store.get_user_by_email("suspended@example.com")
@@ -604,19 +601,12 @@ def test_14_suspended_user_cannot_login(client, setup_test_environment):
 
 
 # ===========================================================================
-# TEST 15: Admin Login Regression Test (Untouched & Works Identically)
+# TEST 15: Demo Admin Password Login Decommissioned (Returns 404/405)
 # ===========================================================================
 def test_15_admin_login_regression(client):
-    # 1. Correct credentials
-    resp = client.post("/api/admin/auth/login", json={"username": "admin", "password": "admin123"})
-    assert resp.status_code == 200
-    token_data = resp.json()
-    assert "access_token" in token_data
-    assert token_data["token_type"] == "bearer"
-
-    # 2. Wrong admin password
-    bad_resp = client.post("/api/admin/auth/login", json={"username": "admin", "password": "wrong_password"})
-    assert bad_resp.status_code == 401
+    # Password login endpoint is decommissioned; POST to /admin/auth/login returns 404 or 405
+    resp = client.post("/api/admin/auth/login", json={"username": "admin", "password": "password"})
+    assert resp.status_code in (404, 405)
 
 
 # ===========================================================================

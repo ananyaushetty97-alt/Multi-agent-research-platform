@@ -836,9 +836,13 @@
         </div>
 
         <!-- Compact Demo Credentials Hint: Admin Only (User demo hint completely removed) -->
-        <div class="login-credentials-hint" id="login-admin-hint" style="display: none;">
-          <span class="material-symbols-outlined text-[15px]">info</span>
-          <span>Demo Admin ID: <code>admin@platform.ai</code> (<code>admin123</code>)</span>
+        <div class="login-credentials-hint" id="login-admin-hint" style="display: none; flex-direction: column; gap: 8px; margin-top: 10px;">
+          <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
+            <a href="../admin/index.html" class="btn-primary-login" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 8px; font-size: 0.8125rem; font-weight: 600;">
+              <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+              <span>Open Admin Portal (Sign in with Google) &rarr;</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

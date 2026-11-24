@@ -3,13 +3,12 @@ import json
 import time
 import psycopg
 
+from admin_backend.security.tokens import create_access_token
+
 BASE_URL = "http://localhost:8000"
 
 print("--- 1. Testing Admin Login and Tracking Endpoints ---")
-login_resp = requests.post(f"{BASE_URL}/api/admin/auth/login", json={"username": "admin", "password": "admin123"})
-print("Admin login status:", login_resp.status_code)
-assert login_resp.status_code == 200, f"Admin login failed: {login_resp.text}"
-admin_token = login_resp.json()["access_token"]
+admin_token = create_access_token(user_id="scratch-test-admin", username="admin", email="admin@platform.ai", role="admin")
 admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
 stats_resp = requests.get(f"{BASE_URL}/api/admin/tracking/stats", headers=admin_headers)

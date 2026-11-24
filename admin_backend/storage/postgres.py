@@ -28,13 +28,13 @@ log = logging.getLogger("admin_backend.storage.postgres")
 
 # Separate table names for admin and user
 ADMIN_USERS_TABLE = "admin_users"
-USER_USERS_TABLE = "app_users"
+USER_USERS_TABLE = "users"
 AUDIT_LOGS_TABLE = "audit_logs"
 USER_ACTIVITY_LOGS_TABLE = "user_activity_logs"
 
 # Table name constants
 ADMIN_USERS_TABLE = "admin_users"
-USER_USERS_TABLE = "app_users"
+USER_USERS_TABLE = "users"
 AUDIT_LOGS_TABLE = "audit_logs"
 USER_ACTIVITY_LOGS_TABLE = "user_activity_logs"
 
@@ -162,8 +162,11 @@ class PostgresUserStorage(UserStorageInterface):
                     (key, key)
                 ).fetchone()
                 if row:
-                    row['role'] = 'user'
-                    return dict(row)
+                    r = dict(row)
+                    r['role'] = 'user'
+                    if 'password_hash' in r and 'hashed_password' not in r:
+                        r['hashed_password'] = r['password_hash']
+                    return r
         except Exception as e:
             log.warning(f"Postgres user lookup failed: {e}")
         return None
@@ -186,24 +189,66 @@ class PostgresUserStorage(UserStorageInterface):
                     (user_id,)
                 ).fetchone()
                 if row:
-                    row['role'] = 'user'
-                    return dict(row)
+                    r = dict(row)
+                    r['role'] = 'user'
+                    if 'password_hash' in r and 'hashed_password' not in r:
+                        r['hashed_password'] = r['password_hash']
+                    return r
         except Exception as e:
             log.warning(f"Postgres user lookup by ID failed: {e}")
         return None
 
+    def get_admin_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Look up active administrator by email in admin_users table only."""
+        clean_email = (email or "").strip().lower()
+        if not clean_email:
+            return None
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    f"SELECT * FROM {ADMIN_USERS_TABLE} WHERE LOWER(email) = %s",
+                    (clean_email,)
+                ).fetchone()
+                if row:
+                    row['role'] = 'admin'
+                    return dict(row)
+        except Exception as e:
+            log.warning(f"Postgres admin lookup by email failed: {e}")
+        return None
+
+    def update_admin_login(self, admin_id: str, google_id: Optional[str] = None) -> None:
+        """Update last_login_at and google_id for an administrator upon successful login."""
+        try:
+            now = datetime.now(timezone.utc)
+            with self._connect() as conn:
+                if google_id:
+                    conn.execute(
+                        f"UPDATE {ADMIN_USERS_TABLE} SET last_login_at = %s, last_login = %s, google_id = %s WHERE id = %s",
+                        (now, now, google_id, admin_id)
+                    )
+                else:
+                    conn.execute(
+                        f"UPDATE {ADMIN_USERS_TABLE} SET last_login_at = %s, last_login = %s WHERE id = %s",
+                        (now, now, admin_id)
+                    )
+                conn.commit()
+        except Exception as e:
+            log.warning(f"Postgres update admin login failed: {e}")
+
     def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         role = user_data.get("role", "user")
         table = self._get_table(role)
+        pw_col = "password_hash" if table == USER_USERS_TABLE else "hashed_password"
+        pw_val = user_data.get("password_hash") or user_data.get("hashed_password")
         try:
             with self._connect() as conn:
                 conn.execute(
                     f"""
-                    INSERT INTO {table} (id, username, email, hashed_password, role, is_active, created_at)
+                    INSERT INTO {table} (id, username, email, {pw_col}, role, is_active, created_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE SET
                         email = EXCLUDED.email,
-                        hashed_password = EXCLUDED.hashed_password,
+                        {pw_col} = EXCLUDED.{pw_col},
                         role = EXCLUDED.role,
                         is_active = EXCLUDED.is_active
                     """,
@@ -211,7 +256,7 @@ class PostgresUserStorage(UserStorageInterface):
                         user_data["id"],
                         user_data["username"],
                         user_data.get("email"),
-                        user_data["hashed_password"],
+                        pw_val,
                         user_data["role"],
                         user_data.get("is_active", True),
                         user_data.get("created_at", datetime.now(timezone.utc)),
@@ -280,8 +325,8 @@ class PostgresAuditStorage(AuditStorageInterface):
                 params = []
 
                 if filter_opts.actor:
-                    sql += " AND LOWER(actor_username) = LOWER(%s)"
-                    params.append(filter_opts.actor)
+                    sql += " AND (LOWER(actor_username) = LOWER(%s) OR actor_username ILIKE %s OR details->>'admin_email' ILIKE %s)"
+                    params.extend([filter_opts.actor, f"%{filter_opts.actor}%", f"%{filter_opts.actor}%"])
                 if filter_opts.action:
                     sql += " AND action = %s"
                     params.append(filter_opts.action.value if hasattr(filter_opts.action, 'value') else filter_opts.action)
@@ -291,6 +336,12 @@ class PostgresAuditStorage(AuditStorageInterface):
                 if filter_opts.status:
                     sql += " AND status = %s"
                     params.append(filter_opts.status)
+                if filter_opts.start_date:
+                    sql += " AND timestamp >= %s"
+                    params.append(filter_opts.start_date)
+                if filter_opts.end_date:
+                    sql += " AND timestamp <= %s"
+                    params.append(filter_opts.end_date)
 
                 sql += " ORDER BY timestamp DESC LIMIT %s OFFSET %s"
                 params.extend([filter_opts.limit, filter_opts.offset])

@@ -13,29 +13,75 @@ security_scheme = HTTPBearer(auto_error=False)
 
 
 class AuthenticatedUser:
-    def __init__(self, user_id: str, username: str, role: str):
-        self.user_id = user_id
+    def __init__(
+        self,
+        user_id: str,
+        username: str,
+        role: str,
+        email: Optional[str] = None,
+        name: Optional[str] = None,
+        token_jti: Optional[str] = None,
+    ):
+        self.user_id = str(user_id)
         self.username = username
         self.role = role
+        self.email = email or username
+        self.name = name or username
+        self.token_jti = token_jti
 
     def is_admin(self) -> bool:
         return self.role == "admin"
 
 
+# Storage instance for admin authorization verification
+_user_storage = None
+
+def _get_user_storage():
+    global _user_storage
+    if _user_storage is not None:
+        return _user_storage
+    try:
+        from admin_backend.routes import auth_routes
+        if getattr(auth_routes, "user_storage", None) is not None:
+            return auth_routes.user_storage
+    except Exception:
+        pass
+    from admin_backend.storage.postgres import PostgresUserStorage
+    return PostgresUserStorage()
+
+
 async def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
 ) -> AuthenticatedUser:
     """
-    Extract and validate JWT Bearer token from Authorization header.
+    Extract and validate admin authentication token from httpOnly cookie or Authorization header.
+    Enforces token signature, expiration, issuer, audience, and real-time database active status.
+    Protects state-changing requests against CSRF.
     """
-    if not credentials or not credentials.credentials:
+    from admin_backend.config import settings
+
+    token = None
+    auth_source = None
+
+    # 1. Prefer httpOnly cookie
+    cookie_token = request.cookies.get(settings.admin_cookie_name)
+    if cookie_token and cookie_token.strip():
+        token = cookie_token.strip()
+        auth_source = "cookie"
+    # 2. Fall back to Authorization Bearer header
+    elif credentials and credentials.credentials:
+        token = credentials.credentials.strip()
+        auth_source = "bearer"
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication credentials were not provided",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
+    # 3. Decode & validate JWT
     try:
         payload = decode_access_token(token)
     except ValueError as e:
@@ -47,7 +93,9 @@ async def get_current_user(
 
     user_id = payload.get("sub")
     username = payload.get("username")
-    role = payload.get("role", "user")
+    role = payload.get("role", "admin")
+    email = payload.get("email")
+    token_jti = payload.get("jti")
 
     if not user_id or not username:
         raise HTTPException(
@@ -56,7 +104,63 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return AuthenticatedUser(user_id=str(user_id), username=username, role=role)
+    # 4. Enforce CSRF protection on state-changing requests when authenticated via cookie
+    if auth_source == "cookie" and request.method.upper() in ("POST", "PUT", "DELETE", "PATCH"):
+        csrf_header = (
+            request.headers.get("X-Requested-With")
+            or request.headers.get("X-Admin-CSRF")
+            or request.headers.get("X-CSRF-Token")
+        )
+        if not csrf_header:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CSRF protection: state-changing requests require custom header (e.g. X-Requested-With).",
+            )
+
+    # 5. Check real-time is_active status in database
+    storage = _get_user_storage()
+    db_user = None
+    try:
+        db_user = storage.get_by_id(str(user_id))
+    except Exception:
+        pass
+
+    if not db_user:
+        try:
+            db_user = storage.get_by_username(username)
+        except Exception:
+            pass
+
+    if not db_user and hasattr(storage, "get_admin_by_email") and email:
+        try:
+            db_user = storage.get_admin_by_email(email)
+        except Exception:
+            pass
+
+    if db_user is not None and not db_user.get("is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin account is deactivated or revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return AuthenticatedUser(
+        user_id=str(db_user.get("id", user_id)) if db_user else str(user_id),
+        username=db_user.get("username", username) if db_user else username,
+        role=db_user.get("role", role) if db_user else role,
+        email=db_user.get("email", email) if db_user else email,
+        name=db_user.get("name") if db_user else username,
+        token_jti=token_jti,
+    )
+
+    return AuthenticatedUser(
+        user_id=str(db_user.get("id", user_id)),
+        username=db_user.get("username", username),
+        role=db_user.get("role", role),
+        email=db_user.get("email", email),
+        name=db_user.get("name"),
+        token_jti=token_jti,
+    )
 
 
 async def require_admin_role(

@@ -153,15 +153,6 @@ async def get_current_user(
         token_jti=token_jti,
     )
 
-    return AuthenticatedUser(
-        user_id=str(db_user.get("id", user_id)),
-        username=db_user.get("username", username),
-        role=db_user.get("role", role),
-        email=db_user.get("email", email),
-        name=db_user.get("name"),
-        token_jti=token_jti,
-    )
-
 
 async def require_admin_role(
     user: AuthenticatedUser = Depends(get_current_user),

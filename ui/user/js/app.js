@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function openLoginModal(role = (state.role === 'admin' ? 'user' : 'admin')) {
+  function openLoginModal(role = 'user') {
     clearFormErrors();
     updateLoginModalUI(role);
     loginModalBackdrop?.classList.add('active');
@@ -2947,14 +2947,29 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { }
   }
 
-  // Call /api/auth/me on startup to restore session and load user chats
-  RP.auth.me().then(user => {
-    updateAuthState(user);
-    checkUrlAuthParams();
-  }).catch(() => {
+  // Check if switching from Admin Mode: ALWAYS ask for user login
+  const startupParams = new URLSearchParams(window.location.search);
+  const isSwitchFromAdmin = startupParams.get('mode_switch') === 'admin_to_user' || 
+                            (document.referrer && document.referrer.includes('/admin/'));
+
+  if (isSwitchFromAdmin) {
+    try {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) { }
+    RP.auth.logout().catch(() => {});
     updateAuthState(null);
-    checkUrlAuthParams();
-  });
+    showToast('Switched from Admin Mode. Please sign in to your user account.', 'person', 3500);
+    openLoginModal('user');
+  } else {
+    // Call /api/auth/me on startup to restore session and load user chats
+    RP.auth.me().then(user => {
+      updateAuthState(user);
+      checkUrlAuthParams();
+    }).catch(() => {
+      updateAuthState(null);
+      checkUrlAuthParams();
+    });
+  }
 
   // Fetch auth config exactly once on page load to initialize Google Sign-in
   initGoogleAuth();

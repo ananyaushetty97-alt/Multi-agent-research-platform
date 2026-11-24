@@ -1,11 +1,17 @@
-import sys
-sys.path.insert(0, ".")
+import os, sys
+sys.path.insert(0, os.path.abspath("."))
 import psycopg
-from user_auth.config import settings
+from admin_backend.config import settings
 
-dsn = settings.postgres_dsn or 'postgresql://postgres:devpassword@localhost:5432/research_platform'
-conn = psycopg.connect(dsn)
-cur = conn.cursor()
-cur.execute("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'app_users'")
-for col in cur.fetchall():
-    print(col)
+dsn = settings.resolve_postgres_dsn()
+with psycopg.connect(dsn) as conn:
+    with conn.cursor() as cur:
+        print("ADMIN USERS:")
+        cur.execute("SELECT id, username, email, role, is_active FROM admin_users;")
+        for r in cur.fetchall():
+            print(r)
+        
+        print("\nUSERS (sample usernames and emails):")
+        cur.execute("SELECT id, name, email, auth_provider, email_verified, status FROM users LIMIT 10;")
+        for r in cur.fetchall():
+            print(r)

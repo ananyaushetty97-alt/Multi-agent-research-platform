@@ -56,7 +56,7 @@ const RP = (() => {
     try {
       res = await fetch(API_BASE + "/generate", {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-Requested-With": "XMLHttpRequest"
@@ -194,7 +194,7 @@ const RP = (() => {
   async function _fetchAuth(endpoint, method, body = null) {
     const opts = {
       method,
-      credentials: "same-origin",
+      credentials: "include",
       headers: {
         "X-Requested-With": "XMLHttpRequest",
         "Accept": "application/json"

@@ -21,7 +21,41 @@
 </head>
 <body>
 
-  <div class="admin-layout" id="app-root">
+  <!-- ======================================================================
+       ADMIN AUTHENTICATION GATE (Displayed when unauthenticated)
+       ====================================================================== -->
+  <div id="admin-auth-gate" style="display: flex; min-height: 100vh; width: 100%; align-items: center; justify-content: center; background-color: var(--surface, #f7f9ff); padding: 1.5rem;">
+    <div class="login-dialog" style="width: 100%; max-width: 440px; background-color: var(--surface-container-lowest, #ffffff); border-radius: var(--radius-lg, 12px); box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.1)); border: 1px solid var(--outline-variant, #e0e0e0); overflow: hidden;">
+      <div class="login-modal-header" style="padding: 1.5rem; background-color: var(--surface-container-low, #edf4ff); border-bottom: 1px solid var(--outline-variant, #e0e0e0); display: flex; align-items: center; gap: 12px;">
+        <div class="brand-icon" style="background-color: var(--primary-container, #005151); color: #ffffff; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        </div>
+        <div>
+          <h3 class="login-modal-title" style="margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--on-surface, #111d28);">Admin Sign-In Required</h3>
+          <p class="login-modal-subtitle" style="margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--on-surface-variant, #3f4948);">Research Hub — Observability Suite</p>
+        </div>
+      </div>
+      <div class="login-modal-body" style="padding: 1.75rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="login-error-banner" id="admin-gate-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="admin-gate-error-text">Not authorised. Access is restricted to authorized administrator accounts.</span>
+        </div>
+        <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #3f4948); line-height: 1.5; margin: 0;">
+          Access to telemetry, evaluation scores, traces, and metrology control rails is restricted to verified administrators. Please authenticate with your authorized Google Admin account.
+        </p>
+        <div id="googleAdminSignInBtnGate" style="min-height: 44px; display: flex; align-items: center; justify-content: center; width: 100%;"></div>
+        <div style="border-top: 1px solid var(--outline-variant, #e0e0e0); padding-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.75rem; color: var(--on-surface-variant, #3f4948);">Not an administrator?</span>
+          <a href="../user/index.html?mode_switch=admin_to_user" style="font-size: 0.8125rem; color: var(--primary, #005151); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <span>Return to User Mode</span>
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-layout" id="app-root" style="display: none;">
 
     <!-- Mobile Sidebar Backdrop Overlay -->
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
@@ -143,7 +177,7 @@
           <span style="font-size: 0.625rem; font-family: var(--font-mono); color: var(--outline);" id="lastCheckTimeDisplay">Live</span>
         </div>
 
-        <button type="button" class="btn-sidebar-return-user" id="btn-sidebar-switch-user" title="Switch to Scholar Workspace (Password Required)">
+        <button type="button" class="btn-sidebar-return-user" id="btn-sidebar-switch-user" title="Switch to Scholar Workspace (User Mode)">
           <span class="material-symbols-outlined text-[16px]">arrow_back</span>
           <span>Switch to User Mode</span>
         </button>
@@ -264,7 +298,7 @@
               <div class="profile-dropdown-actions">
                 <button class="profile-action-item" id="btn-switch-to-user-dropdown" type="button">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
-                  <span>Switch to User Mode (Verify Password)</span>
+                  <span>Switch to User Mode</span>
                 </button>
                 <button class="profile-action-item" id="headerLogoutBtn" type="button">
                   <span class="material-symbols-outlined text-[16px]">lock</span>
@@ -1454,6 +1488,13 @@
               <span class="material-symbols-outlined text-[18px]">login</span>
               <span id="btn-switch-user-text">Sign In as User</span>
             </button>
+          </div>
+
+          <div style="border-top: 1px solid var(--outline-variant, #e0e0e0); margin-top: 14px; padding-top: 10px; text-align: center;">
+            <a href="../user/index.html?mode_switch=admin_to_user" style="font-size: 0.8125rem; color: var(--primary, #005151); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+              <span>Or sign in via User Portal</span>
+              <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+            </a>
           </div>
         </form>
 

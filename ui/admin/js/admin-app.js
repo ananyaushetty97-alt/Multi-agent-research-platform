@@ -132,14 +132,8 @@
 
   // Initialize on DOM ready
   document.addEventListener("DOMContentLoaded", async () => {
-    initRouting();
-    initGlobalControls();
-    renderAllViews();
-    handleKeyboardShortcuts();
-    
-    // Authenticate and load live data from backend
+    // Authenticate and load live data from backend before rendering
     await initAuthAndLiveData();
-    initPollingTimer();
   });
 
   // ---------- AUTHENTICATION & LIVE API CLIENT ----------
@@ -190,11 +184,22 @@
     try {
       const response = await fetch(url, { ...options, headers });
 
-      // Handle token expiration or unauthenticated 401
-      if (response.status === 401 && !options._retried) {
+      // Handle token expiration or unauthenticated 401 / 403
+      if ((response.status === 401 || response.status === 403) && !options._retried) {
         updateBackendStatusBadge(false);
         updateAdminProfileDisplay(null);
-        openAdminLoginModal("Your session has expired or requires authentication.");
+        authToken = null;
+        sessionStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_access_token");
+        if (pollIntervalTimer) {
+          clearInterval(pollIntervalTimer);
+          pollIntervalTimer = null;
+        }
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "none";
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "flex";
+        initGoogleAdminButton();
         return response;
       }
 
@@ -209,32 +214,97 @@
 
   async function initAuthAndLiveData() {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSwitchFromUser = urlParams.get("mode_switch") === "user_to_admin" || 
+                               (document.referrer && document.referrer.includes("/user/"));
+
+      if (isSwitchFromUser) {
+        // ALWAYS require fresh admin login when switching from User Mode!
+        authToken = null;
+        sessionStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_access_token");
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e) { }
+
+        await fetch(`${API_ROOT}/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        }).catch(() => {});
+
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "flex";
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "none";
+
+        updateAdminProfileDisplay(null);
+        isBackendConnected = false;
+        updateBackendStatusBadge(false);
+
+        const gateBanner = document.getElementById("admin-gate-error-banner");
+        const gateText = document.getElementById("admin-gate-error-text");
+        if (gateBanner && gateText) {
+          gateText.textContent = "Switched from User Mode. Please sign in with your authorized Google Admin account.";
+          gateBanner.style.display = "flex";
+        }
+        initGoogleAdminButton();
+        return;
+      }
+
       const meRes = await fetch(`${API_ROOT}/auth/me`, {
         method: "GET",
         credentials: "include",
         headers: {
           "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
           ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {})
         }
       });
 
       if (meRes.ok) {
         const user = await meRes.json();
-        updateAdminProfileDisplay(user);
-        isBackendConnected = true;
-        updateBackendStatusBadge(true);
-        await fetchAllLiveTelemetry();
-        return;
+        if (user && user.role === "admin") {
+          // Authorized admin confirmed - reveal dashboard and initialize
+          const gate = document.getElementById("admin-auth-gate");
+          if (gate) gate.style.display = "none";
+          const root = document.getElementById("app-root");
+          if (root) root.style.display = "";
+
+          updateAdminProfileDisplay(user);
+          isBackendConnected = true;
+          updateBackendStatusBadge(true);
+
+          initRouting();
+          initGlobalControls();
+          renderAllViews();
+          handleKeyboardShortcuts();
+          await fetchAllLiveTelemetry();
+          initPollingTimer();
+          return;
+        }
       }
     } catch (e) {
       console.warn("Auth check probe error:", e);
     }
 
-    // Not authenticated: prompt for login
+    // Not authenticated or not admin: strictly lock portal and show Admin Sign-In Gate
+    authToken = null;
+    sessionStorage.removeItem("admin_access_token");
+    localStorage.removeItem("admin_access_token");
     isBackendConnected = false;
     updateBackendStatusBadge(false);
     updateAdminProfileDisplay(null);
-    openAdminLoginModal();
+
+    const root = document.getElementById("app-root");
+    if (root) root.style.display = "none";
+    const gate = document.getElementById("admin-auth-gate");
+    if (gate) gate.style.display = "flex";
+
+    initGoogleAdminButton();
   }
 
   function updateBackendStatusBadge(connected) {
@@ -641,7 +711,7 @@
       });
     }
 
-    // Switch to User Mode Triggers (Requires Password)
+    // Switch to User Mode Triggers
     const btnSidebarSwitchUser = document.getElementById("btn-sidebar-switch-user");
     const btnSwitchUserDropdown = document.getElementById("btn-switch-to-user-dropdown");
     const profileSwitchUser = document.getElementById("profile-switch-user");
@@ -2663,8 +2733,21 @@
             callback: handleGoogleAdminCredentialResponse,
             auto_select: false,
           });
+          const gateBtn = document.getElementById("googleAdminSignInBtnGate");
+          if (gateBtn) {
+            gateBtn.innerHTML = "";
+            google.accounts.id.renderButton(gateBtn, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              shape: "rectangular",
+              text: "signin_with",
+              logo_alignment: "left",
+              width: 320,
+            });
+          }
           const btnContainer = document.getElementById("googleAdminSignInBtn");
-          if (btnContainer) {
+          if (btnContainer && btnContainer !== gateBtn) {
             btnContainer.innerHTML = "";
             google.accounts.id.renderButton(btnContainer, {
               theme: "outline",
@@ -2690,7 +2773,10 @@
   async function handleGoogleAdminCredentialResponse(response) {
     const errBanner = document.getElementById("switch-user-error-banner");
     const errText = document.getElementById("switch-user-error-text");
+    const gateBanner = document.getElementById("admin-gate-error-banner");
+    const gateText = document.getElementById("admin-gate-error-text");
     if (errBanner) errBanner.style.display = "none";
+    if (gateBanner) gateBanner.style.display = "none";
 
     try {
       const res = await fetch(`${API_ROOT}/auth/google`, {
@@ -2708,15 +2794,31 @@
         const data = await res.json();
         authToken = data.access_token;
         sessionStorage.setItem("admin_access_token", authToken);
+
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "none";
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "";
+
         updateAdminProfileDisplay(data.user);
         closeAllModals();
         showToast(`Welcome, ${data.user.name || data.user.email}!`, "success");
         isBackendConnected = true;
         updateBackendStatusBadge(true);
+
+        initRouting();
+        initGlobalControls();
+        renderAllViews();
+        handleKeyboardShortcuts();
         await fetchAllLiveTelemetry();
+        initPollingTimer();
       } else {
         const err = await res.json().catch(() => ({}));
-        const detail = err.detail || "Not authorised.";
+        const detail = err.detail || "Not authorised. Only registered administrators may access Admin Mode.";
+        if (gateBanner && gateText) {
+          gateText.textContent = detail;
+          gateBanner.style.display = "flex";
+        }
         if (errBanner && errText) {
           errText.textContent = detail;
           errBanner.style.display = "flex";
@@ -2724,8 +2826,13 @@
         showToast(detail, "error");
       }
     } catch (e) {
+      const msg = "Connection failed while authenticating with Google.";
+      if (gateBanner && gateText) {
+        gateText.textContent = msg;
+        gateBanner.style.display = "flex";
+      }
       if (errBanner && errText) {
-        errText.textContent = "Connection failed while authenticating with Google.";
+        errText.textContent = msg;
         errBanner.style.display = "flex";
       }
       showToast("Authentication failed: network error", "error");
@@ -2769,7 +2876,12 @@
     try {
       const resp = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
         body: JSON.stringify({ email: email, password: password }),
       });
       if (resp.ok) {
@@ -2779,16 +2891,20 @@
         authErrorDetail = errData.detail || "Incorrect user password.";
       }
     } catch (e) {
-      // Offline fallback check
-      if (password === "user123" && (email === "user@platform.ai" || email === "user")) {
-        loginSucceeded = true;
-      }
+      authErrorDetail = "Unable to reach user authentication service.";
     }
 
     if (loginSucceeded) {
       authToken = null;
       sessionStorage.removeItem("admin_access_token");
       localStorage.removeItem("admin_access_token");
+
+      // Invalidate admin session so switching always requires fresh login
+      await fetch(`${API_ROOT}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      }).catch(() => {});
 
       closeAllModals();
       showToast("User credentials verified! Switching to User Mode...", "success");
@@ -2826,9 +2942,18 @@
     authToken = null;
     sessionStorage.removeItem("admin_access_token");
     localStorage.removeItem("admin_access_token");
+    if (pollIntervalTimer) {
+      clearInterval(pollIntervalTimer);
+      pollIntervalTimer = null;
+    }
+    const root = document.getElementById("app-root");
+    if (root) root.style.display = "none";
+    const gate = document.getElementById("admin-auth-gate");
+    if (gate) gate.style.display = "flex";
+
     updateAdminProfileDisplay(null);
     showToast("Admin session locked. Please sign in to continue.", "info");
-    openAdminLoginModal("Admin session locked. Please sign in to resume.");
+    initGoogleAdminButton();
   }
 
   function closeAllModals() {

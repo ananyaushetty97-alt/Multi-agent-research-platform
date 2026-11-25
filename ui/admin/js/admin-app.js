@@ -46,7 +46,11 @@
         total_attacks: 0,
         indirect_count: 0,
         direct_count: 0
-      }
+      },
+      summary: null,
+      history: [],
+      filters: { source: "production", check_type: "", outcome: "" },
+      expandedEventId: null
     },
     memory: {
       ltm_reports: [],
@@ -69,6 +73,17 @@
   let isBackendConnected = false;
   let redteamRunInProgress = false;
   let authToken = sessionStorage.getItem("admin_access_token") || localStorage.getItem("admin_access_token") || null;
+
+  // Escape text before putting it inside HTML (event text can contain attacker-controlled content)
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
   // Indian Standard Time (IST) formatting helper
   function formatIST(isoStr, includeDate = true) {
@@ -284,12 +299,22 @@
 
   async function fetchSafety() {
     try {
-      const [eventsRes, redteamRes] = await Promise.all([
-        apiRequest("/safety/events?limit=100"),
-        apiRequest("/safety/redteam")
+      const filters = state.safety.filters;
+      const params = new URLSearchParams({ limit: "200", source: filters.source || "production" });
+      if (filters.check_type) params.set("check_type", filters.check_type);
+      if (filters.outcome) params.set("outcome", filters.outcome);
+      const summaryParams = new URLSearchParams({ source: filters.source || "production" });
+
+      const [eventsRes, summaryRes, redteamRes, historyRes] = await Promise.all([
+        apiRequest(`/safety/events?${params.toString()}`),
+        apiRequest(`/safety/summary?${summaryParams.toString()}`),
+        apiRequest("/safety/redteam"),
+        apiRequest("/safety/redteam/history?limit=20")
       ]);
 
       if (eventsRes.ok) state.safety.events = await eventsRes.json();
+      if (summaryRes.ok) state.safety.summary = await summaryRes.json();
+      if (historyRes.ok) state.safety.history = await historyRes.json();
       if (!redteamRunInProgress && redteamRes.ok) {
         state.safety.redteam = await redteamRes.json();
       } else if (!redteamRunInProgress && redteamRes.status === 404) {
@@ -434,44 +459,7 @@
 
   // ---------- GLOBAL HEADER CONTROLS ----------
   function initGlobalControls() {
-    const redteamButton = document.getElementById("safetyRunRedteamButton");
-    if (redteamButton) {
-      redteamButton.addEventListener("click", async () => {
-        if (!isBackendConnected) {
-          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
-          return;
-        }
-        const confirmed = window.confirm(
-          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
-        );
-        if (!confirmed) return;
-        redteamButton.disabled = true;
-        redteamRunInProgress = true;
-        const statusEl = document.getElementById("safetyRedteamRunStatus");
-        state.safety.redteam = null;
-        if (statusEl) statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
-        renderSafetyView();
-        try {
-          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
-          if (!response.ok) {
-            const failure = await response.json().catch(() => ({}));
-            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
-          }
-          const summary = await response.json();
-          state.safety.redteam = summary;
-          renderSafetyView();
-          if (statusEl) statusEl.textContent =
-            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
-          showToast("Live platform test results saved", "success");
-        } catch (error) {
-          if (statusEl) statusEl.textContent = "Run failed.";
-          showToast(error.message || "Live platform test failed", "error");
-        } finally {
-          redteamRunInProgress = false;
-          redteamButton.disabled = false;
-        }
-      });
-    }
+    initSafetyControls();
 
     const intervalSelect = document.getElementById("headerIntervalSelect");
     if (intervalSelect) {
@@ -1562,6 +1550,222 @@
   }
 
   // 5. Safety & Red-Team View
+  const SAFETY_CHECK_TYPE_LABELS = {
+    input_rule: { label: "Input Rule", tone: "danger" },
+    input_llm: { label: "Input LLM Guard", tone: "danger" },
+    output_rule: { label: "Output Rule", tone: "warning" },
+    output_llm: { label: "Output LLM Guard", tone: "warning" },
+    search_xpia: { label: "Search XPIA Injection", tone: "info" }
+  };
+  const SAFETY_OUTCOME_TONES = { blocked: "danger", sanitized: "success", flagged: "warning" };
+  const REDTEAM_STATUS_TONES = { defended: "success", breached: "danger", error: "warning" };
+  const REDTEAM_TYPE_LABELS = { indirect: "Indirect (XPIA)", direct: "Direct" };
+  const SAFETY_SOURCE_LABELS = { production: "production", redteam: "red-team test", all: "recorded" };
+
+  function safetyBadge(text, tone) {
+    return `<span class="safety-badge ${escapeHtml(tone || "")}">${escapeHtml(text)}</span>`;
+  }
+
+  function safetySetText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function yesNo(value) {
+    if (value === true) return "yes";
+    if (value === false) return "no";
+    return "n/a";
+  }
+
+  function formatRate(totalAttacks, ratePct) {
+    if (!totalAttacks || totalAttacks <= 0) return "—";
+    return `${Number(ratePct || 0).toFixed(1)}%`;
+  }
+
+  function redteamEvidence(attack) {
+    if (attack.status === "error") return attack.error || "Run error";
+    if (attack.type === "indirect") {
+      const parts = [
+        `canary leaked: ${yesNo(attack.canary_leaked)}`,
+        `verifier flagged: ${yesNo(attack.verify_flagged)}`,
+        `output guard blocked: ${yesNo(attack.guard_blocked)}`
+      ];
+      if (typeof attack.revisions === "number") parts.push(`revisions: ${attack.revisions}`);
+      return parts.join(" · ");
+    }
+    if (attack.reason) return attack.reason;
+    if (attack.guard_blocked === true) return "Input guard blocked";
+    return "No breach evidence";
+  }
+
+  function redteamStatus(attack) {
+    if (attack.status) return attack.status;
+    if (attack.reached_user) return "breached";
+    return "defended";
+  }
+
+  function describeRunScope(scope) {
+    if (scope === "all") return "all cases";
+    if (scope === "direct") return "direct jailbreaks only";
+    if (scope === "quick") return "quick check";
+    return "case set unknown";
+  }
+
+  function describeDefense(defenseEnabled) {
+    if (defenseEnabled === true) return "defenses enabled";
+    if (defenseEnabled === false) return "defenses DISABLED (offline comparison run)";
+    return "defense status not recorded";
+  }
+
+  function renderRedteamMeta(rt) {
+    const runMeta = document.getElementById("safetyRedteamRunMeta");
+    if (!runMeta) return;
+    if (redteamRunInProgress) {
+      runMeta.textContent = "A red-team run is in progress. Results will appear when it finishes.";
+      return;
+    }
+    if (!rt.run_id) {
+      runMeta.textContent = "No red-team run recorded yet. Use Run Live Platform Test to create one.";
+      return;
+    }
+    let recorded = "time unavailable";
+    if (rt.recorded_at) recorded = formatIST(rt.recorded_at);
+    runMeta.textContent = [
+      `Latest run: ${rt.run_id}`,
+      describeRunScope(rt.scope),
+      rt.mode || "mode not recorded",
+      describeDefense(rt.defense_enabled),
+      recorded
+    ].join(" | ");
+  }
+
+  function renderRedteamAttacks(rt) {
+    const attacksBody = document.getElementById("safetyRedteamAttacksBody");
+    if (!attacksBody) return;
+    const attacks = rt.attacks || [];
+    if (attacks.length === 0) {
+      attacksBody.innerHTML = '<tr><td colspan="4">No red-team attacks recorded yet.</td></tr>';
+      return;
+    }
+    attacksBody.innerHTML = attacks.map((attack) => {
+      const statusText = redteamStatus(attack);
+      const typeLabel = REDTEAM_TYPE_LABELS[attack.type] || attack.type || "unknown";
+      const preview = attack.payload_preview || "";
+      return `
+        <tr>
+          <td>${safetyBadge(typeLabel, "info")}</td>
+          <td title="${escapeHtml(preview)}">${escapeHtml(preview.slice(0, 120))}</td>
+          <td>${safetyBadge(statusText, REDTEAM_STATUS_TONES[statusText])}</td>
+          <td>${escapeHtml(redteamEvidence(attack))}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  function renderRedteamHistory() {
+    const historyBody = document.getElementById("safetyRedteamHistoryBody");
+    if (!historyBody) return;
+    const history = state.safety.history || [];
+    if (history.length === 0) {
+      historyBody.innerHTML = '<tr><td colspan="8">No previous runs recorded.</td></tr>';
+      return;
+    }
+    historyBody.innerHTML = history.map((run) => {
+      let modeCell = escapeHtml(run.mode || "—");
+      if (run.defense_enabled === false) modeCell += " " + safetyBadge("defense off", "warning");
+      let reachedCell = "0";
+      if (run.attacks_reached_user > 0) reachedCell = safetyBadge(String(run.attacks_reached_user), "danger");
+      return `
+        <tr>
+          <td>${escapeHtml(formatIST(run.recorded_at))}</td>
+          <td class="font-mono">${escapeHtml(run.run_id)}</td>
+          <td>${escapeHtml(describeRunScope(run.scope))}</td>
+          <td>${modeCell}</td>
+          <td>${escapeHtml(`${run.attacks_defended} / ${run.total_attacks}`)}</td>
+          <td>${reachedCell}</td>
+          <td>${escapeHtml(String(run.attacks_errored))}</td>
+          <td>${escapeHtml(formatRate(run.total_attacks, run.defense_rate_pct))}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  function renderSafetySummary() {
+    const summary = state.safety.summary;
+    if (!summary) {
+      ["safetySummaryTotal", "safetySummaryWindow", "safetySummaryBlocked", "safetySummarySanitized"].forEach((id) => safetySetText(id, "0"));
+      safetySetText("safetySummaryLatest", "—");
+      return;
+    }
+    const byOutcome = summary.by_outcome || {};
+    safetySetText("safetySummaryTotal", `${summary.total_events || 0}`);
+    safetySetText("safetySummaryWindow", `${summary.events_in_window || 0}`);
+    safetySetText("safetySummaryBlocked", `${byOutcome.blocked || 0}`);
+    safetySetText("safetySummarySanitized", `${byOutcome.sanitized || 0}`);
+    if (summary.latest_event_at) {
+      safetySetText("safetySummaryLatest", formatIST(summary.latest_event_at));
+    } else {
+      safetySetText("safetySummaryLatest", "—");
+    }
+  }
+
+  function safetyEventDetailRow(ev) {
+    const details = {
+      event_id: ev.event_id,
+      timestamp: ev.timestamp,
+      source: ev.source,
+      request_id: ev.request_id,
+      session_id: ev.session_id,
+      check_type: ev.check_type,
+      outcome: ev.outcome,
+      reason: ev.reason,
+      excerpt: ev.excerpt,
+      details: ev.details || {}
+    };
+    return `
+      <tr class="safety-event-details">
+        <td colspan="6">${escapeHtml(JSON.stringify(details, null, 2))}</td>
+      </tr>`;
+  }
+
+  function renderSafetyEvents() {
+    const tableBody = document.getElementById("safetyEventsTableBody");
+    if (!tableBody) return;
+
+    const filters = state.safety.filters || {};
+    const eventsList = state.safety.events || [];
+    const sourceLabel = SAFETY_SOURCE_LABELS[filters.source || "production"] || "recorded";
+    let plural = "s";
+    if (eventsList.length === 1) plural = "";
+    safetySetText("safetyEventsCount", `${eventsList.length} ${sourceLabel} event${plural} shown`);
+
+    if (eventsList.length === 0) {
+      let message = "No safety violation events recorded. Guardrails and XPIA detectors are monitoring incoming traffic.";
+      if (filters.check_type || filters.outcome) message = "No events match these filters.";
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">${escapeHtml(message)}</td>
+        </tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = eventsList.map((ev) => {
+      const typeInfo = SAFETY_CHECK_TYPE_LABELS[ev.check_type] || { label: ev.check_type, tone: "" };
+      const isOpen = state.safety.expandedEventId === ev.event_id;
+      let sourceTag = "";
+      if (ev.source === "redteam") sourceTag = " " + safetyBadge("red-team", "warning");
+      let detailRow = "";
+      if (isOpen) detailRow = safetyEventDetailRow(ev);
+      return `
+        <tr class="safety-event-row border-b border-surface-container hover:bg-surface-container-high/40 transition-colors" data-event-id="${escapeHtml(ev.event_id)}" aria-expanded="${isOpen}">
+          <td class="px-space-md py-3 font-mono text-label-sm">${escapeHtml(formatIST(ev.timestamp))}</td>
+          <td class="px-space-md py-3 font-mono text-label-sm text-outline" title="${escapeHtml(ev.event_id)}">${escapeHtml(String(ev.event_id).slice(0, 8))}</td>
+          <td class="px-space-md py-3">${safetyBadge(typeInfo.label, typeInfo.tone)}${sourceTag}</td>
+          <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${escapeHtml(ev.reason)}">${escapeHtml(ev.reason)}</td>
+          <td class="px-space-md py-3 font-mono text-body-sm text-on-surface-variant max-w-sm truncate" title="${escapeHtml(ev.excerpt)}">${escapeHtml(ev.excerpt)}</td>
+          <td class="px-space-md py-3">${safetyBadge(ev.outcome, SAFETY_OUTCOME_TONES[ev.outcome])}</td>
+        </tr>${detailRow}`;
+    }).join("");
+  }
+
   function renderSafetyView() {
     const rt = state.safety.redteam || {
       defense_rate_pct: 0,
@@ -1571,90 +1775,192 @@
       direct_count: 0
     };
 
-    const defRateEl = document.getElementById("safetyDefenseRate");
-    const totalAttacksEl = document.getElementById("safetyTotalAttacks");
-    const indirectEl = document.getElementById("safetyIndirectAttacks");
-    const directEl = document.getElementById("safetyDirectAttacks");
-    const errorsEl = document.getElementById("safetyRedteamErrors");
+    safetySetText("safetyDefenseRate", formatRate(rt.total_attacks, rt.defense_rate_pct));
+    safetySetText("safetyTotalAttacks", `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`);
+    safetySetText("safetyRedteamBreached", `${rt.attacks_reached_user || 0}`);
+    safetySetText("safetyIndirectAttacks", `${rt.indirect_count || 0}`);
+    safetySetText("safetyDirectAttacks", `${rt.direct_count || 0}`);
+    safetySetText("safetyRedteamErrors", `${rt.attacks_errored || 0}`);
 
-    if (defRateEl) defRateEl.textContent = rt.total_attacks > 0 ? `${Number(rt.defense_rate_pct ?? 0).toFixed(1)}%` : "—";
-    if (totalAttacksEl) totalAttacksEl.textContent = `${rt.attacks_defended || 0} / ${rt.total_attacks || 0}`;
-    if (indirectEl) indirectEl.textContent = `${rt.indirect_count || 0}`;
-    if (directEl) directEl.textContent = `${rt.direct_count || 0}`;
-    if (errorsEl) errorsEl.textContent = `${rt.attacks_errored || 0}`;
+    renderRedteamMeta(rt);
+    renderRedteamAttacks(rt);
+    renderRedteamHistory();
+    renderSafetySummary();
+    renderSafetyEvents();
+  }
 
-    const runMeta = document.getElementById("safetyRedteamRunMeta");
-    if (runMeta) {
-      const mode = rt.mode ? rt.mode : "unknown mode";
-      const defense = rt.defense_enabled === true ? "defenses enabled" : "defense status unavailable";
-      runMeta.textContent = rt.run_id
-        ? `Previously saved run: ${rt.run_id} | ${mode} | ${defense} | ${rt.recorded_at ? formatIST(rt.recorded_at) : "time unavailable"}`
-        : "No persisted benchmark found.";
+  // ---- Safety tab controls: filters, refresh, exports, red-team run
+  const REDTEAM_SCOPE_TEXT = {
+    all: {
+      note: "Live run: tests this platform only with 11 fixed cases (6 indirect + 5 direct). It invokes the configured LLM and may consume provider quota. Defenses stay enabled.",
+      confirm: "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+    },
+    direct: {
+      note: "Direct-only run: sends the 5 fixed jailbreak prompts through the real API input guard. Faster, and uses little LLM quota. Defenses stay enabled.",
+      confirm: "Run the 5 fixed direct jailbreak cases against this platform's input guard? Production defenses remain enabled."
     }
+  };
 
-    const attacksBody = document.getElementById("safetyRedteamAttacksBody");
-    if (attacksBody) {
-      attacksBody.innerHTML = "";
-      const attacks = rt.attacks || [];
-      if (attacks.length === 0) {
-        attacksBody.innerHTML = '<tr><td colspan="4">No persisted benchmark attacks loaded.</td></tr>';
-      } else {
-        attacks.forEach((attack) => {
-          const evidence = attack.error || attack.reason
-            || (attack.guard_blocked === true ? "Guard blocked"
-              : attack.verify_flagged === true ? "Verifier flagged"
-              : attack.canary_leaked === true ? "Canary detected"
-              : "No breach evidence");
-          attacksBody.insertAdjacentHTML("beforeend", `
-            <tr>
-              <td>${escapeHtml(attack.type || "unknown")}</td>
-              <td title="${escapeHtml(attack.payload_preview || "")}">${escapeHtml((attack.payload_preview || "").slice(0, 120))}</td>
-              <td>${escapeHtml(attack.status || (attack.reached_user ? "breached" : "defended"))}</td>
-              <td>${escapeHtml(evidence)}</td>
-            </tr>
-          `);
-        });
+  function selectedRedteamScope() {
+    const scopeSelect = document.getElementById("safetyRedteamScope");
+    if (scopeSelect && REDTEAM_SCOPE_TEXT[scopeSelect.value]) return scopeSelect.value;
+    return "all";
+  }
+
+  function updateRedteamScopeNote() {
+    const scopeNote = document.getElementById("safetyRedteamScopeNote");
+    if (scopeNote) scopeNote.textContent = REDTEAM_SCOPE_TEXT[selectedRedteamScope()].note;
+  }
+
+  function setRedteamControlsDisabled(disabled) {
+    ["safetyRunRedteamButton", "safetyRedteamScope"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = disabled;
+    });
+  }
+
+  async function runRedteamFromAdmin() {
+    if (!isBackendConnected) {
+      showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+      return;
+    }
+    const scope = selectedRedteamScope();
+    if (!window.confirm(REDTEAM_SCOPE_TEXT[scope].confirm)) return;
+
+    const statusEl = document.getElementById("safetyRedteamRunStatus");
+    setRedteamControlsDisabled(true);
+    redteamRunInProgress = true;
+    if (statusEl) statusEl.textContent = "Run in progress. This can take a few minutes.";
+    renderSafetyView();
+    try {
+      const response = await apiRequest("/safety/redteam/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope })
+      });
+      if (!response.ok) {
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.detail || `Benchmark failed (${response.status})`);
       }
+      const summary = await response.json();
+      state.safety.redteam = summary;
+      if (statusEl) {
+        statusEl.textContent = `Saved: ${summary.attacks_defended} defended, ${summary.attacks_reached_user} reached user, ${summary.attacks_errored} errors.`;
+      }
+      showToast("Live platform test results saved", "success");
+    } catch (error) {
+      if (statusEl) statusEl.textContent = `Run failed: ${error.message || "unknown error"}`;
+      showToast(error.message || "Live platform test failed", "error");
+    } finally {
+      redteamRunInProgress = false;
+      setRedteamControlsDisabled(false);
+      await fetchSafety();
     }
+  }
 
-    const tableBody = document.getElementById("safetyEventsTableBody");
-    if (!tableBody) return;
-    tableBody.innerHTML = "";
+  function initSafetyControls() {
+    const bindFilter = (id, key) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = state.safety.filters[key];
+      el.addEventListener("change", () => {
+        state.safety.filters[key] = el.value;
+        state.safety.expandedEventId = null;
+        fetchSafety();
+      });
+    };
+    bindFilter("safetyFilterSource", "source");
+    bindFilter("safetyFilterCheckType", "check_type");
+    bindFilter("safetyFilterOutcome", "outcome");
 
-    const eventsList = state.safety.events || [];
-    if (eventsList.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="5" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
-            No safety violation events recorded. Guardrails and XPIA detectors are monitoring incoming traffic.
-          </td>
-        </tr>
-      `;
-    } else {
-      eventsList.forEach((ev) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors";
+    const refreshButton = document.getElementById("safetyRefreshButton");
+    if (refreshButton) refreshButton.addEventListener("click", () => fetchSafety());
 
-        let typeBadge = '<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm uppercase">' + ev.check_type + '</span>';
-        if (ev.check_type === "search_xpia") {
-          typeBadge = '<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm font-semibold uppercase">Search XPIA Injection</span>';
-        } else if (ev.check_type === "input_rule") {
-          typeBadge = '<span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">Input Guardrail</span>';
+    const eventsBody = document.getElementById("safetyEventsTableBody");
+    if (eventsBody) {
+      eventsBody.addEventListener("click", (e) => {
+        const row = e.target.closest("tr.safety-event-row");
+        if (!row) return;
+        const id = row.getAttribute("data-event-id");
+        if (state.safety.expandedEventId === id) {
+          state.safety.expandedEventId = null;
+        } else {
+          state.safety.expandedEventId = id;
         }
-
-        tr.innerHTML = `
-          <td class="px-space-md py-3 font-mono text-label-sm text-outline">${ev.event_id}</td>
-          <td class="px-space-md py-3">${typeBadge}</td>
-          <td class="px-space-md py-3 text-on-surface font-medium max-w-xs truncate" title="${ev.reason}">${ev.reason}</td>
-          <td class="px-space-md py-3 font-mono text-body-sm text-on-surface-variant max-w-sm truncate" title="${ev.excerpt}">${ev.excerpt}</td>
-          <td class="px-space-md py-3">
-            <span class="px-2 py-0.5 rounded bg-error/10 text-error font-label-sm font-semibold uppercase">${ev.outcome}</span>
-          </td>
-        `;
-
-        tableBody.appendChild(tr);
+        renderSafetyEvents();
       });
     }
+
+    document.querySelectorAll("[data-safety-export]").forEach((btn) => {
+      btn.addEventListener("click", () => exportSafetyData(btn.dataset.safetyExport, btn.dataset.format));
+    });
+
+    const scopeSelect = document.getElementById("safetyRedteamScope");
+    if (scopeSelect) scopeSelect.addEventListener("change", updateRedteamScopeNote);
+    updateRedteamScopeNote();
+
+    const redteamButton = document.getElementById("safetyRunRedteamButton");
+    if (redteamButton) redteamButton.addEventListener("click", runRedteamFromAdmin);
+  }
+
+  function csvCell(value) {
+    let text = "";
+    if (value === null || value === undefined) {
+      text = "";
+    } else if (typeof value === "object") {
+      text = JSON.stringify(value);
+    } else {
+      text = String(value);
+    }
+    // Stop spreadsheet apps from treating a cell as a formula.
+    if (/^[=+\-@]/.test(text)) text = "'" + text;
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function toCsv(rows, columns) {
+    const lines = [columns.join(",")];
+    rows.forEach((row) => {
+      lines.push(columns.map((c) => csvCell(row[c])).join(","));
+    });
+    return lines.join("\n") + "\n";
+  }
+
+  function exportSafetyData(kind, format) {
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    if (kind === "events") {
+      const events = state.safety.events || [];
+      if (events.length === 0) {
+        showToast("No safety events to export", "error");
+        return;
+      }
+      if (format === "csv") {
+        downloadFile(
+          toCsv(events, ["timestamp", "event_id", "source", "check_type", "outcome", "reason", "excerpt", "request_id", "session_id", "details"]),
+          `safety_events_${stamp}.csv`,
+          "text/csv"
+        );
+      } else {
+        downloadFile(JSON.stringify(events, null, 2), `safety_events_${stamp}.json`, "application/json");
+      }
+      showToast(`Exported ${events.length} safety events as ${String(format).toUpperCase()}`, "success");
+      return;
+    }
+
+    const rt = state.safety.redteam;
+    if (!rt || !rt.run_id) {
+      showToast("No red-team run to export yet", "error");
+      return;
+    }
+    if (format === "csv") {
+      downloadFile(
+        toCsv(rt.attacks || [], ["type", "status", "payload_preview", "reached_user", "canary_leaked", "verify_flagged", "guard_blocked", "input_blocked", "revisions", "reason", "error"]),
+        `redteam_${rt.run_id}.csv`,
+        "text/csv"
+      );
+    } else {
+      downloadFile(JSON.stringify(rt, null, 2), `redteam_${rt.run_id}.json`, "application/json");
+    }
+    showToast(`Exported red-team run ${rt.run_id} as ${String(format).toUpperCase()}`, "success");
   }
 
   // 6. Memory & Semantic Cache View

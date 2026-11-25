@@ -725,3 +725,68 @@
   }
 }
 
+
+/* ---------- Safety & Red-Team tab ---------- */
+.safety-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.safety-select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  outline: none;
+  cursor: pointer;
+}
+
+.safety-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  background-color: rgba(120, 120, 120, 0.12);
+  color: var(--on-surface);
+}
+
+.safety-badge.danger {
+  background-color: rgba(186, 26, 26, 0.12);
+  color: var(--error, #ba1a1a);
+}
+
+.safety-badge.success {
+  background-color: rgba(0, 110, 60, 0.12);
+  color: #0a7a43;
+}
+
+.safety-badge.warning {
+  background-color: rgba(180, 110, 0, 0.14);
+  color: #9a5b00;
+}
+
+.safety-badge.info {
+  background-color: rgba(0, 81, 81, 0.1);
+  color: var(--primary);
+}
+
+.safety-event-row {
+  cursor: pointer;
+}
+
+.safety-event-details td {
+  background: var(--surface-container);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

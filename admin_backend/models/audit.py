@@ -19,6 +19,7 @@ class AuditAction(str, Enum):
     CONFIG_UPDATE = "config.update"
     EXPORT_DATA = "export.data"
     HUMAN_REVIEW_ADD = "quality.human_review_add"
+    REDTEAM_RUN = "redteam.run"
 
 
 class AuditLogEntry(BaseModel):

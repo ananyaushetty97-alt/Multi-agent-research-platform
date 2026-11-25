@@ -4,6 +4,17 @@
 (function () {
   "use strict";
 
+  // Utility: escape HTML for safe DOM insertion
+  function escapeHtml(text) {
+    if (typeof text !== "string") return "";
+    return text
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """)
+      .replace(/'/g, "&#039;");
+  }
+
   // Reactive Live State (Directly connected to FastAPI backend)
   const state = {
     health: {
@@ -434,45 +445,6 @@
 
   // ---------- GLOBAL HEADER CONTROLS ----------
   function initGlobalControls() {
-    const redteamButton = document.getElementById("safetyRunRedteamButton");
-    if (redteamButton) {
-      redteamButton.addEventListener("click", async () => {
-        if (!isBackendConnected) {
-          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
-          return;
-        }
-        const confirmed = window.confirm(
-          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
-        );
-        if (!confirmed) return;
-        redteamButton.disabled = true;
-        redteamRunInProgress = true;
-        const statusEl = document.getElementById("safetyRedteamRunStatus");
-        state.safety.redteam = null;
-        if (statusEl) statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
-        renderSafetyView();
-        try {
-          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
-          if (!response.ok) {
-            const failure = await response.json().catch(() => ({}));
-            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
-          }
-          const summary = await response.json();
-          state.safety.redteam = summary;
-          renderSafetyView();
-          if (statusEl) statusEl.textContent =
-            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
-          showToast("Live platform test results saved", "success");
-        } catch (error) {
-          if (statusEl) statusEl.textContent = "Run failed.";
-          showToast(error.message || "Live platform test failed", "error");
-        } finally {
-          redteamRunInProgress = false;
-          redteamButton.disabled = false;
-        }
-      });
-    }
-
     const intervalSelect = document.getElementById("headerIntervalSelect");
     if (intervalSelect) {
       intervalSelect.addEventListener("change", (e) => {
@@ -516,6 +488,92 @@
             if (icon) icon.classList.remove("admin-spin");
             refreshBtn.disabled = false;
           }, 450);
+        }
+      });
+    }
+
+    // Safety Red-Team Controls - Run Offline Benchmark (uses fake LLM)
+    const safetyRunOfflineBtn = document.getElementById("safetyRunRedteamButton");
+    if (safetyRunOfflineBtn) {
+      safetyRunOfflineBtn.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        const confirmed = window.confirm(
+          "Run 11 fixed adversarial cases OFFLINE (fake LLM, no API quota consumed)? This runs fast with simulated responses."
+        );
+        if (!confirmed) return;
+        safetyRunOfflineBtn.disabled = true;
+        redteamRunInProgress = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        state.safety.redteam = null;
+        if (statusEl) {
+          statusEl.textContent = "Offline run in progress. Counts will appear when this run finishes.";
+          statusEl.classList.remove("hidden");
+        }
+        renderSafetyView();
+        try {
+          const response = await apiRequest("/safety/redteam/run?fake_llm=true", { method: "POST" });
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Offline benchmark results saved", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Offline benchmark failed", "error");
+        } finally {
+          redteamRunInProgress = false;
+          safetyRunOfflineBtn.disabled = false;
+        }
+      });
+    }
+
+    // Safety Red-Team Controls - Trigger New Run (live LLM)
+    const safetyTriggerRedteamBtn = document.getElementById("safetyTriggerRedteamBtn");
+    if (safetyTriggerRedteamBtn) {
+      safetyTriggerRedteamBtn.addEventListener("click", async () => {
+        if (!isBackendConnected) {
+          showToast("Sign in to the authenticated admin backend before running the benchmark", "error");
+          return;
+        }
+        const confirmed = window.confirm(
+          "Run 11 fixed adversarial cases against this platform? The 6 indirect cases invoke the configured LLM and may consume provider quota. Production defenses remain enabled."
+        );
+        if (!confirmed) return;
+        safetyTriggerRedteamBtn.disabled = true;
+        redteamRunInProgress = true;
+        const statusEl = document.getElementById("safetyRedteamRunStatus");
+        state.safety.redteam = null;
+        if (statusEl) {
+          statusEl.textContent = "Run in progress. Counts will appear when this run finishes.";
+          statusEl.classList.remove("hidden");
+        }
+        renderSafetyView();
+        try {
+          const response = await apiRequest("/safety/redteam/run", { method: "POST" });
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.detail || `Benchmark failed (${response.status})`);
+          }
+          const summary = await response.json();
+          state.safety.redteam = summary;
+          renderSafetyView();
+          if (statusEl) statusEl.textContent =
+            `Saved: ${summary.attacks_completed} completed, ${summary.attacks_errored} errors.`;
+          showToast("Live platform test results saved", "success");
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "Run failed.";
+          showToast(error.message || "Live platform test failed", "error");
+        } finally {
+          redteamRunInProgress = false;
+          safetyTriggerRedteamBtn.disabled = false;
         }
       });
     }

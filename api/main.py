@@ -93,7 +93,7 @@ def _sources_from(search_results, report: str = ""):
     # Extract all citation numbers from the report (e.g., [1], [2][3], [4,5])
     cited_numbers = set()
     # Match patterns like [1], [2][3], [1, 2], [1,2,3]
-    for match in re.finditer(r'\[(\d+(?:[,;\s]+\d+)*)\]', report):
+    for match in re.finditer(r'\[\s*(\d+(?:[,;\s]+\d+)*)\s*\]', report):
         # Split by comma, semicolon, or whitespace
         for num_str in re.split(r'[,;\s]+', match.group(1)):
             if num_str.isdigit():

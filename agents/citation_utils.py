@@ -6,7 +6,7 @@ SOURCES_HEADING = "## Sources"
 def _get_cited_numbers(report: str) -> set[int]:
     """Extract all citation numbers from the report text."""
     cited_numbers = set()
-    for match in re.finditer(r'\[(\d+(?:[,;\s]+\d+)*)\]', report):
+    for match in re.finditer(r'\[\s*(\d+(?:[,;\s]+\d+)*)\s*\]', report):
         for num_str in re.split(r'[,;\s]+', match.group(1)):
             if num_str.isdigit():
                 cited_numbers.add(int(num_str))

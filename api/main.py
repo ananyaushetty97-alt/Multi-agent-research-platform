@@ -25,7 +25,7 @@ from api import integration as parts
 from admin_backend.router import admin_router
 from admin_backend.services.trace_service import trace_service
 from admin_backend.services.metrics_service import metrics_service
-from admin_backend.services.safety_service import safety_service
+from admin_backend.services.safety_service import safety_service, input_check_type, output_check_type
 from admin_backend.services.audit_service import audit_service
 from admin_backend.services.quality_service import quality_service
 from admin_backend.models.traces import (
@@ -231,7 +231,7 @@ def generate(req: TopicRequest, request: Request):
     ok, reason = check_input(req.topic, is_followup=is_followup)
     if not ok:
         safety_service.record_blocked_event(
-            check_type=GuardCheckType.INPUT_RULE,
+            check_type=input_check_type(reason),
             reason=reason,
             raw_text=req.topic,
             request_id=request_id,
@@ -356,7 +356,7 @@ def generate(req: TopicRequest, request: Request):
     ok, reason = check_output(report, min_len=10 if intent == "question" else MIN_REPORT_LEN)
     if not ok:
         safety_service.record_blocked_event(
-            check_type=GuardCheckType.OUTPUT_RULE,
+            check_type=output_check_type(reason),
             reason=reason,
             raw_text=report[:160],
             request_id=request_id,
@@ -646,7 +646,7 @@ async def generate_with_files(
     ok, reason = check_input(topic, is_followup=is_followup, has_files=len(files) > 0)
     if not ok:
         safety_service.record_blocked_event(
-            check_type=GuardCheckType.INPUT_RULE,
+            check_type=input_check_type(reason),
             reason=reason,
             raw_text=topic,
             request_id=request_id,
@@ -743,7 +743,7 @@ async def generate_with_files(
     ok, reason = check_output(report, min_len=10 if intent == "question" else MIN_REPORT_LEN)
     if not ok:
         safety_service.record_blocked_event(
-            check_type=GuardCheckType.OUTPUT_RULE,
+            check_type=output_check_type(reason),
             reason=reason,
             raw_text=report[:160],
             request_id=request_id,

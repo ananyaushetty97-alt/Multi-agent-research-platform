@@ -135,7 +135,8 @@ def run_indirect(payload: str, defense: bool = True) -> dict:
     state = build_poisoned_pipeline(payload, defense).invoke({
         "topic": TOPIC, "search_results": None, "summary": None, "report": None,
         "verification_notes": None, "is_verified": False, "revision_count": 0,
-        "cache_hit": False, "session_id": None, "intent": None,
+        # A red-team session id tags any sanitizer event as test traffic on the admin Safety page.
+        "cache_hit": False, "session_id": f"redteam-{uuid.uuid4()}", "intent": None,
         "conversation_history": [],
     })
     body = strip_sources(state.get("report") or "")
@@ -316,6 +317,40 @@ def print_tables(rows):
           f"across {len(rows)} attempts")
 
 
+def history_entry(payload: dict) -> dict:
+    """Counts-only summary of one run, for the admin Safety page's run history."""
+    rows = payload.get("results") or []
+    defended = sum(r.get("status") == "defended" for r in rows)
+    breached = sum(r.get("status") == "breached" for r in rows)
+    errored = sum(r.get("status") == "error" for r in rows)
+    total = len(rows)
+    if total:
+        defense_rate = round(defended / total * 100, 1)
+    else:
+        defense_rate = 0.0
+    return {
+        "run_id": payload.get("run_id"),
+        "recorded_at": payload.get("recorded_at"),
+        "mode": payload.get("mode"),
+        "scope": payload.get("scope"),
+        "defense_enabled": payload.get("defense_enabled"),
+        "total_attacks": total,
+        "attacks_defended": defended,
+        "attacks_reached_user": breached,
+        "attacks_errored": errored,
+        "defense_rate_pct": defense_rate,
+    }
+
+
+def append_history(payload: dict, history_file: Path) -> None:
+    """Append this run to the history file. A failure here must not lose the results."""
+    try:
+        with open(history_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(history_entry(payload)) + "\n")
+    except OSError as exc:
+        print(f"Could not update red-team history: {exc}")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="PyRIT red-team for the research pipeline")
     p.add_argument("--all", action="store_true", help="run every attack")
@@ -368,10 +403,23 @@ def main(argv=None):
     print_tables(rows)
     out = ROOT / "logs" / "redteam_results.json"
     out.parent.mkdir(exist_ok=True)
+    if args.fake_llm:
+        mode = "offline-fake-llm"
+    elif args.no_pyrit:
+        mode = "live-direct-call"
+    else:
+        mode = "live-pyrit"
+    if args.direct_only:
+        scope = "direct"
+    elif args.all:
+        scope = "all"
+    else:
+        scope = "quick"
     payload = {
         "run_id": f"redteam-{int(time.time() * 1000)}",
         "recorded_at": datetime.now(timezone.utc).isoformat(),
-        "mode": "offline-fake-llm" if args.fake_llm else "live-pyrit",
+        "mode": mode,
+        "scope": scope,
         "defense_enabled": DEFENSE,
         "total_attacks": len(rows),
         "results": rows,
@@ -379,6 +427,7 @@ def main(argv=None):
     temp = out.with_suffix(".json.tmp")
     temp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     temp.replace(out)
+    append_history(payload, out.with_name("redteam_history.jsonl"))
     print(f"Full results saved to {out.relative_to(ROOT)}")
     return rows
 

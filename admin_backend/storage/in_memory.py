@@ -180,6 +180,8 @@ class InMemorySafetyStorage(SafetyStorageInterface):
             matched = [e for e in matched if e.check_type == filter_opts.check_type]
         if filter_opts.outcome:
             matched = [e for e in matched if e.outcome == filter_opts.outcome]
+        if filter_opts.source:
+            matched = [e for e in matched if e.source == filter_opts.source]
 
         # Newest first
         matched = list(reversed(matched))

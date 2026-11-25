@@ -106,6 +106,12 @@
             <span>Share</span>
           </button>
 
+          <!-- Header Sign In Button (visible when logged out) -->
+          <button class="btn-header-action" id="btn-header-signin" type="button" title="Sign In to access or save your research" style="display: none;">
+            <span class="material-symbols-outlined text-[16px]">login</span>
+            <span>Sign In</span>
+          </button>
+
           <!-- Profile Component: The ONLY place to view profile and login as User or Admin! -->
           <div class="profile-container" id="profile-container">
             <button class="btn-profile" id="btn-profile-trigger" type="button" title="User Profile &amp; Account">
@@ -113,7 +119,7 @@
                 <span class="material-symbols-outlined text-[16px]" id="profile-avatar-icon">person</span>
               </div>
               <div class="profile-label-group">
-                <span class="profile-user-name" id="profile-user-name">User</span>
+                <span class="profile-user-name" id="profile-user-name">Guest</span>
                 <span class="profile-role-tag" id="profile-role-tag">User</span>
               </div>
               <span class="material-symbols-outlined text-[16px] profile-chevron" id="profile-chevron">expand_more</span>
@@ -126,11 +132,11 @@
                   <span class="material-symbols-outlined text-[20px]" id="dropdown-avatar-icon">person</span>
                 </div>
                 <div class="profile-dropdown-info">
-                  <h4 class="profile-dropdown-name" id="dropdown-profile-name">User</h4>
-                  <p class="profile-dropdown-email" id="dropdown-profile-email">user@platform.ai</p>
+                  <h4 class="profile-dropdown-name" id="dropdown-profile-name">Guest</h4>
+                  <p class="profile-dropdown-email" id="dropdown-profile-email">Not signed in</p>
                   <div class="profile-status-pill" id="dropdown-status-pill">
                     <span class="status-dot-active"></span>
-                    <span id="dropdown-role-label">User Account</span>
+                    <span id="dropdown-role-label">Guest Visitor</span>
                   </div>
                 </div>
               </div>
@@ -166,9 +172,19 @@
                   <span class="material-symbols-outlined text-[16px]" id="quick-switch-icon">admin_panel_settings</span>
                   <span id="btn-switch-account-text">Switch to Admin Login</span>
                 </button>
+                <button class="profile-action-item profile-action-logout" id="btn-profile-logout" type="button" style="display: none; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; text-align: left; font-family: inherit; font-size: inherit; color: var(--error, #ba1a1a); cursor: pointer; padding: 8px 12px; border-radius: var(--radius-sm);">
+                  <span class="material-symbols-outlined text-[16px]">logout</span>
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
           </div>
+
+          <!-- Header Sign Out Button (visible when logged in) -->
+          <button class="btn-header-action btn-header-signout" id="btn-header-signout" type="button" title="Sign Out of your account" style="display: none;">
+            <span class="material-symbols-outlined text-[16px]">logout</span>
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 
@@ -500,6 +516,10 @@
                         <span class="material-symbols-outlined text-[16px]">content_copy</span>
                         <span>Copy report</span>
                       </button>
+                      <button class="btn-report-tool btn-review-turn" id="btn-review-main-report" type="button" title="Rate & review monograph">
+                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                        <span>Review</span>
+                      </button>
                       <button class="btn-report-tool" id="btn-retry-synthesis" type="button" title="Regenerate">
                         <span class="material-symbols-outlined text-[16px]">refresh</span>
                         <span>Retry</span>
@@ -693,27 +713,42 @@
           </button>
         </div>
 
+        <!-- User Authentication Mode Switcher: Sign In vs Create Account -->
+        <div class="login-role-tabs user-auth-mode-toggle" id="user-auth-mode-toggle" style="margin-top: 0.5rem; margin-bottom: 0.25rem;">
+          <button class="login-role-tab active" id="user-mode-signin" type="button">
+            <span class="material-symbols-outlined text-[16px]">login</span>
+            <span class="login-tab-name">Sign In</span>
+          </button>
+          <button class="login-role-tab" id="user-mode-register" type="button">
+            <span class="material-symbols-outlined text-[16px]">person_add</span>
+            <span class="login-tab-name">Create Account</span>
+          </button>
+        </div>
+
         <!-- Verification Error Banner -->
         <div class="login-error-banner" id="login-error-banner" style="display: none;">
           <span class="material-symbols-outlined text-[18px]">error</span>
-          <span id="login-error-text">Verification failed: Invalid email or password. Access denied.</span>
+          <span id="login-error-text">Verification failed. Access denied.</span>
         </div>
 
-        <!-- Clean Standard Login Form -->
+        <!-- Clean Standard Login / Sign In Form (User Sign In & Admin Login) -->
         <form class="login-form" id="login-form" onsubmit="return false;">
           <div class="form-group">
-            <label class="form-label" for="login-email">Email or User ID</label>
+            <label class="form-label" for="login-email" id="login-email-label">Email Address</label>
             <div class="form-input-wrapper">
               <span class="material-symbols-outlined form-input-icon">mail</span>
-              <input class="form-input" id="login-email" type="text" placeholder="user@platform.ai or user" required autocomplete="username" />
+              <input class="form-input" id="login-email" type="text" placeholder="Enter your email" required autocomplete="username" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="login-password">Password</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" for="login-password" style="margin-bottom: 0;">Password</label>
+              <a href="#" id="link-forgot-password" class="auth-helper-link" style="font-size: 0.75rem; color: var(--primary, #006688); text-decoration: none;">Forgot password?</a>
+            </div>
             <div class="form-input-wrapper">
               <span class="material-symbols-outlined form-input-icon">key</span>
-              <input class="form-input" id="login-password" type="password" placeholder="Enter password (e.g. user123)" required autocomplete="current-password" />
+              <input class="form-input" id="login-password" type="password" placeholder="Enter your password" required autocomplete="current-password" />
               <button type="button" class="btn-password-visibility" id="btn-toggle-password" title="Toggle password visibility">
                 <span class="material-symbols-outlined text-[18px]" id="icon-toggle-password">visibility</span>
               </button>
@@ -723,16 +758,283 @@
           <div class="login-actions-row">
             <button class="btn-primary-login" id="btn-submit-login" type="submit">
               <span class="material-symbols-outlined text-[18px]" id="btn-login-icon">login</span>
-              <span id="btn-login-text">Sign In as User</span>
+              <span id="btn-login-text">Sign In</span>
             </button>
+          </div>
+
+          <!-- Quick link: Don't have an account? Create one -->
+          <div class="auth-switch-prompt" id="prompt-to-signup" style="text-align: center; margin-top: 0.75rem; font-size: 0.8125rem; color: var(--on-surface-variant, #666);">
+            <span>Don't have an account?</span>
+            <a href="#" id="link-goto-register" style="color: var(--primary, #006688); font-weight: 600; text-decoration: none; margin-left: 4px;">Create one</a>
           </div>
         </form>
 
-        <!-- Compact Demo Credentials Hint -->
-        <div class="login-credentials-hint">
-          <span class="material-symbols-outlined text-[15px]">info</span>
-          <span>Demo IDs: <strong>User:</strong> <code>user@platform.ai</code> (<code>user123</code>) &bull; <strong>Admin:</strong> <code>admin@platform.ai</code> (<code>admin123</code>)</span>
+        <!-- Google Admin Authentication Container (shown on Admin tab) -->
+        <div id="user-modal-admin-section" style="display: none; flex-direction: column; align-items: center; gap: 12px; margin: 16px 0; text-align: center;">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #fff; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+            <span class="material-symbols-outlined text-[24px]">admin_panel_settings</span>
+          </div>
+          <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #666); margin: 0; max-width: 300px;">
+            Administrative access is restricted to verified administrators and requires an authorized Google Admin account.
+          </p>
+          <a href="../admin/index.html?mode_switch=user_to_admin" class="btn-primary-login" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 0.625rem 1.25rem; margin-top: 4px; border-radius: 8px; font-weight: 500;">
+            <span class="material-symbols-outlined text-[18px]">launch</span>
+            <span>Open Admin Observability Portal</span>
+          </a>
         </div>
+
+        <!-- Clean User Registration Form (Regular Users Only) -->
+        <form class="login-form" id="register-form" style="display: none;" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="register-name">Full Name</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">badge</span>
+              <input class="form-input" id="register-name" type="text" placeholder="e.g. Alice Smith" required autocomplete="name" />
+            </div>
+            <div class="form-field-error" id="register-name-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-email">Email Address</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">mail</span>
+              <input class="form-input" id="register-email" type="email" placeholder="alice@example.com" required autocomplete="email" />
+            </div>
+            <div class="form-field-error" id="register-email-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-password">Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">key</span>
+              <input class="form-input" id="register-password" type="password" placeholder="At least 8 chars with letter and number" required autocomplete="new-password" />
+              <button type="button" class="btn-password-visibility" id="btn-toggle-reg-password" title="Toggle password visibility">
+                <span class="material-symbols-outlined text-[18px]" id="icon-toggle-reg-password">visibility</span>
+              </button>
+            </div>
+            <div class="form-field-error" id="register-password-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-confirm-password">Confirm Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">check_circle</span>
+              <input class="form-input" id="register-confirm-password" type="password" placeholder="Re-enter your password" required autocomplete="new-password" />
+            </div>
+            <div class="form-field-error" id="register-confirm-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-register" type="submit">
+              <span class="material-symbols-outlined text-[18px]">person_add</span>
+              <span>Create Account</span>
+            </button>
+          </div>
+
+          <!-- Quick link: Already have an account? Log in -->
+          <div class="auth-switch-prompt" id="prompt-to-signin" style="text-align: center; margin-top: 0.75rem; font-size: 0.8125rem; color: var(--on-surface-variant, #666);">
+            <span>Already have an account?</span>
+            <a href="#" id="link-goto-login" style="color: var(--primary, #006688); font-weight: 600; text-decoration: none; margin-left: 4px;">Log in</a>
+          </div>
+        </form>
+
+        <!-- Google Sign-In Container (Regular Users Only: Sign In & Create Account) -->
+        <div class="google-auth-container" id="google-auth-container" style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+          <div class="auth-divider" style="display: flex; align-items: center; width: 100%; gap: 0.5rem;">
+            <hr style="flex: 1; border: none; border-top: 1px solid var(--border-subtle, #e0e0e0);" />
+            <span style="font-size: 0.75rem; color: var(--on-surface-variant, #757575); text-transform: uppercase;">or</span>
+            <hr style="flex: 1; border: none; border-top: 1px solid var(--border-subtle, #e0e0e0);" />
+          </div>
+          <div id="google-signin-btn-wrapper" style="min-height: 40px; display: flex; justify-content: center; width: 100%;">
+            <div id="google-gis-button-target" style="display: flex; justify-content: center; width: 100%;"></div>
+          </div>
+          <div id="google-auth-unavailable" style="display: none; font-size: 0.8125rem; color: #ba1a1a; text-align: center; padding: 0.25rem 0.5rem;">
+            Google Sign-In is temporarily unavailable. Please sign in with email.
+          </div>
+        </div>
+
+        <!-- Compact Demo Credentials Hint: Admin Only (User demo hint completely removed) -->
+        <div class="login-credentials-hint" id="login-admin-hint" style="display: none; flex-direction: column; gap: 8px; margin-top: 10px;">
+          <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
+            <a href="../admin/index.html?mode_switch=user_to_admin" class="btn-primary-login" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 8px; font-size: 0.8125rem; font-weight: 600;">
+              <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+              <span>Open Admin Portal (Sign in with Google) &rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       EMAIL OTP VERIFICATION MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="verify-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">mark_email_read</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Verify Your Email</h3>
+            <p class="login-modal-subtitle">Enter the 6-digit code sent to your email address</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-verify-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="verify-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="verify-error-text">Verification code invalid or expired.</span>
+        </div>
+        <div class="login-success-banner" id="verify-success-banner" style="display: none; background: #e6f4ea; color: #137333; padding: 8px 12px; border-radius: 6px; font-size: 0.8125rem; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span id="verify-success-text">Verification code resent successfully!</span>
+        </div>
+
+        <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #666); margin-bottom: 12px; line-height: 1.45;">
+          A 6-digit verification code was dispatched to <strong id="verify-email-display" style="color: var(--on-surface, #111);">your email</strong>. It is valid for 10 minutes.
+        </p>
+
+        <form class="login-form" id="verify-form" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="verify-otp-input">6-Digit Verification Code</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">pin</span>
+              <input class="form-input" id="verify-otp-input" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required autocomplete="one-time-code" style="letter-spacing: 4px; font-weight: 600; font-size: 1.125rem; text-align: center;" />
+            </div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-verify-otp" type="submit">
+              <span class="material-symbols-outlined text-[18px]">verified</span>
+              <span>Verify &amp; Continue</span>
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.8125rem;">
+            <button type="button" id="btn-resend-otp" style="background: none; border: none; color: var(--primary, #006688); cursor: pointer; font-size: 0.8125rem; padding: 0; font-weight: 500;">
+              Resend Code
+            </button>
+            <span id="resend-cooldown-timer" style="color: var(--on-surface-variant, #888); font-size: 0.75rem; display: none;">Wait <span id="cooldown-seconds">60</span>s</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       FORGOT PASSWORD MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="forgot-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">lock_reset</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Reset Password</h3>
+            <p class="login-modal-subtitle">Enter your email to receive a password reset link</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-forgot-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="forgot-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="forgot-error-text"></span>
+        </div>
+        <div class="login-success-banner" id="forgot-success-banner" style="display: none; background: #e6f4ea; color: #137333; padding: 10px 12px; border-radius: 6px; font-size: 0.8125rem; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span id="forgot-success-text">If that email exists in our system, a password reset link has been dispatched.</span>
+        </div>
+
+        <form class="login-form" id="forgot-form" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Account Email Address</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">mail</span>
+              <input class="form-input" id="forgot-email" type="email" placeholder="name@example.com" required autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-forgot" type="submit">
+              <span class="material-symbols-outlined text-[18px]">send</span>
+              <span>Send Reset Link</span>
+            </button>
+          </div>
+
+          <div style="text-align: center; margin-top: 14px; font-size: 0.8125rem;">
+            <a href="#" id="link-back-to-login" style="color: var(--primary, #006688); text-decoration: none; font-weight: 500;">Back to Sign In</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       NEW PASSWORD ENTRY MODAL (Triggered via link / query param)
+       ====================================================================== -->
+  <div class="modal-backdrop" id="reset-modal-backdrop">
+    <div class="modal-dialog login-dialog">
+      <div class="login-modal-header">
+        <div class="login-brand-group">
+          <div class="brand-icon">
+            <span class="material-symbols-outlined text-[20px]">password</span>
+          </div>
+          <div>
+            <h3 class="login-modal-title">Create New Password</h3>
+            <p class="login-modal-subtitle">Choose a new secure password for your account</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-reset-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body">
+        <div class="login-error-banner" id="reset-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="reset-error-text"></span>
+        </div>
+
+        <form class="login-form" id="reset-password-form" onsubmit="return false;">
+          <input type="hidden" id="reset-token-input" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="reset-new-password">New Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">key</span>
+              <input class="form-input" id="reset-new-password" type="password" placeholder="At least 8 chars with letter &amp; number" required autocomplete="new-password" />
+            </div>
+            <div class="form-field-error" id="reset-new-password-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reset-confirm-password">Confirm New Password</label>
+            <div class="form-input-wrapper">
+              <span class="material-symbols-outlined form-input-icon">check_circle</span>
+              <input class="form-input" id="reset-confirm-password" type="password" placeholder="Re-enter new password" required autocomplete="new-password" />
+            </div>
+            <div class="form-field-error" id="reset-confirm-password-error" style="display: none; color: #ba1a1a; font-size: 0.75rem; margin-top: 3px;"></div>
+          </div>
+
+          <div class="login-actions-row">
+            <button class="btn-primary-login" id="btn-submit-reset-password" type="submit">
+              <span class="material-symbols-outlined text-[18px]">lock_reset</span>
+              <span>Update Password</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -994,6 +1296,73 @@
     </div>
   </div>
 
+  <!-- ======================================================================
+       REPORT REVIEW & RATING MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="review-modal-backdrop">
+    <div class="modal-dialog review-dialog" style="max-width: 480px;">
+      <div class="delete-modal-header" style="border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 0.75rem;">
+        <div class="delete-brand-group">
+          <div class="brand-icon" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+            <span class="material-symbols-outlined text-[20px]">rate_review</span>
+          </div>
+          <div>
+            <h3 class="delete-modal-title" id="review-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Rate Research Monograph</h3>
+            <p class="delete-modal-subtitle" id="review-modal-subtitle" style="margin: 0; font-size: 0.85rem; color: #64748b;">Help improve multi-agent synthesis quality</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btn-close-review-modal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <form id="review-form" style="padding-top: 1rem;">
+        <input type="hidden" id="review-report-id" value="" />
+        <input type="hidden" id="review-session-id" value="" />
+        <input type="hidden" id="review-topic" value="" />
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Relevance</span>
+            <span id="review-relevance-val" style="font-weight: 600; color: #0284c7;">8/10</span>
+          </label>
+          <input type="range" id="review-relevance" min="1" max="10" value="8" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Accuracy &amp; Factuality</span>
+            <span id="review-accuracy-val" style="font-weight: 600; color: #0284c7;">8/10</span>
+          </label>
+          <input type="range" id="review-accuracy" min="1" max="10" value="8" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Clarity &amp; Structure</span>
+            <span id="review-clarity-val" style="font-weight: 600; color: #0284c7;">9/10</span>
+          </label>
+          <input type="range" id="review-clarity" min="1" max="10" value="9" style="width: 100%; accent-color: #0284c7;" />
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+            <span>Comments / Feedback (Optional)</span>
+            <span id="review-comment-count" style="font-size: 0.75rem; color: #94a3b8;">0/1000</span>
+          </label>
+          <textarea id="review-comment" maxlength="1000" rows="3" placeholder="Provide feedback on evidence citations, depth, or formatting..." style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button type="button" class="btn-delete-cancel" id="btn-cancel-review">Cancel</button>
+          <button type="submit" id="btn-submit-review" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; background: #0284c7; color: white; border: none; cursor: pointer;">
+            Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="toast-notice" id="toast-notice">
     <span class="material-symbols-outlined text-[17px]">check_circle</span>
@@ -1003,6 +1372,7 @@
   <!-- Separated JavaScript Modules -->
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script id="google-gsi-client-script" src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 

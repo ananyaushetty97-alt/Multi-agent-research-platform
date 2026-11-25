@@ -28,14 +28,30 @@ def _b64url_decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s.encode("ascii"))
 
 
+# In-memory revocation cache for logged out sessions
+_revoked_jtis: set[str] = set()
+
+
+def revoke_token_jti(jti: str) -> None:
+    """Record a token JTI as revoked."""
+    if jti:
+        _revoked_jtis.add(str(jti))
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check if a token JTI has been revoked."""
+    return str(jti) in _revoked_jtis if jti else False
+
+
 def create_access_token(
     user_id: str,
     username: str,
     role: str,
+    email: str | None = None,
     expires_delta: timedelta | None = None
 ) -> str:
     """
-    Generate an HMAC-SHA256 signed access token.
+    Generate an HMAC-SHA256 signed access token with admin audience and issuer.
     """
     now = datetime.now(timezone.utc)
     delta = expires_delta or timedelta(minutes=settings.admin_token_expire_minutes)
@@ -48,7 +64,10 @@ def create_access_token(
     payload = {
         "sub": str(user_id),
         "username": username,
+        "email": email or username,
         "role": role,
+        "iss": settings.admin_jwt_issuer,
+        "aud": settings.admin_jwt_audience,
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
         "jti": str(uuid.uuid4())
@@ -67,7 +86,7 @@ def create_access_token(
 def decode_access_token(token: str) -> Dict[str, Any]:
     """
     Validate and decode a signed token.
-    Raises ValueError if token is expired, tampered with, or malformed.
+    Raises ValueError if token is expired, tampered with, malformed, revoked, or has invalid audience/issuer.
     """
     if not token or not isinstance(token, str):
         raise ValueError("Token must be a non-empty string")
@@ -104,5 +123,20 @@ def decode_access_token(token: str) -> Dict[str, Any]:
     now = int(time.time())
     if now > exp:
         raise ValueError("Token has expired")
+
+    # Audience check
+    aud = payload.get("aud")
+    if aud != settings.admin_jwt_audience:
+        raise ValueError(f"Invalid token audience: expected '{settings.admin_jwt_audience}'")
+
+    # Issuer check
+    iss = payload.get("iss")
+    if iss != settings.admin_jwt_issuer:
+        raise ValueError(f"Invalid token issuer: expected '{settings.admin_jwt_issuer}'")
+
+    # Revocation check
+    jti = payload.get("jti")
+    if jti and is_token_revoked(jti):
+        raise ValueError("Token has been revoked")
 
     return payload

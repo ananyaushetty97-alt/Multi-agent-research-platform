@@ -79,7 +79,7 @@ class HealthService:
         Probe PostgreSQL database reachability and vector extension readiness.
         """
         start = time.perf_counter()
-        dsn = settings.postgres_dsn or os.environ.get("POSTGRES_DSN", "")
+        dsn = settings.resolve_postgres_dsn() if hasattr(settings, "resolve_postgres_dsn") else (settings.postgres_dsn or os.environ.get("POSTGRES_DSN", ""))
         if not dsn:
             return DependencyCheckResult(
                 name="postgres",

@@ -24,11 +24,11 @@ def stub_run_pipeline(topic: str, history=None, session_id=None) -> str:
     )
 
 
-def stub_check_cache(topic: str):
+def stub_check_cache(topic: str, user_id=None):
     return None
 
 
-def stub_save_to_ltm(report, topic=None, score=None, search_results=None):
+def stub_save_to_ltm(report, topic=None, score=None, search_results=None, user_id=None):
     return None
 
 

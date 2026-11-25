@@ -20,3 +20,4 @@ langsmith>=0.3    # judge tracking + evaluation dashboard
 pdfplumber>=0.11.0
 python-docx>=1.1.0
 python-magic>=0.4.27
+google-auth>=2.0.0 # Google OAuth ID-token verification

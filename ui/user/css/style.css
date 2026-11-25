@@ -1928,14 +1928,14 @@ input, textarea, kbd {
 }
 
 /* ==========================================================================
-   ADMIN-ONLY: LLM-as-a-Judge Evaluation Scorecard (evaluation/judge.py)
+   LLM-as-a-Judge Evaluation Scorecard (evaluation/judge.py)
    ========================================================================== */
 .admin-eval-section {
-  display: none; /* Visible only when in Admin Mode */
+  display: none !important; /* LLM-as-a-Judge hidden in user mode */
 }
 
-.admin-mode .admin-eval-section {
-  display: block;
+body.admin-mode .admin-eval-section {
+  display: block !important;
 }
 
 .judge-scorecard {
@@ -2643,7 +2643,7 @@ input, textarea, kbd {
 }
 
 .modal-backdrop.active {
-  display: flex;
+  display: flex !important;
 }
 
 .modal-dialog {

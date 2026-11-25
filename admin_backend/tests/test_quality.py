@@ -4,6 +4,7 @@ Unit tests for quality scores, LLM-as-a-judge logs, and human reviews.
 import json
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 from admin_backend.models.quality import QualityFilter
 from admin_backend.services.quality_service import QualityService
 
@@ -75,7 +76,14 @@ def test_quality_service_log_parsing_and_heuristics():
             os.remove(temp_path)
 
 
-def test_human_reviews_isolation():
+@patch("psycopg.connect")
+def test_human_reviews_isolation(mock_connect):
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_connect.return_value.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+    mock_cur.fetchall.return_value = []
+
     svc = QualityService()
     review = svc.add_human_review(
         topic="Microgrid electrification",

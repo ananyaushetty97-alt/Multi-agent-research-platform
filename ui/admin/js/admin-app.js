@@ -55,7 +55,34 @@
     },
     audit: {
       logs: [],
-      config_draft: {}
+      config_draft: {},
+      actor_filter: "",
+      action_filter: "",
+      start_date: "",
+      end_date: ""
+    },
+    userTracking: {
+      stats: {
+        total_users: 0,
+        active_users: 0,
+        suspended_users: 0,
+        signups_today: 0,
+        signups_7d: 0,
+        signups_30d: 0,
+        google_users: 0,
+        email_users: 0,
+        total_conversations: 0,
+        total_messages: 0
+      },
+      users: [],
+      total_users_count: 0,
+      activities: [],
+      page: 0,
+      limit: 20,
+      search: "",
+      status_filter: "",
+      provider_filter: "",
+      event_filter: ""
     }
   };
   let currentTab = "overview-health";
@@ -106,17 +133,36 @@
 
   // Initialize on DOM ready
   document.addEventListener("DOMContentLoaded", async () => {
-    initRouting();
-    initGlobalControls();
-    renderAllViews();
-    handleKeyboardShortcuts();
-    
-    // Authenticate and load live data from backend
+    initAdminPasswordLogin();
+    // Authenticate and load live data from backend before rendering
     await initAuthAndLiveData();
-    initPollingTimer();
   });
 
   // ---------- AUTHENTICATION & LIVE API CLIENT ----------
+  let currentAdminUser = null;
+  let googleAdminAuthInitialized = false;
+
+  function updateAdminProfileDisplay(user) {
+    currentAdminUser = user;
+    const nameEl = document.getElementById("profile-user-name");
+    const dropNameEl = document.querySelector(".profile-dropdown-name");
+    const dropEmailEl = document.querySelector(".profile-dropdown-email");
+    const statusText = document.querySelector(".profile-status-pill span:last-child");
+
+    if (user) {
+      const displayName = user.name || user.username || user.email || "Admin";
+      if (nameEl) nameEl.textContent = displayName;
+      if (dropNameEl) dropNameEl.textContent = displayName;
+      if (dropEmailEl) dropEmailEl.textContent = user.email || "—";
+      if (statusText) statusText.textContent = `Active Admin (${user.role || 'admin'})`;
+    } else {
+      if (nameEl) nameEl.textContent = "Sign In Required";
+      if (dropNameEl) dropNameEl.textContent = "Not Authenticated";
+      if (dropEmailEl) dropEmailEl.textContent = "Please sign in";
+      if (statusText) statusText.textContent = "Session Locked";
+    }
+  }
+
   async function apiRequest(endpoint, options = {}) {
     const url = endpoint.startsWith("http") ? endpoint : `${API_ROOT}${endpoint}`;
     const headers = {
@@ -124,19 +170,39 @@
       ...(options.headers || {})
     };
 
+    // Include CSRF protection header on state-changing methods
+    const method = (options.method || "GET").toUpperCase();
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+      headers["X-Requested-With"] = "XMLHttpRequest";
+    }
+
     if (authToken) {
       headers["Authorization"] = `Bearer ${authToken}`;
     }
 
+    // Always include credentials to send httpOnly admin_session cookie
+    options.credentials = options.credentials || "include";
+
     try {
       const response = await fetch(url, { ...options, headers });
 
-      // Handle token expiration / 401
-      if (response.status === 401 && !options._retried) {
-        const reauthed = await attemptAutoLogin();
-        if (reauthed) {
-          return apiRequest(endpoint, { ...options, _retried: true });
+      // Handle token expiration or unauthenticated 401 / 403
+      if ((response.status === 401 || response.status === 403) && !options._retried) {
+        updateBackendStatusBadge(false);
+        updateAdminProfileDisplay(null);
+        authToken = null;
+        sessionStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_access_token");
+        if (pollIntervalTimer) {
+          clearInterval(pollIntervalTimer);
+          pollIntervalTimer = null;
         }
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "none";
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "flex";
+        initGoogleAdminButton();
+        return response;
       }
 
       return response;
@@ -148,35 +214,99 @@
     }
   }
 
-  async function attemptAutoLogin(username = "admin", password = "admin123") {
+  async function initAuthAndLiveData() {
     try {
-      const res = await fetch(`${API_ROOT}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ username, password })
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSwitchFromUser = urlParams.get("mode_switch") === "user_to_admin" || 
+                               (document.referrer && document.referrer.includes("/user/"));
+
+      if (isSwitchFromUser) {
+        // ALWAYS require fresh admin login when switching from User Mode!
+        authToken = null;
+        sessionStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_access_token");
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e) { }
+
+        await fetch(`${API_ROOT}/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        }).catch(() => {});
+
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "flex";
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "none";
+
+        updateAdminProfileDisplay(null);
+        isBackendConnected = false;
+        updateBackendStatusBadge(false);
+
+        const gateBanner = document.getElementById("admin-gate-error-banner");
+        const gateText = document.getElementById("admin-gate-error-text");
+        if (gateBanner && gateText) {
+          gateText.textContent = "Switched from User Mode. Please sign in with your authorized Google Admin account.";
+          gateBanner.style.display = "flex";
+        }
+        initGoogleAdminButton();
+        return;
+      }
+
+      const meRes = await fetch(`${API_ROOT}/auth/me`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {})
+        }
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        authToken = data.access_token;
-        sessionStorage.setItem("admin_access_token", authToken);
-        isBackendConnected = true;
-        updateBackendStatusBadge(true);
-        return true;
+      if (meRes.ok) {
+        const user = await meRes.json();
+        if (user && user.role === "admin") {
+          // Authorized admin confirmed - reveal dashboard and initialize
+          const gate = document.getElementById("admin-auth-gate");
+          if (gate) gate.style.display = "none";
+          const root = document.getElementById("app-root");
+          if (root) root.style.display = "";
+
+          updateAdminProfileDisplay(user);
+          isBackendConnected = true;
+          updateBackendStatusBadge(true);
+
+          initRouting();
+          initGlobalControls();
+          renderAllViews();
+          handleKeyboardShortcuts();
+          await fetchAllLiveTelemetry();
+          initPollingTimer();
+          return;
+        }
       }
     } catch (e) {
-      // Offline fallback
-      isBackendConnected = false;
-      updateBackendStatusBadge(false);
+      console.warn("Auth check probe error:", e);
     }
-    return false;
-  }
 
-  async function initAuthAndLiveData() {
-    if (!authToken) {
-      await attemptAutoLogin();
-    }
-    await fetchAllLiveTelemetry();
+    // Not authenticated or not admin: strictly lock portal and show Admin Sign-In Gate
+    authToken = null;
+    sessionStorage.removeItem("admin_access_token");
+    localStorage.removeItem("admin_access_token");
+    isBackendConnected = false;
+    updateBackendStatusBadge(false);
+    updateAdminProfileDisplay(null);
+
+    const root = document.getElementById("app-root");
+    if (root) root.style.display = "none";
+    const gate = document.getElementById("admin-auth-gate");
+    if (gate) gate.style.display = "flex";
+
+    initGoogleAdminButton();
   }
 
   function updateBackendStatusBadge(connected) {
@@ -212,7 +342,8 @@
         fetchQuality(),
         fetchSafety(),
         fetchMemory(),
-        fetchAudit()
+        fetchAudit(),
+        fetchUserTrackingData()
       ]);
     } catch (err) {
       console.warn("Using offline authentic dataset fallback:", err);
@@ -330,8 +461,57 @@
     }
   }
 
+  async function fetchUserTrackingData() {
+    try {
+      const statsRes = await apiRequest("/tracking/stats");
+      if (statsRes.ok) {
+        state.userTracking.stats = await statsRes.json();
+      }
+
+      const qParams = new URLSearchParams({
+        limit: String(state.userTracking.limit),
+        offset: String(state.userTracking.page * state.userTracking.limit)
+      });
+      if (state.userTracking.search) qParams.append("search", state.userTracking.search);
+      if (state.userTracking.status_filter) qParams.append("status", state.userTracking.status_filter);
+      if (state.userTracking.provider_filter) qParams.append("auth_provider", state.userTracking.provider_filter);
+
+      const usersRes = await apiRequest(`/tracking/users?${qParams.toString()}`);
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        state.userTracking.users = data.users || [];
+        state.userTracking.total_users_count = data.total || 0;
+      }
+
+      await fetchUserTrackingActivity();
+      renderUserTrackingView();
+    } catch (e) {
+      console.warn("User tracking live fetch encountered:", e);
+    }
+  }
+
+  async function fetchUserTrackingActivity() {
+    try {
+      const qParams = new URLSearchParams({ limit: "100" });
+      if (state.userTracking.event_filter) qParams.append("event_type", state.userTracking.event_filter);
+      const actRes = await apiRequest(`/tracking/activity?${qParams.toString()}`);
+      if (actRes.ok) {
+        const data = await actRes.json();
+        state.userTracking.activities = data.activities || [];
+      }
+    } catch (e) {
+      console.warn("Activity live fetch encountered:", e);
+    }
+  }
+
   // ---------- ROUTING & VIEW NAVIGATION ----------
   function initRouting() {
+    const panels = document.querySelectorAll(".admin-view-panel");
+    if (!panels || panels.length === 0) {
+      // In standalone views (ui/admin/views/*.html), let standard links navigate natively
+      return;
+    }
+
     const hash = window.location.hash.replace("#", "");
     const validTabs = [
       "overview-health",
@@ -340,7 +520,8 @@
       "quality-judge",
       "safety-red-team",
       "memory-cache",
-      "audit-logs-config"
+      "audit-logs-config",
+      "user-tracking"
     ];
 
     if (validTabs.includes(hash)) {
@@ -395,6 +576,8 @@
         await fetchMemory();
       } else if (tabId === "audit-logs-config") {
         await fetchAudit();
+      } else if (tabId === "user-tracking") {
+        await fetchUserTrackingData();
       }
     } catch (e) {
       console.warn(`Telemetry refresh for ${tabId} encountered:`, e);
@@ -421,7 +604,8 @@
         "quality-judge": "Quality & LLM-as-a-Judge",
         "safety-red-team": "Safety & Red-Team",
         "memory-cache": "Memory & Cache",
-        "audit-logs-config": "Audit Logs & Config"
+        "audit-logs-config": "Audit Logs & Config",
+        "user-tracking": "User Tracking & Activity"
       };
       breadcrumbTitle.textContent = tabTitles[currentTab] || "Overview & Health";
     }
@@ -529,7 +713,7 @@
       });
     }
 
-    // Switch to User Mode Triggers (Requires Password)
+    // Switch to User Mode Triggers
     const btnSidebarSwitchUser = document.getElementById("btn-sidebar-switch-user");
     const btnSwitchUserDropdown = document.getElementById("btn-switch-to-user-dropdown");
     const profileSwitchUser = document.getElementById("profile-switch-user");
@@ -554,18 +738,39 @@
       });
     }
 
-    // Modal 3 (Switch to User) Controls
+    // Modal 3 (Switch to User / Admin Login) Controls
     const switchTabUser = document.getElementById("switch-tab-user");
     const switchTabAdmin = document.getElementById("switch-tab-admin");
+    const googleSection = document.getElementById("googleAdminAuthSection");
+    const modalTitle = document.getElementById("switch-user-modal-title");
+    const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+    const btnSubmitText = document.getElementById("btn-switch-user-text");
+    const emailInput = document.getElementById("switchUserEmailInput");
+    const errBanner = document.getElementById("switch-user-error-banner");
+
     if (switchTabUser) {
       switchTabUser.addEventListener("click", () => {
         switchTabUser.classList.add("active");
         switchTabAdmin?.classList.remove("active");
+        if (googleSection) googleSection.style.display = "none";
+        if (modalTitle) modalTitle.textContent = "Sign In as User";
+        if (modalSubtitle) modalSubtitle.textContent = "Enter user credentials to switch to User Mode";
+        if (btnSubmitText) btnSubmitText.textContent = "Sign In as User";
+        if (emailInput) emailInput.value = "user@platform.ai";
+        if (errBanner) errBanner.style.display = "none";
       });
     }
     if (switchTabAdmin) {
       switchTabAdmin.addEventListener("click", () => {
-        showToast("Already operating in Admin Mode. Enter user password to switch to User Mode.", "info");
+        switchTabAdmin.classList.add("active");
+        switchTabUser?.classList.remove("active");
+        if (googleSection) googleSection.style.display = "flex";
+        if (modalTitle) modalTitle.textContent = "Admin Portal Sign In";
+        if (modalSubtitle) modalSubtitle.textContent = "Sign in with an authorized Google account or admin credentials";
+        if (btnSubmitText) btnSubmitText.textContent = "Sign In as Admin";
+        if (emailInput) emailInput.value = "admin@platform.ai";
+        if (errBanner) errBanner.style.display = "none";
+        initGoogleAdminButton();
       });
     }
 
@@ -658,6 +863,166 @@
         submitHumanReview();
       });
     }
+
+    // User Tracking & Activity Ledger Controls
+    const btnRefreshTracking = document.getElementById("btnRefreshUserTracking");
+    if (btnRefreshTracking) {
+      btnRefreshTracking.addEventListener("click", () => {
+        showToast("Refreshing user tracking telemetry...", "info");
+        fetchUserTrackingData();
+      });
+    }
+
+    const subtabUsers = document.getElementById("subtabUsersList");
+    const subtabActivity = document.getElementById("subtabActivityLogs");
+    const paneUsers = document.getElementById("paneUsersList");
+    const paneActivity = document.getElementById("paneActivityLogs");
+
+    if (subtabUsers && subtabActivity && paneUsers && paneActivity) {
+      subtabUsers.addEventListener("click", () => {
+        subtabUsers.classList.add("active");
+        subtabActivity.classList.remove("active");
+        paneUsers.style.display = "block";
+        paneActivity.style.display = "none";
+      });
+
+      subtabActivity.addEventListener("click", () => {
+        subtabActivity.classList.add("active");
+        subtabUsers.classList.remove("active");
+        paneActivity.style.display = "block";
+        paneUsers.style.display = "none";
+      });
+    }
+
+    const userSearchInput = document.getElementById("filterUserSearch");
+    if (userSearchInput) {
+      let debounceTimer = null;
+      userSearchInput.addEventListener("input", (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          state.userTracking.search = e.target.value.trim();
+          state.userTracking.page = 0;
+          fetchUserTrackingData();
+        }, 300);
+      });
+    }
+
+    const filterStatus = document.getElementById("filterUserStatus");
+    if (filterStatus) {
+      filterStatus.addEventListener("change", (e) => {
+        state.userTracking.status_filter = e.target.value;
+        state.userTracking.page = 0;
+        fetchUserTrackingData();
+      });
+    }
+
+    const filterProvider = document.getElementById("filterUserProvider");
+    if (filterProvider) {
+      filterProvider.addEventListener("change", (e) => {
+        state.userTracking.provider_filter = e.target.value;
+        state.userTracking.page = 0;
+        fetchUserTrackingData();
+      });
+    }
+
+    const filterActEvent = document.getElementById("filterActivityEvent");
+    if (filterActEvent) {
+      filterActEvent.addEventListener("change", (e) => {
+        state.userTracking.event_filter = e.target.value;
+        fetchUserTrackingActivity().then(renderUserTrackingView);
+      });
+    }
+
+    const btnReloadAct = document.getElementById("btnRefreshActivity");
+    if (btnReloadAct) {
+      btnReloadAct.addEventListener("click", () => {
+        fetchUserTrackingActivity().then(renderUserTrackingView);
+      });
+    }
+
+    // Audit logs filter controls
+    const filterAuditActor = document.getElementById("filterAuditActor");
+    if (filterAuditActor) {
+      let auditDebounce = null;
+      filterAuditActor.addEventListener("input", (e) => {
+        clearTimeout(auditDebounce);
+        auditDebounce = setTimeout(() => {
+          state.audit.actor_filter = e.target.value.trim();
+          renderAuditView();
+        }, 200);
+      });
+    }
+
+    const filterAuditAction = document.getElementById("filterAuditAction");
+    if (filterAuditAction) {
+      filterAuditAction.addEventListener("change", (e) => {
+        state.audit.action_filter = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const filterAuditStartDate = document.getElementById("filterAuditStartDate");
+    if (filterAuditStartDate) {
+      filterAuditStartDate.addEventListener("change", (e) => {
+        state.audit.start_date = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const filterAuditEndDate = document.getElementById("filterAuditEndDate");
+    if (filterAuditEndDate) {
+      filterAuditEndDate.addEventListener("change", (e) => {
+        state.audit.end_date = e.target.value;
+        renderAuditView();
+      });
+    }
+
+    const btnResetAuditFilters = document.getElementById("btnResetAuditFilters");
+    if (btnResetAuditFilters) {
+      btnResetAuditFilters.addEventListener("click", () => {
+        state.audit.actor_filter = "";
+        state.audit.action_filter = "";
+        state.audit.start_date = "";
+        state.audit.end_date = "";
+        if (filterAuditActor) filterAuditActor.value = "";
+        if (filterAuditAction) filterAuditAction.value = "";
+        if (filterAuditStartDate) filterAuditStartDate.value = "";
+        if (filterAuditEndDate) filterAuditEndDate.value = "";
+        renderAuditView();
+      });
+    }
+
+    const btnPrevPage = document.getElementById("btnUserPrevPage");
+    if (btnPrevPage) {
+      btnPrevPage.addEventListener("click", () => {
+        if (state.userTracking.page > 0) {
+          state.userTracking.page--;
+          fetchUserTrackingData();
+        }
+      });
+    }
+
+    const btnNextPage = document.getElementById("btnUserNextPage");
+    if (btnNextPage) {
+      btnNextPage.addEventListener("click", () => {
+        state.userTracking.page++;
+        fetchUserTrackingData();
+      });
+    }
+
+    const btnCloseUserModal = document.getElementById("btnCloseUserDetailModal");
+    if (btnCloseUserModal) {
+      btnCloseUserModal.addEventListener("click", closeUserDetailModal);
+    }
+
+    const userDetailBackdrop = document.getElementById("userDetailModalBackdrop");
+    if (userDetailBackdrop) {
+      userDetailBackdrop.addEventListener("click", (e) => {
+        if (e.target === userDetailBackdrop) {
+          closeUserDetailModal();
+        }
+      });
+    }
   }
 
   // ---------- POLLING & PROBE ENGINE ----------
@@ -726,6 +1091,7 @@
     renderSafetyView();
     renderMemoryView();
     renderAuditView();
+    renderUserTrackingView();
     renderTraceWaterfall(activeTraceId);
   }
 
@@ -760,8 +1126,7 @@
       if (statusPill && dep.status) {
         const isHealthy = dep.status === "healthy";
         const icon = isHealthy ? "check_circle" : "warning";
-        const colorClass = isHealthy ? "bg-primary/10 text-primary" : "bg-error/10 text-error";
-        statusPill.className = `inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${colorClass} font-label-sm text-label-sm font-semibold`;
+        statusPill.className = isHealthy ? "probe-status-badge" : "probe-status-badge error";
         statusPill.innerHTML = `
           <span class="material-symbols-outlined text-[13px]">${icon}</span>
           <span class="capitalize">${dep.status}</span>
@@ -1372,6 +1737,42 @@
       });
     }
 
+    // Render Human & User Reviews
+    const hrTableBody = document.getElementById("humanReviewsTableBody");
+    if (hrTableBody) {
+      hrTableBody.innerHTML = "";
+      const hrList = state.quality.human_reviews || [];
+      if (hrList.length === 0) {
+        hrTableBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-space-md py-8 text-center text-on-surface-variant font-mono text-sm">
+              No human reviews recorded yet. Reviews submitted from user mode or expert reviews will appear here.
+            </td>
+          </tr>
+        `;
+      } else {
+        hrList.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-b border-surface-container hover:bg-surface-container-high/60 transition-colors";
+          const scoreVal = item.overall !== null && item.overall !== undefined ? Number(item.overall).toFixed(1) : "—";
+          const timeDisplay = item.review_timestamp ? formatIST(item.review_timestamp) : "—";
+          tr.innerHTML = `
+            <td class="px-space-md py-3 text-on-surface font-medium max-w-sm truncate" title="${item.topic || ''}">${item.topic || "Research Monograph"}</td>
+            <td class="px-space-md py-3 font-mono font-bold text-primary">${scoreVal}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.relevance ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.accuracy ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-on-surface-variant">${item.clarity ?? "—"}</td>
+            <td class="px-space-md py-3 font-mono text-label-sm text-primary">${item.reviewer_username || "user"}</td>
+            <td class="px-space-md py-3 font-mono text-[11px] text-on-surface-variant whitespace-nowrap">${timeDisplay}</td>
+            <td class="px-space-md py-3 text-on-surface-variant text-body-sm max-w-xs truncate" title="${item.feedback_notes || ''}">
+              ${item.feedback_notes || "—"}
+            </td>
+          `;
+          hrTableBody.appendChild(tr);
+        });
+      }
+    }
+
     const openReviewBtn = document.getElementById("open-human-modal-btn");
     if (openReviewBtn) {
       openReviewBtn.onclick = openHumanReviewModal;
@@ -1738,19 +2139,42 @@
     const adminTableBody = document.getElementById("auditLogsTableBody");
     if (adminTableBody) {
       adminTableBody.innerHTML = "";
-      const adminLogs = state.audit.logs || [];
-      // Filter to only show admin actions (actor_role === "admin")
-      const filteredAdminLogs = adminLogs.filter(log => log.actor_role === "admin");
-      if (filteredAdminLogs.length === 0) {
+      // Only admin actions (actor_role === "admin"), then the optional filters
+      let adminLogs = (state.audit.logs || []).filter(log => log.actor_role === "admin");
+
+      // Apply client-side filters
+      const actorFilter = (state.audit.actor_filter || "").trim().toLowerCase();
+      const actionFilter = (state.audit.action_filter || "").trim();
+      const startDate = (state.audit.start_date || "").trim();
+      const endDate = (state.audit.end_date || "").trim();
+
+      if (actorFilter) {
+        adminLogs = adminLogs.filter(l =>
+          (l.actor_username || "").toLowerCase().includes(actorFilter) ||
+          JSON.stringify(l.details || {}).toLowerCase().includes(actorFilter) ||
+          (l.resource_type || "").toLowerCase().includes(actorFilter)
+        );
+      }
+      if (actionFilter) {
+        adminLogs = adminLogs.filter(l => l.action === actionFilter);
+      }
+      if (startDate) {
+        adminLogs = adminLogs.filter(l => l.timestamp && l.timestamp.slice(0, 10) >= startDate);
+      }
+      if (endDate) {
+        adminLogs = adminLogs.filter(l => l.timestamp && l.timestamp.slice(0, 10) <= endDate);
+      }
+
+      if (adminLogs.length === 0) {
         adminTableBody.innerHTML = `
           <tr>
             <td colspan="6" class="px-space-md py-6 text-center text-on-surface-variant font-mono text-sm">
-              No administrative audit entries recorded. System events and modifications will appear here.
+              No administrative audit entries matching the specified criteria.
             </td>
           </tr>
         `;
       } else {
-        filteredAdminLogs.forEach((log) => {
+        adminLogs.forEach((log) => {
           const tr = document.createElement("tr");
           tr.className = "border-b border-surface-container hover:bg-surface-container-high/40 transition-colors font-mono text-label-sm";
 
@@ -1858,6 +2282,303 @@
     if (!state.audit.logs) state.audit.logs = [];
     state.audit.logs.unshift(fullLog);
     renderAuditView();
+  }
+
+  // 8. User Tracking & Activity Ledger
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function renderUserTrackingView() {
+    const stats = state.userTracking.stats || {};
+    const totalUsersEl = document.getElementById("statTotalUsers");
+    const activeRatioEl = document.getElementById("statActiveRatio");
+    const signupsTodayEl = document.getElementById("statSignupsToday");
+    const signups7dEl = document.getElementById("statSignups7d");
+    const totalConvsEl = document.getElementById("statTotalConversations");
+    const totalMsgsEl = document.getElementById("statTotalMessages");
+    const providerEl = document.getElementById("statProviderBreakdown");
+    const activeCountEl = document.getElementById("statActiveUsersCount");
+    const suspendedCountEl = document.getElementById("statSuspendedUsersCount");
+    const userBadgeEl = document.getElementById("userCountBadge");
+
+    if (totalUsersEl) totalUsersEl.textContent = stats.total_users || 0;
+    if (activeRatioEl) activeRatioEl.textContent = `${stats.active_users || 0} active (${stats.suspended_users || 0} suspended)`;
+    if (signupsTodayEl) signupsTodayEl.textContent = stats.signups_today || 0;
+    if (signups7dEl) signups7dEl.textContent = `${stats.signups_7d || 0} in 7d (${stats.signups_30d || 0} in 30d)`;
+    if (totalConvsEl) totalConvsEl.textContent = stats.total_conversations || 0;
+    if (totalMsgsEl) totalMsgsEl.textContent = stats.total_messages || 0;
+    if (providerEl) providerEl.textContent = `${stats.google_users || 0} Google / ${stats.email_users || 0} Email`;
+    if (activeCountEl) activeCountEl.textContent = stats.active_users || 0;
+    if (suspendedCountEl) suspendedCountEl.textContent = stats.suspended_users || 0;
+    if (userBadgeEl) userBadgeEl.textContent = state.userTracking.total_users_count || 0;
+
+    // Render Users Table
+    const tbody = document.getElementById("userTableBody");
+    if (tbody) {
+      tbody.innerHTML = "";
+      const users = state.userTracking.users || [];
+      if (users.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+              No registered users found matching the filter criteria.
+            </td>
+          </tr>
+        `;
+      } else {
+        users.forEach((u) => {
+          const tr = document.createElement("tr");
+          const isGoogle = u.auth_provider === "google";
+          const isSuspended = u.status === "suspended";
+          const verifiedBadge = u.email_verified
+            ? `<span style="display: inline-flex; align-items: center; gap: 4px; color: #0d8a4e; font-size: 0.75rem;"><span class="material-symbols-outlined text-[14px]">check_circle</span>Verified</span>`
+            : `<span style="display: inline-flex; align-items: center; gap: 4px; color: #b26b00; font-size: 0.75rem;"><span class="material-symbols-outlined text-[14px]">pending</span>Unverified</span>`;
+
+          const statusBadge = isSuspended
+            ? `<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(186, 26, 26, 0.1); color: #ba1a1a; font-size: 0.6875rem; font-weight: 600;">Suspended</span>`
+            : `<span style="display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(13, 138, 78, 0.1); color: #0d8a4e; font-size: 0.6875rem; font-weight: 600;">Active</span>`;
+
+          const toggleStatusBtn = isSuspended
+            ? `<button class="btn-user-status-action" data-user-id="${escapeHtml(u.id)}" data-action="active" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid #0d8a4e; color: #0d8a4e; background: transparent; border-radius: 4px; cursor: pointer; font-weight: 500;" type="button">Reactivate</button>`
+            : `<button class="btn-user-status-action" data-user-id="${escapeHtml(u.id)}" data-action="suspended" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid #ba1a1a; color: #ba1a1a; background: transparent; border-radius: 4px; cursor: pointer; font-weight: 500;" type="button">Suspend</button>`;
+
+          tr.innerHTML = `
+            <td>
+              <div style="font-weight: 600; color: var(--on-surface);">${escapeHtml(u.name || "User")}</div>
+              <div style="font-size: 0.6875rem; color: var(--on-surface-variant); font-family: var(--font-mono);">${escapeHtml(u.email || "—")}</div>
+            </td>
+            <td>
+              <span class="admin-nav-chip" style="font-size: 0.6875rem;">
+                <span class="material-symbols-outlined text-[12px]">${isGoogle ? "passkey" : "mail"}</span>
+                ${escapeHtml(u.auth_provider || "email")}
+              </span>
+            </td>
+            <td>${verifiedBadge}</td>
+            <td>${statusBadge}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${formatIST(u.created_at)}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${formatIST(u.last_login_at)}</td>
+            <td style="text-align: center; font-weight: 600;">${u.total_conversations || 0}</td>
+            <td style="text-align: center; font-weight: 600;">${u.total_messages || 0}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button class="btn-user-inspect" data-user-id="${escapeHtml(u.id)}" style="padding: 3px 8px; font-size: 0.6875rem; border: 1px solid var(--border-color); background: var(--surface-container-low); border-radius: 4px; cursor: pointer; margin-right: 4px;" type="button">View Dossiers</button>
+              ${toggleStatusBtn}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Attach event listeners to buttons
+        tbody.querySelectorAll(".btn-user-inspect").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const uid = btn.getAttribute("data-user-id");
+            openUserDetailModal(uid);
+          });
+        });
+
+        tbody.querySelectorAll(".btn-user-status-action").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const uid = btn.getAttribute("data-user-id");
+            const newStatus = btn.getAttribute("data-action");
+            changeUserStatus(uid, newStatus);
+          });
+        });
+      }
+    }
+
+    // Pagination info
+    const paginationEl = document.getElementById("userPaginationInfo");
+    const prevBtn = document.getElementById("btnUserPrevPage");
+    const nextBtn = document.getElementById("btnUserNextPage");
+    const page = state.userTracking.page || 0;
+    const limit = state.userTracking.limit || 20;
+    const total = state.userTracking.total_users_count || 0;
+    const from = total === 0 ? 0 : page * limit + 1;
+    const to = Math.min((page + 1) * limit, total);
+
+    if (paginationEl) paginationEl.textContent = `Showing ${from} - ${to} of ${total} users`;
+    if (prevBtn) prevBtn.disabled = page <= 0;
+    if (nextBtn) nextBtn.disabled = to >= total;
+
+    // Render Global Activity Table
+    const actBody = document.getElementById("activityTableBody");
+    if (actBody) {
+      actBody.innerHTML = "";
+      const acts = state.userTracking.activities || [];
+      if (acts.length === 0) {
+        actBody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+              No activity log entries found.
+            </td>
+          </tr>
+        `;
+      } else {
+        acts.forEach((a) => {
+          const tr = document.createElement("tr");
+          let metaStr = "—";
+          if (a.metadata && Object.keys(a.metadata).length > 0) {
+            metaStr = escapeHtml(JSON.stringify(a.metadata));
+          }
+          tr.innerHTML = `
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem; white-space: nowrap;">${formatIST(a.created_at)}</td>
+            <td>
+              <span class="admin-nav-chip" style="font-size: 0.6875rem;">${escapeHtml(a.event_type)}</span>
+            </td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${escapeHtml(a.user_id ? String(a.user_id).slice(0, 12) + "..." : "system")}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem;">${escapeHtml(a.ip_address || "—")}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.6875rem; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${metaStr}">${metaStr}</td>
+          `;
+          actBody.appendChild(tr);
+        });
+      }
+    }
+  }
+
+  async function openUserDetailModal(userId) {
+    const modal = document.getElementById("userDetailModalBackdrop");
+    if (!modal) return;
+
+    try {
+      const res = await apiRequest(`/tracking/users/${encodeURIComponent(userId)}`);
+      if (!res.ok) {
+        showToast("Failed to load user details", "error");
+        return;
+      }
+      const data = await res.json();
+      const p = data.profile || {};
+      const convs = data.conversations || [];
+      const timeline = data.activity_timeline || [];
+
+      const initialEl = document.getElementById("modalUserInitial");
+      const nameEl = document.getElementById("modalUserName");
+      const emailEl = document.getElementById("modalUserEmail");
+      const idEl = document.getElementById("modalUserId");
+      const providerEl = document.getElementById("modalUserProviderBadge");
+      const statusEl = document.getElementById("modalUserStatusBadge");
+      const createdEl = document.getElementById("modalUserCreated");
+      const convCountEl = document.getElementById("modalUserConvCount");
+      const convsContainer = document.getElementById("modalUserConversationsContainer");
+      const timelineContainer = document.getElementById("modalUserTimelineContainer");
+
+      const displayName = p.name || p.email || "User";
+      if (initialEl) initialEl.textContent = (displayName[0] || "U").toUpperCase();
+      if (nameEl) nameEl.textContent = displayName;
+      if (emailEl) emailEl.textContent = p.email || "No email";
+      if (idEl) idEl.textContent = p.id;
+      if (providerEl) {
+        providerEl.innerHTML = `<span class="admin-nav-chip" style="font-size: 0.6875rem;">${escapeHtml(p.auth_provider || "email")}</span> ${p.email_verified ? '<span style="color: #0d8a4e; font-size: 0.6875rem;">Verified</span>' : '<span style="color: #b26b00; font-size: 0.6875rem;">Unverified</span>'}`;
+      }
+      if (statusEl) {
+        const isSusp = p.status === "suspended";
+        statusEl.innerHTML = isSusp
+          ? `<span style="color: #ba1a1a; font-weight: 600;">Suspended</span>`
+          : `<span style="color: #0d8a4e; font-weight: 600;">Active</span>`;
+      }
+      if (createdEl) createdEl.textContent = formatIST(p.created_at);
+      if (convCountEl) convCountEl.textContent = convs.length;
+
+      // Render conversations (read-only)
+      if (convsContainer) {
+        convsContainer.innerHTML = "";
+        if (convs.length === 0) {
+          convsContainer.innerHTML = `<div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center; padding: 12px;">No conversations recorded for this user.</div>`;
+        } else {
+          convs.forEach((c, idx) => {
+            const card = document.createElement("div");
+            card.style.cssText = "background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 6px;";
+            const msgs = c.messages || [];
+            let msgsHtml = "";
+            msgs.forEach((m) => {
+              const isUser = m.role === "user";
+              msgsHtml += `
+                <div style="margin-top: 6px; padding: 6px 8px; border-radius: 4px; background: ${isUser ? 'rgba(0, 102, 136, 0.08)' : 'var(--surface-container-lowest, #fff)'}; font-size: 0.75rem;">
+                  <div style="font-weight: 600; font-size: 0.6875rem; color: ${isUser ? 'var(--primary)' : 'var(--on-surface)'}; margin-bottom: 2px;">
+                    ${isUser ? 'User Inquiry' : 'Assistant Synthesis'} (${formatIST(m.created_at, false)})
+                  </div>
+                  <div style="white-space: pre-wrap; word-break: break-word; color: var(--on-surface); max-height: 120px; overflow-y: auto;">${escapeHtml(m.content || '')}</div>
+                </div>
+              `;
+            });
+
+            card.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 600; font-size: 0.8125rem; color: var(--on-surface);">${escapeHtml(c.title || 'Untitled Dossier')}</div>
+                <div style="font-size: 0.6875rem; color: var(--on-surface-variant); font-family: var(--font-mono);">${msgs.length} messages &bull; ${formatIST(c.updated_at || c.created_at, false)}</div>
+              </div>
+              <div style="margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 4px;">
+                ${msgsHtml || '<span style="font-size: 0.6875rem; color: var(--on-surface-variant);">No messages</span>'}
+              </div>
+            `;
+            convsContainer.appendChild(card);
+          });
+        }
+      }
+
+      // Render timeline
+      if (timelineContainer) {
+        timelineContainer.innerHTML = "";
+        if (timeline.length === 0) {
+          timelineContainer.innerHTML = `<div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center; padding: 8px;">No activity logs recorded.</div>`;
+        } else {
+          timeline.forEach((t) => {
+            const item = document.createElement("div");
+            item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-bottom: 1px dashed var(--border-color);";
+            let meta = "";
+            if (t.metadata && Object.keys(t.metadata).length > 0) {
+              meta = ` &bull; ${escapeHtml(JSON.stringify(t.metadata))}`;
+            }
+            item.innerHTML = `
+              <div>
+                <span style="font-weight: 600; color: var(--primary);">${escapeHtml(t.event_type)}</span>
+                <span style="color: var(--on-surface-variant);">${meta}</span>
+              </div>
+              <div style="color: var(--outline); font-size: 0.6875rem; white-space: nowrap; margin-left: 12px;">${formatIST(t.created_at)}</div>
+            `;
+            timelineContainer.appendChild(item);
+          });
+        }
+      }
+
+      modal.style.display = "flex";
+      modal.classList.add("active");
+    } catch (e) {
+      console.warn("Could not open user detail modal:", e);
+      showToast("Error loading user profile", "error");
+    }
+  }
+
+  function closeUserDetailModal() {
+    const modal = document.getElementById("userDetailModalBackdrop");
+    if (modal) {
+      modal.style.display = "none";
+      modal.classList.remove("active");
+    }
+  }
+
+  async function changeUserStatus(userId, newStatus) {
+    try {
+      const res = await apiRequest(`/tracking/users/${encodeURIComponent(userId)}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        showToast(`User status updated to ${newStatus}`, "success");
+        await fetchUserTrackingData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.detail || "Failed to update user status", "error");
+      }
+    } catch (e) {
+      showToast("Network error updating user status", "error");
+    }
   }
 
   // ---------- DESTRUCTIVE ACTION SAFEGUARD ENGINE ----------
@@ -1974,16 +2695,31 @@
     pendingDestructiveAction = null;
   }
 
-  // ---------- USER MODE SWITCHING & AUTHENTICATION ----------
+  // ---------- USER MODE SWITCHING & ADMIN AUTHENTICATION ----------
   function openSwitchUserModal() {
     closeAllModals();
     const modal = document.getElementById("switch-user-modal");
     if (modal) {
       modal.classList.add("active");
+      const tabUser = document.getElementById("switch-tab-user");
+      const tabAdmin = document.getElementById("switch-tab-admin");
+      const googleSection = document.getElementById("googleAdminAuthSection");
+      const modalTitle = document.getElementById("switch-user-modal-title");
+      const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+      const btnSubmitText = document.getElementById("btn-switch-user-text");
       const emailInput = document.getElementById("switchUserEmailInput");
       const passInput = document.getElementById("switchUserPasswordInput");
       const errBanner = document.getElementById("switch-user-error-banner");
-      if (emailInput && !emailInput.value) emailInput.value = "user@platform.ai";
+
+      tabUser?.classList.add("active");
+      tabAdmin?.classList.remove("active");
+      if (googleSection) googleSection.style.display = "none";
+      const switchForm = document.getElementById("switchUserForm");
+      if (switchForm) switchForm.style.display = "flex";
+      if (modalTitle) modalTitle.textContent = "Sign In as User";
+      if (modalSubtitle) modalSubtitle.textContent = "Enter user credentials to switch to User Mode";
+      if (btnSubmitText) btnSubmitText.textContent = "Sign In as User";
+      if (emailInput) emailInput.value = "";
       if (passInput) {
         passInput.value = "";
         setTimeout(() => passInput.focus(), 150);
@@ -1992,7 +2728,262 @@
     }
   }
 
+  function openAdminLoginModal(msg = null) {
+    closeAllModals();
+    const modal = document.getElementById("switch-user-modal");
+    if (modal) {
+      modal.classList.add("active");
+      const tabAdmin = document.getElementById("switch-tab-admin");
+      const tabUser = document.getElementById("switch-tab-user");
+      const googleSection = document.getElementById("googleAdminAuthSection");
+      const switchForm = document.getElementById("switchUserForm");
+      const modalTitle = document.getElementById("switch-user-modal-title");
+      const modalSubtitle = document.getElementById("switch-user-modal-subtitle");
+      const btnSubmitText = document.getElementById("btn-switch-user-text");
+      const emailInput = document.getElementById("switchUserEmailInput");
+      const passInput = document.getElementById("switchUserPasswordInput");
+      const errBanner = document.getElementById("switch-user-error-banner");
+      const errText = document.getElementById("switch-user-error-text");
+
+      tabAdmin?.classList.add("active");
+      tabUser?.classList.remove("active");
+      if (googleSection) googleSection.style.display = "flex";
+      if (switchForm) switchForm.style.display = "none";
+      if (modalTitle) modalTitle.textContent = "Admin Portal Sign In";
+      if (modalSubtitle) modalSubtitle.textContent = msg || "Sign in with your authorized Google Admin account";
+      if (btnSubmitText) btnSubmitText.textContent = "Sign In as Admin";
+      if (emailInput) emailInput.value = "";
+      if (passInput) passInput.value = "";
+
+      if (msg && errBanner && errText) {
+        errText.textContent = msg;
+        errBanner.style.display = "flex";
+      } else if (errBanner) {
+        errBanner.style.display = "none";
+      }
+
+      initGoogleAdminButton();
+    }
+  }
+
+  async function initGoogleAdminButton() {
+    try {
+      const res = await fetch(`${API_ROOT}/auth/config`, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const cfg = await res.json();
+      const cid = cfg.google_client_id;
+      if (!cid) {
+        console.warn("No GOOGLE_CLIENT_ID returned from /auth/config");
+        return;
+      }
+
+      function renderGSI() {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          google.accounts.id.initialize({
+            client_id: cid,
+            callback: handleGoogleAdminCredentialResponse,
+            auto_select: false,
+          });
+          const gateBtn = document.getElementById("googleAdminSignInBtnGate");
+          if (gateBtn) {
+            gateBtn.innerHTML = "";
+            google.accounts.id.renderButton(gateBtn, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              shape: "rectangular",
+              text: "signin_with",
+              logo_alignment: "left",
+              width: 320,
+            });
+          }
+          const btnContainer = document.getElementById("googleAdminSignInBtn");
+          if (btnContainer && btnContainer !== gateBtn) {
+            btnContainer.innerHTML = "";
+            google.accounts.id.renderButton(btnContainer, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              shape: "rectangular",
+              text: "signin_with",
+              logo_alignment: "left",
+              width: 280,
+            });
+          }
+          googleAdminAuthInitialized = true;
+        } else {
+          setTimeout(renderGSI, 200);
+        }
+      }
+      renderGSI();
+    } catch (e) {
+      console.warn("Failed to initialize Google Admin Auth:", e);
+    }
+  }
+
+  // Username + password sign-in on the admin gate (POST /auth/login), alongside Google sign-in
+  function initAdminPasswordLogin() {
+    const form = document.getElementById("adminPasswordLoginForm");
+    if (!form) return;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await handleAdminPasswordLogin();
+    });
+  }
+
+  function showAdminGateError(message) {
+    const gateBanner = document.getElementById("admin-gate-error-banner");
+    const gateText = document.getElementById("admin-gate-error-text");
+    if (gateBanner && gateText) {
+      gateText.textContent = message;
+      gateBanner.style.display = "flex";
+    }
+  }
+
+  async function handleAdminPasswordLogin() {
+    const usernameInput = document.getElementById("adminPasswordLoginUsername");
+    const passwordInput = document.getElementById("adminPasswordLoginPassword");
+    const button = document.getElementById("adminPasswordLoginButton");
+    const gateBanner = document.getElementById("admin-gate-error-banner");
+    if (gateBanner) gateBanner.style.display = "none";
+
+    let username = "";
+    if (usernameInput) username = usernameInput.value.trim();
+    let password = "";
+    if (passwordInput) password = passwordInput.value;
+    if (!username || !password) {
+      showAdminGateError("Enter your admin username and password.");
+      return;
+    }
+
+    if (button) button.disabled = true;
+    try {
+      const res = await fetch(`${API_ROOT}/auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        let detail = "Incorrect username or password";
+        if (typeof data.detail === "string") detail = data.detail;
+        showAdminGateError(detail);
+        showToast(detail, "error");
+        return;
+      }
+      if (data.role !== "admin") {
+        showAdminGateError("Not authorised. This account is not an administrator.");
+        showToast("Not an administrator account", "error");
+        return;
+      }
+
+      authToken = data.access_token;
+      sessionStorage.setItem("admin_access_token", authToken);
+      if (passwordInput) passwordInput.value = "";
+
+      const gate = document.getElementById("admin-auth-gate");
+      if (gate) gate.style.display = "none";
+      const root = document.getElementById("app-root");
+      if (root) root.style.display = "";
+
+      updateAdminProfileDisplay({ username: data.username, name: data.username, role: data.role });
+      closeAllModals();
+      showToast(`Welcome, ${data.username}!`, "success");
+      isBackendConnected = true;
+      updateBackendStatusBadge(true);
+
+      initRouting();
+      initGlobalControls();
+      renderAllViews();
+      handleKeyboardShortcuts();
+      await fetchAllLiveTelemetry();
+      initPollingTimer();
+    } catch (e) {
+      showAdminGateError("Connection failed while signing in.");
+      showToast("Sign-in failed: network error", "error");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function handleGoogleAdminCredentialResponse(response) {
+    const errBanner = document.getElementById("switch-user-error-banner");
+    const errText = document.getElementById("switch-user-error-text");
+    const gateBanner = document.getElementById("admin-gate-error-banner");
+    const gateText = document.getElementById("admin-gate-error-text");
+    if (errBanner) errBanner.style.display = "none";
+    if (gateBanner) gateBanner.style.display = "none";
+
+    try {
+      const res = await fetch(`${API_ROOT}/auth/google`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        authToken = data.access_token;
+        sessionStorage.setItem("admin_access_token", authToken);
+
+        const gate = document.getElementById("admin-auth-gate");
+        if (gate) gate.style.display = "none";
+        const root = document.getElementById("app-root");
+        if (root) root.style.display = "";
+
+        updateAdminProfileDisplay(data.user);
+        closeAllModals();
+        showToast(`Welcome, ${data.user.name || data.user.email}!`, "success");
+        isBackendConnected = true;
+        updateBackendStatusBadge(true);
+
+        initRouting();
+        initGlobalControls();
+        renderAllViews();
+        handleKeyboardShortcuts();
+        await fetchAllLiveTelemetry();
+        initPollingTimer();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        const detail = err.detail || "Not authorised. Only registered administrators may access Admin Mode.";
+        if (gateBanner && gateText) {
+          gateText.textContent = detail;
+          gateBanner.style.display = "flex";
+        }
+        if (errBanner && errText) {
+          errText.textContent = detail;
+          errBanner.style.display = "flex";
+        }
+        showToast(detail, "error");
+      }
+    } catch (e) {
+      const msg = "Connection failed while authenticating with Google.";
+      if (gateBanner && gateText) {
+        gateText.textContent = msg;
+        gateBanner.style.display = "flex";
+      }
+      if (errBanner && errText) {
+        errText.textContent = msg;
+        errBanner.style.display = "flex";
+      }
+      showToast("Authentication failed: network error", "error");
+    }
+  }
+
   async function verifyAndSwitchToUser() {
+    const tabAdmin = document.getElementById("switch-tab-admin");
+    const isAdminTab = tabAdmin && tabAdmin.classList.contains("active");
+
     const emailInput = document.getElementById("switchUserEmailInput");
     const passInput = document.getElementById("switchUserPasswordInput");
     const errBanner = document.getElementById("switch-user-error-banner");
@@ -2003,63 +2994,58 @@
 
     if (!email || !password) {
       if (errBanner && errText) {
-        errText.textContent = "Please enter both user email and password.";
+        errText.textContent = "Please enter both credentials.";
         errBanner.style.display = "flex";
       }
       return false;
     }
 
-    const origins = [];
-    if (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http")) {
-      origins.push(window.location.origin);
+    // If on the Admin Tab: Admin password login is decommissioned
+    if (isAdminTab) {
+      if (errBanner && errText) {
+        errText.textContent = "Admin password login has been decommissioned. Please sign in with your authorized Google Admin account.";
+        errBanner.style.display = "flex";
+      }
+      showToast("Password login decommissioned. Sign in with Google.", "error");
+      return false;
     }
-    origins.push("http://localhost:8000", "http://127.0.0.1:8000");
 
+    // On User Tab: Switch to User Mode
     let loginSucceeded = false;
     let authErrorDetail = null;
 
-    for (const base of origins) {
-      const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
-      for (const ep of endpoints) {
-        try {
-          const resp = await fetch(ep, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({ username: email, password: password })
-          });
-          if (resp.ok) {
-            loginSucceeded = true;
-            break;
-          } else if (resp.status === 401 || resp.status === 422) {
-            const errData = await resp.json().catch(() => ({}));
-            // If the server process is still running with the old min_length=8 schema before restart:
-            if (resp.status === 422 && (password === "user123" || password === "user1234" || password === "admin123")) {
-              loginSucceeded = true;
-              authErrorDetail = null;
-              break;
-            }
-            authErrorDetail = Array.isArray(errData.detail)
-              ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(", ")
-              : (errData.detail || "Incorrect username or password");
-          }
-        } catch (e) {
-          // Endpoint unreachable, continue trying next candidate
-        }
-      }
-      if (loginSucceeded) break;
-    }
-
-    // Graceful offline fallback if server is unreachable
-    if (!loginSucceeded && !authErrorDetail) {
-      if (password === "user123" && (email === "user@platform.ai" || email === "user")) {
+    try {
+      const resp = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({ email: email, password: password }),
+      });
+      if (resp.ok) {
         loginSucceeded = true;
+      } else {
+        const errData = await resp.json().catch(() => ({}));
+        authErrorDetail = errData.detail || "Incorrect user password.";
       }
+    } catch (e) {
+      authErrorDetail = "Unable to reach user authentication service.";
     }
 
     if (loginSucceeded) {
       authToken = null;
       sessionStorage.removeItem("admin_access_token");
       localStorage.removeItem("admin_access_token");
+
+      // Invalidate admin session so switching always requires fresh login
+      await fetch(`${API_ROOT}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      }).catch(() => {});
 
       closeAllModals();
       showToast("User credentials verified! Switching to User Mode...", "success");
@@ -2075,17 +3061,40 @@
       }
       passInput?.classList.add("input-error");
       setTimeout(() => passInput?.classList.remove("input-error"), 600);
-      showToast("Verification failed: Invalid user password", "error");
+      showToast(msg, "error");
       return false;
     }
   }
 
-  function lockAdminSession() {
+  async function lockAdminSession() {
+    try {
+      await fetch(`${API_ROOT}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+        },
+      });
+    } catch (e) {
+      console.warn("Logout error:", e);
+    }
     authToken = null;
     sessionStorage.removeItem("admin_access_token");
     localStorage.removeItem("admin_access_token");
-    showToast("Admin session locked. Please verify credentials to continue.", "info");
-    openSwitchUserModal();
+    if (pollIntervalTimer) {
+      clearInterval(pollIntervalTimer);
+      pollIntervalTimer = null;
+    }
+    const root = document.getElementById("app-root");
+    if (root) root.style.display = "none";
+    const gate = document.getElementById("admin-auth-gate");
+    if (gate) gate.style.display = "flex";
+
+    updateAdminProfileDisplay(null);
+    showToast("Admin session locked. Please sign in to continue.", "info");
+    initGoogleAdminButton();
   }
 
   function closeAllModals() {
@@ -2259,6 +3268,9 @@
     openSwitchUserModal,
     verifyAndSwitchToUser,
     fetchAllLiveTelemetry,
+    fetchUserTrackingData,
+    openUserDetailModal,
+    changeUserStatus,
     lockAdminSession
   };
 })();

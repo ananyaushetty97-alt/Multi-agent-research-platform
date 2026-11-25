@@ -12,13 +12,63 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 
+  <!-- Google Identity Services (GSI) Client -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- Shared Academic Editorial Intelligence Design System -->
   <link rel="stylesheet" href="../user/css/style.css"/>
   <link rel="stylesheet" href="css/admin-style.css"/>
 </head>
 <body>
 
-  <div class="admin-layout" id="app-root">
+  <!-- ======================================================================
+       ADMIN AUTHENTICATION GATE (Displayed when unauthenticated)
+       ====================================================================== -->
+  <div id="admin-auth-gate" style="display: flex; min-height: 100vh; width: 100%; align-items: center; justify-content: center; background-color: var(--surface, #f7f9ff); padding: 1.5rem;">
+    <div class="login-dialog" style="width: 100%; max-width: 440px; background-color: var(--surface-container-lowest, #ffffff); border-radius: var(--radius-lg, 12px); box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.1)); border: 1px solid var(--outline-variant, #e0e0e0); overflow: hidden;">
+      <div class="login-modal-header" style="padding: 1.5rem; background-color: var(--surface-container-low, #edf4ff); border-bottom: 1px solid var(--outline-variant, #e0e0e0); display: flex; align-items: center; gap: 12px;">
+        <div class="brand-icon" style="background-color: var(--primary-container, #005151); color: #ffffff; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        </div>
+        <div>
+          <h3 class="login-modal-title" style="margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--on-surface, #111d28);">Admin Sign-In Required</h3>
+          <p class="login-modal-subtitle" style="margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--on-surface-variant, #3f4948);">Research Hub — Observability Suite</p>
+        </div>
+      </div>
+      <div class="login-modal-body" style="padding: 1.75rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="login-error-banner" id="admin-gate-error-banner" style="display: none;">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+          <span id="admin-gate-error-text">Not authorised. Access is restricted to authorized administrator accounts.</span>
+        </div>
+        <p style="font-size: 0.8125rem; color: var(--on-surface-variant, #3f4948); line-height: 1.5; margin: 0;">
+          Access to telemetry, evaluation scores, traces, and metrology control rails is restricted to verified administrators. Please authenticate with your authorized Google Admin account or your administrator username and password.
+        </p>
+        <div id="googleAdminSignInBtnGate" style="min-height: 44px; display: flex; align-items: center; justify-content: center; width: 100%;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem; color: var(--on-surface-variant, #3f4948);">
+          <span style="flex: 1; height: 1px; background: var(--outline-variant, #e0e0e0);"></span>
+          <span>or sign in with password</span>
+          <span style="flex: 1; height: 1px; background: var(--outline-variant, #e0e0e0);"></span>
+        </div>
+        <form id="adminPasswordLoginForm" style="display: flex; flex-direction: column; gap: 0.75rem;" autocomplete="on">
+          <input class="form-input" id="adminPasswordLoginUsername" type="text" placeholder="Admin username" required autocomplete="username" />
+          <input class="form-input" id="adminPasswordLoginPassword" type="password" placeholder="Password" required autocomplete="current-password" />
+          <button type="submit" class="btn-header-action" id="adminPasswordLoginButton" style="width: 100%; justify-content: center; padding: 0.6rem 1rem;">
+            <span class="material-symbols-outlined text-[16px]">login</span>
+            <span>Sign In</span>
+          </button>
+        </form>
+        <div style="border-top: 1px solid var(--outline-variant, #e0e0e0); padding-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.75rem; color: var(--on-surface-variant, #3f4948);">Not an administrator?</span>
+          <a href="../user/index.html?mode_switch=admin_to_user" style="font-size: 0.8125rem; color: var(--primary, #005151); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <span>Return to User Mode</span>
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-layout" id="app-root" style="display: none;">
 
     <!-- Mobile Sidebar Backdrop Overlay -->
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
@@ -120,6 +170,14 @@
           </div>
           <span class="admin-nav-chip">Logs</span>
         </a>
+
+        <a class="admin-nav-item" data-path="user-tracking" href="#user-tracking">
+          <div class="admin-nav-item-left">
+            <span class="material-symbols-outlined">group</span>
+            <span>User Tracking &amp; Activity</span>
+          </div>
+          <span class="admin-nav-chip">Users</span>
+        </a>
       </nav>
 
       <!-- Sidebar Footer with Status & Password-Protected Return to User Mode -->
@@ -132,7 +190,7 @@
           <span style="font-size: 0.625rem; font-family: var(--font-mono); color: var(--outline);" id="lastCheckTimeDisplay">Live</span>
         </div>
 
-        <button type="button" class="btn-sidebar-return-user" id="btn-sidebar-switch-user" title="Switch to Scholar Workspace (Password Required)">
+        <button type="button" class="btn-sidebar-return-user" id="btn-sidebar-switch-user" title="Switch to Scholar Workspace (User Mode)">
           <span class="material-symbols-outlined text-[16px]">arrow_back</span>
           <span>Switch to User Mode</span>
         </button>
@@ -253,7 +311,7 @@
               <div class="profile-dropdown-actions">
                 <button class="profile-action-item" id="btn-switch-to-user-dropdown" type="button">
                   <span class="material-symbols-outlined text-[16px]">logout</span>
-                  <span>Switch to User Mode (Verify Password)</span>
+                  <span>Switch to User Mode</span>
                 </button>
                 <button class="profile-action-item" id="headerLogoutBtn" type="button">
                   <span class="material-symbols-outlined text-[16px]">lock</span>
@@ -471,6 +529,11 @@
               <span class="process-stat-label">Provider Fallbacks</span>
               <div class="summary-stat-num" id="metricFallbacks">0</div>
               <span class="summary-stat-sub">Fallback routing events</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Search Tool Calls</span>
+              <div class="summary-stat-num" id="metricSearchCalls" style="color: var(--primary);">0</div>
+              <span class="summary-stat-sub">Tavily scientific queries</span>
             </div>
             <div class="summary-stat-card">
               <span class="process-stat-label">Tokens Consumed</span>
@@ -718,13 +781,13 @@
           <div class="admin-table-container">
             <div class="admin-table-header">
               <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <span class="admin-card-title">Human Evaluation Reviews</span>
+                <span class="admin-card-title">Human &amp; User Reviews</span>
                 <button class="btn-header-action" onclick="AdminController.openHumanReviewModal()" type="button" style="padding: 0.5rem 1rem; width: auto;">
                   <span class="material-symbols-outlined text-[16px]">add</span>
                   <span>Add Human Review</span>
                 </button>
               </div>
-              <span class="admin-card-subtitle">Human reviewer calibration separate from automated LLM-as-a-judge scores</span>
+              <span class="admin-card-subtitle">Reviews from users and human evaluators, kept separate from automated LLM-as-a-judge scores</span>
             </div>
             <div class="admin-table-scroll">
               <table class="admin-table">
@@ -934,6 +997,30 @@
               <span class="admin-card-title">Administrative Operations Journal</span>
               <span class="admin-nav-chip">APPEND-ONLY SECURE STREAM</span>
             </div>
+            <!-- Audit Filters Toolbar -->
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--surface-container-low);">
+              <div style="flex: 1; min-width: 220px; position: relative; display: flex; align-items: center;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 10px; font-size: 18px; color: var(--on-surface-variant);">search</span>
+                <input type="text" id="filterAuditActor" placeholder="Search by admin email, action..." style="width: 100%; padding: 6px 12px 6px 34px; font-size: 0.8125rem; font-family: inherit; background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);" />
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <select id="filterAuditAction" style="padding: 6px 10px; font-size: 0.8125rem; background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);">
+                  <option value="">Action: All</option>
+                  <option value="auth.login">auth.login</option>
+                  <option value="auth.logout">auth.logout</option>
+                  <option value="user.suspend">user.suspend</option>
+                  <option value="user.reactivate">user.reactivate</option>
+                  <option value="user.data_view">user.data_view</option>
+                  <option value="admin.manage">admin.manage</option>
+                  <option value="export.data">export.data</option>
+                  <option value="config.update">config.update</option>
+                </select>
+                <input type="date" id="filterAuditStartDate" title="From Date" style="padding: 5px 8px; font-size: 0.8125rem; background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);" />
+                <span style="font-size: 0.75rem; color: var(--on-surface-variant);">to</span>
+                <input type="date" id="filterAuditEndDate" title="To Date" style="padding: 5px 8px; font-size: 0.8125rem; background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);" />
+                <button type="button" id="btnResetAuditFilters" class="time-pill-btn" style="padding: 5px 10px; font-size: 0.75rem;">Reset</button>
+              </div>
+            </div>
             <div class="admin-table-scroll">
               <table class="admin-table">
                 <thead>
@@ -995,6 +1082,250 @@
           </div>
         </section>
 
+        <!-- ==================== TAB 8: USER TRACKING & ACTIVITY ==================== -->
+        <section id="panel-user-tracking" class="admin-view-panel hidden">
+          <!-- Banner & Action -->
+          <div class="dashboard-banner">
+            <div>
+              <span class="sidebar-admin-tag">User Intelligence &amp; Data Isolation</span>
+              <h1 class="dashboard-banner-title">User Tracking &amp; Activity Ledger</h1>
+              <p class="dashboard-banner-desc">
+                Unified administrative view of all registered platform users, isolated chat dossiers, per-user message telemetry, and immutable security audit events.
+              </p>
+            </div>
+            <div class="dashboard-banner-actions">
+              <button class="btn-header-action" id="btnRefreshUserTracking" type="button">
+                <span class="material-symbols-outlined text-[16px]">sync</span>
+                <span>Refresh Tracking Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards (6 Tiles) -->
+          <div class="summary-tiles-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Total Users</span>
+              <div class="summary-stat-num" id="statTotalUsers">—</div>
+              <span class="summary-stat-sub" id="statActiveRatio">— active</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">New Signups</span>
+              <div class="summary-stat-num" id="statSignupsToday" style="color: var(--primary);">—</div>
+              <span class="summary-stat-sub" id="statSignups7d">— in 7d</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Total Conversations</span>
+              <div class="summary-stat-num" id="statTotalConversations">—</div>
+              <span class="summary-stat-sub" style="color: var(--primary);">Per-user isolated</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Total Messages</span>
+              <div class="summary-stat-num" id="statTotalMessages">—</div>
+              <span class="summary-stat-sub">Monographs &amp; prompts</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Google vs Email</span>
+              <div class="summary-stat-num" id="statProviderBreakdown" style="font-size: 1.25rem;">—</div>
+              <span class="summary-stat-sub">Verified identity</span>
+            </div>
+            <div class="summary-stat-card">
+              <span class="process-stat-label">Account Status</span>
+              <div class="summary-stat-num" id="statStatusBreakdown" style="font-size: 1.25rem;">
+                <span style="color: #0d8a4e;" id="statActiveUsersCount">—</span>
+                <span style="font-size: 0.875rem; color: var(--on-surface-variant);">/</span>
+                <span style="color: #ba1a1a;" id="statSuspendedUsersCount">—</span>
+              </div>
+              <span class="summary-stat-sub">Active / Suspended</span>
+            </div>
+          </div>
+
+          <!-- Main Sub-tabs: Users Directory vs Global Activity Stream -->
+          <div style="display: flex; gap: 8px; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <button id="subtabUsersList" class="time-pill-btn active" style="padding: 6px 14px; font-weight: 600;" type="button">
+              <span class="material-symbols-outlined text-[16px]" style="vertical-align: middle; margin-right: 4px;">badge</span>
+              Users Directory (<span id="userCountBadge">0</span>)
+            </button>
+            <button id="subtabActivityLogs" class="time-pill-btn" style="padding: 6px 14px; font-weight: 600;" type="button">
+              <span class="material-symbols-outlined text-[16px]" style="vertical-align: middle; margin-right: 4px;">manage_history</span>
+              Global Activity Feed
+            </button>
+          </div>
+
+          <!-- Pane 1: Users Directory -->
+          <div id="paneUsersList" class="admin-card" style="margin-bottom: 1.5rem;">
+            <!-- Filters & Search Toolbar -->
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div style="flex: 1; min-width: 240px; position: relative; display: flex; align-items: center;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 10px; font-size: 18px; color: var(--on-surface-variant);">search</span>
+                <input type="text" id="filterUserSearch" placeholder="Search by name, email, or user ID..." style="width: 100%; padding: 7px 12px 7px 34px; font-size: 0.8125rem; font-family: inherit; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);" />
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="filterUserStatus" style="padding: 6px 10px; font-size: 0.8125rem; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);">
+                  <option value="">Status: All</option>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+                <select id="filterUserProvider" style="padding: 6px 10px; font-size: 0.8125rem; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);">
+                  <option value="">Provider: All</option>
+                  <option value="email">Email</option>
+                  <option value="google">Google</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Auth Provider</th>
+                    <th>Verified</th>
+                    <th>Status</th>
+                    <th>Signed Up</th>
+                    <th>Last Login</th>
+                    <th style="text-align: center;">Chats</th>
+                    <th style="text-align: center;">Messages</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="userTableBody">
+                  <tr>
+                    <td colspan="9" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+                      Loading users directory...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--on-surface-variant);">
+              <div id="userPaginationInfo">Showing 0 of 0 users</div>
+              <div style="display: flex; gap: 6px;">
+                <button id="btnUserPrevPage" class="time-pill-btn" style="padding: 4px 10px;" disabled type="button">Previous</button>
+                <button id="btnUserNextPage" class="time-pill-btn" style="padding: 4px 10px;" disabled type="button">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 2: Global Activity Feed -->
+          <div id="paneActivityLogs" class="admin-card" style="display: none; margin-bottom: 1.5rem;">
+            <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="filterActivityEvent" style="padding: 6px 10px; font-size: 0.8125rem; background: var(--surface-container-low); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--on-surface);">
+                  <option value="">Event Type: All</option>
+                  <option value="login_success">login_success</option>
+                  <option value="login_failure">login_failure</option>
+                  <option value="signup">signup</option>
+                  <option value="email_verified">email_verified</option>
+                  <option value="google_login">google_login</option>
+                  <option value="conversation_created">conversation_created</option>
+                  <option value="conversation_deleted">conversation_deleted</option>
+                  <option value="messages_sent">messages_sent</option>
+                  <option value="password_reset_requested">password_reset_requested</option>
+                  <option value="password_reset_completed">password_reset_completed</option>
+                  <option value="account_status_changed">account_status_changed</option>
+                  <option value="logout">logout</option>
+                </select>
+              </div>
+              <button id="btnRefreshActivity" class="btn-header-action" type="button" style="padding: 5px 10px;">
+                <span class="material-symbols-outlined text-[15px]">refresh</span>
+                <span>Reload Feed</span>
+              </button>
+            </div>
+
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Time (IST)</th>
+                    <th>Event Type</th>
+                    <th>User ID / Email</th>
+                    <th>IP Address</th>
+                    <th>Metadata</th>
+                  </tr>
+                </thead>
+                <tbody id="activityTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--on-surface-variant);">
+                      Loading global activity feed...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== USER DETAIL MODAL (Read-Only Dossiers & Timeline) ==================== -->
+  <div class="modal-backdrop" id="userDetailModalBackdrop">
+    <div class="modal-dialog" style="max-width: 860px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="login-modal-header" style="border-bottom: 1px solid var(--border-color);">
+        <div class="login-brand-group">
+          <div class="brand-icon" style="background-color: var(--primary-container); color: #fff;" id="modalUserInitial">
+            U
+          </div>
+          <div>
+            <h3 class="login-modal-title" id="modalUserName">—</h3>
+            <p class="login-modal-subtitle" id="modalUserEmail" style="font-family: var(--font-mono); font-size: 0.75rem;">—</p>
+          </div>
+        </div>
+        <button class="icon-btn" id="btnCloseUserDetailModal" type="button" title="Close">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="login-modal-body" style="overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Overview Chips -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;">
+          <div style="padding: 8px 12px; background: var(--surface-container-low); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.6875rem; text-transform: uppercase; color: var(--on-surface-variant); font-weight: 600;">User ID</div>
+            <div id="modalUserId" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface); margin-top: 3px; word-break: break-all;">—</div>
+          </div>
+          <div style="padding: 8px 12px; background: var(--surface-container-low); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.6875rem; text-transform: uppercase; color: var(--on-surface-variant); font-weight: 600;">Provider &amp; Verified</div>
+            <div id="modalUserProviderBadge" style="font-size: 0.75rem; margin-top: 3px;">—</div>
+          </div>
+          <div style="padding: 8px 12px; background: var(--surface-container-low); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.6875rem; text-transform: uppercase; color: var(--on-surface-variant); font-weight: 600;">Account Status</div>
+            <div id="modalUserStatusBadge" style="font-size: 0.75rem; margin-top: 3px;">—</div>
+          </div>
+          <div style="padding: 8px 12px; background: var(--surface-container-low); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.6875rem; text-transform: uppercase; color: var(--on-surface-variant); font-weight: 600;">Signed Up</div>
+            <div id="modalUserCreated" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface); margin-top: 3px;">—</div>
+          </div>
+        </div>
+
+        <!-- Conversations and Messages Section -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 8px;">
+            <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined text-[18px]" style="color: var(--primary);">forum</span>
+              Conversations &amp; Message History (<span id="modalUserConvCount">0</span>)
+            </h4>
+          </div>
+          <div id="modalUserConversationsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+            <div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center; padding: 12px;">No conversations recorded.</div>
+          </div>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div>
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 8px;">
+            <h4 style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined text-[18px]" style="color: var(--primary);">timeline</span>
+              Activity Timeline
+            </h4>
+          </div>
+          <div id="modalUserTimelineContainer" style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.6875rem;">
+            <!-- Activity events populated here -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1060,13 +1391,13 @@
       <div class="login-modal-body">
         <!-- Clean Role Switcher Tabs (Matching Image 1) -->
         <div class="login-role-tabs">
-          <button class="login-role-tab active" id="switch-tab-user" type="button">
-            <span class="material-symbols-outlined text-[18px]">person</span>
-            <span class="login-tab-name">User</span>
-          </button>
-          <button class="login-role-tab" id="switch-tab-admin" type="button">
+          <button class="login-role-tab active" id="switch-tab-admin" type="button">
             <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
             <span class="login-tab-name">Admin</span>
+          </button>
+          <button class="login-role-tab" id="switch-tab-user" type="button">
+            <span class="material-symbols-outlined text-[18px]">person</span>
+            <span class="login-tab-name">User</span>
           </button>
         </div>
 
@@ -1076,13 +1407,21 @@
           <span id="switch-user-error-text">Verification failed: Invalid user password. Access denied.</span>
         </div>
 
-        <!-- Clean Standard Login Form -->
-        <form class="login-form" id="switchUserForm" onsubmit="return false;">
+        <!-- Google Admin Authentication Container (shown on Admin tab) -->
+        <div id="googleAdminAuthSection" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px 0;">
+          <div id="googleAdminSignInBtn" style="min-height: 44px; display: flex; align-items: center; justify-content: center;"></div>
+          <div style="font-size: 0.75rem; color: var(--on-surface-variant); text-align: center;">
+            Sign in with your authorized Google Admin account.
+          </div>
+        </div>
+
+        <!-- Clean Standard Login Form (for switching to User Mode) -->
+        <form class="login-form" id="switchUserForm" style="display: none;" onsubmit="return false;">
           <div class="form-group">
             <label class="form-label" for="switchUserEmailInput">Email or User ID</label>
             <div class="form-input-wrapper">
               <span class="material-symbols-outlined form-input-icon">mail</span>
-              <input class="form-input" id="switchUserEmailInput" type="text" value="user@platform.ai" placeholder="user@platform.ai or user" required autocomplete="username" />
+              <input class="form-input" id="switchUserEmailInput" type="text" value="" placeholder="name@example.com" required autocomplete="username" />
             </div>
           </div>
 
@@ -1090,7 +1429,7 @@
             <label class="form-label" for="switchUserPasswordInput">Password</label>
             <div class="form-input-wrapper">
               <span class="material-symbols-outlined form-input-icon">key</span>
-              <input class="form-input" id="switchUserPasswordInput" type="password" placeholder="Enter password (user123)" required autocomplete="current-password" />
+              <input class="form-input" id="switchUserPasswordInput" type="password" placeholder="Enter user password" required autocomplete="current-password" />
               <button type="button" class="btn-password-visibility" id="btn-toggle-switch-pass" title="Toggle password visibility">
                 <span class="material-symbols-outlined text-[18px]" id="switch-pass-toggle-icon">visibility</span>
               </button>
@@ -1103,12 +1442,19 @@
               <span id="btn-switch-user-text">Sign In as User</span>
             </button>
           </div>
+
+          <div style="border-top: 1px solid var(--outline-variant, #e0e0e0); margin-top: 14px; padding-top: 10px; text-align: center;">
+            <a href="../user/index.html?mode_switch=admin_to_user" style="font-size: 0.8125rem; color: var(--primary, #005151); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+              <span>Or sign in via User Portal</span>
+              <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+            </a>
+          </div>
         </form>
 
-        <!-- Compact Demo Credentials Hint -->
-        <div class="login-credentials-hint">
+        <!-- Informational Note -->
+        <div class="login-credentials-hint" id="login-credentials-note" style="display: none;">
           <span class="material-symbols-outlined text-[15px]">info</span>
-          <span>Demo IDs: <strong>User:</strong> <code>user@platform.ai</code> (<code>user123</code>) &bull; <strong>Admin:</strong> <code>admin@platform.ai</code> (<code>admin123</code>)</span>
+          <span>Admin access requires an authorized Google account.</span>
         </div>
       </div>
     </div>

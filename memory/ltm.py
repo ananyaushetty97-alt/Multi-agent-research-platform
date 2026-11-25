@@ -4,6 +4,7 @@ Postgres (pgvector extension), and retrieves similar past reports later.
 """
 
 import json
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -32,14 +33,30 @@ CREATE INDEX IF NOT EXISTS reports_embedding_idx
 
 
 class LongTermMemory:
-    def __init__(self, dsn: str | None = None):
+    def __init__(self, dsn: str | None = None, table_name: str = "reports"):
+        if not table_name.isidentifier():
+            raise ValueError(f"Invalid table name: {table_name}")
         self._dsn = dsn or settings.postgres_dsn
+        self.table_name = table_name
+        self._last_failure_time: float = 0.0
+        self._failure_cache_seconds: float = 30.0
 
     def _connect(self, register_vector_type: bool = True) -> psycopg.Connection:
-        conn = psycopg.connect(self._dsn, connect_timeout=2, row_factory=dict_row)
-        if register_vector_type:
-            register_vector(conn)
-        return conn
+        now = time.time()
+        if (now - self._last_failure_time) < self._failure_cache_seconds:
+            raise psycopg.OperationalError(
+                f"LTM fast-fail circuit breaker: connection recently failed ({now - self._last_failure_time:.1f}s ago < {self._failure_cache_seconds}s)"
+            )
+
+        try:
+            conn = psycopg.connect(self._dsn, connect_timeout=2, row_factory=dict_row)
+            if register_vector_type:
+                register_vector(conn)
+            self._last_failure_time = 0.0
+            return conn
+        except Exception:
+            self._last_failure_time = time.time()
+            raise
 
     def init_schema(self) -> None:
         """
@@ -48,8 +65,22 @@ class LongTermMemory:
         because the 'vector' type doesn't exist in a brand-new database until
         CREATE EXTENSION runs here — registering it any earlier would fail.
         """
+        schema_sql = f"""
+        CREATE EXTENSION IF NOT EXISTS vector;
+
+        CREATE TABLE IF NOT EXISTS {self.table_name} (
+            id UUID PRIMARY KEY,
+            text TEXT NOT NULL,
+            embedding VECTOR({EMBEDDING_DIM}) NOT NULL,
+            metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+
+        CREATE INDEX IF NOT EXISTS {self.table_name}_embedding_idx
+            ON {self.table_name} USING hnsw (embedding vector_cosine_ops);
+        """
         with self._connect(register_vector_type=False) as conn:
-            conn.execute(CREATE_TABLE_SQL)
+            conn.execute(schema_sql)
             conn.commit()
 
     def store_report(
@@ -64,8 +95,8 @@ class LongTermMemory:
         metadata = metadata or {}
         with self._connect() as conn:
             conn.execute(
-                """
-                INSERT INTO reports (id, text, embedding, metadata, created_at)
+                f"""
+                INSERT INTO {self.table_name} (id, text, embedding, metadata, created_at)
                 VALUES (%s, %s, %s::vector, %s, %s)
                 """,
                 (report_id, text, embedding, json.dumps(metadata), datetime.now(timezone.utc)),
@@ -73,27 +104,48 @@ class LongTermMemory:
             conn.commit()
         return report_id
 
-    def find_similar(self, embedding: list[float], top_k: int = 5) -> list[dict]:
+    def find_similar(
+        self,
+        embedding: list[float],
+        top_k: int = 5,
+        user_id: str | None = None,
+    ) -> list[dict]:
         """
         Return up to top_k past reports most similar to the given embedding,
         ordered closest first. Each result includes a 'similarity' score (0 to 1).
+        If user_id is provided, only return reports owned by this user or public/unowned reports.
+        If user_id is None, only return unowned/public reports.
         """
         with self._connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT id, text, metadata, created_at,
-                       1 - (embedding <=> %s::vector) AS similarity
-                FROM reports
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """,
-                (embedding, embedding, top_k),
-            ).fetchall()
+            if user_id is not None:
+                rows = conn.execute(
+                    f"""
+                    SELECT id, text, metadata, created_at,
+                           1 - (embedding <=> %s::vector) AS similarity
+                    FROM {self.table_name}
+                    WHERE (metadata->>'user_id' = %s OR metadata->>'user_id' IS NULL)
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (embedding, str(user_id), embedding, top_k),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"""
+                    SELECT id, text, metadata, created_at,
+                           1 - (embedding <=> %s::vector) AS similarity
+                    FROM {self.table_name}
+                    WHERE metadata->>'user_id' IS NULL
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (embedding, embedding, top_k),
+                ).fetchall()
         return [dict(row) for row in rows]
 
     def delete_report(self, report_id: str) -> None:
         with self._connect() as conn:
-            conn.execute("DELETE FROM reports WHERE id = %s", (report_id,))
+            conn.execute(f"DELETE FROM {self.table_name} WHERE id = %s", (report_id,))
             conn.commit()
 
 

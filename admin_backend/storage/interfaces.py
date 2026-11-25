@@ -31,6 +31,14 @@ class UserStorageInterface(ABC):
         """Store a new user."""
         pass
 
+    def get_admin_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Retrieve admin user by email."""
+        return None
+
+    def update_admin_login(self, admin_id: str, google_id: Optional[str] = None) -> None:
+        """Update last login timestamp and optional google_id."""
+        pass
+
 
 class AuditStorageInterface(ABC):
     @abstractmethod

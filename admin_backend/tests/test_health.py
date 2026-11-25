@@ -46,6 +46,8 @@ def test_redis_probe_healthy():
 def test_postgres_probe_unconfigured(monkeypatch):
     from admin_backend.config import settings
     monkeypatch.setattr(settings, "postgres_dsn", "")
+    monkeypatch.delenv("POSTGRES_DSN", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     svc = HealthService()
     res = svc.check_postgres()
     assert res.status == ServiceStatus.NOT_CONFIGURED

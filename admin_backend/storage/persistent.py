@@ -246,13 +246,19 @@ class PersistentAuditStorage(AuditStorageInterface):
             matched = list(self._entries)
 
         if filter_opts.actor:
-            matched = [e for e in matched if e.actor_username.lower() == filter_opts.actor.lower()]
+            # Partial match on the actor name or the admin email in details (same as in-memory storage)
+            a_lower = filter_opts.actor.lower()
+            matched = [e for e in matched if a_lower in e.actor_username.lower() or a_lower in str(e.details.get("admin_email", "")).lower()]
         if filter_opts.action:
             matched = [e for e in matched if e.action == filter_opts.action]
         if filter_opts.resource_type:
             matched = [e for e in matched if e.resource_type == filter_opts.resource_type]
         if filter_opts.status:
             matched = [e for e in matched if e.status == filter_opts.status]
+        if filter_opts.start_date:
+            matched = [e for e in matched if e.timestamp >= filter_opts.start_date]
+        if filter_opts.end_date:
+            matched = [e for e in matched if e.timestamp <= filter_opts.end_date]
 
         # Newest first
         matched = list(reversed(matched))

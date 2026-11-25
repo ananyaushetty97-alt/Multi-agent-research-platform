@@ -59,3 +59,12 @@ htmlcov/
 logs/
 logs/*.jsonl
 .pytest_cache/
+backup_database.sql
+backup_before_003.sql
+*.sql.bak
+*.dump
+
+backup_database.sql
+backup_before_003.sql
+*.sql.bak
+*.dump

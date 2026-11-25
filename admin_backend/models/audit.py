@@ -10,7 +10,12 @@ from pydantic import BaseModel, Field
 class AuditAction(str, Enum):
     AUTH_LOGIN = "auth.login"
     AUTH_LOGIN_FAILED = "auth.login_failed"
+    AUTH_LOGOUT = "auth.logout"
     USER_PROVISION = "user.provision"
+    USER_SUSPEND = "user.suspend"
+    USER_REACTIVATE = "user.reactivate"
+    USER_DATA_VIEW = "user.data_view"
+    ADMIN_MANAGE = "admin.manage"
     CACHE_INVALIDATE = "cache.invalidate"
     CACHE_CLEAR = "cache.clear"
     LTM_REPORT_DELETE = "ltm.report_delete"
@@ -39,6 +44,8 @@ class AuditLogFilter(BaseModel):
     action: Optional[AuditAction] = None
     resource_type: Optional[str] = None
     status: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
     limit: int = Field(50, ge=1, le=200)
     offset: int = Field(0, ge=0)
 

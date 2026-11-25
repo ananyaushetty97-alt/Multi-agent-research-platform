@@ -50,6 +50,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const quickSwitchIcon = document.getElementById('quick-switch-icon');
   const btnSwitchAccountText = document.getElementById('btn-switch-account-text');
 
+  // Header & Profile Auth Actions
+  const btnHeaderSignin = document.getElementById('btn-header-signin');
+  const btnHeaderSignout = document.getElementById('btn-header-signout');
+  const btnProfileLogout = document.getElementById('btn-profile-logout');
+
+  // User Auth Mode & Registration Elements
+  const userAuthModeToggle = document.getElementById('user-auth-mode-toggle');
+  const userModeSigninBtn = document.getElementById('user-mode-signin');
+  const userModeRegisterBtn = document.getElementById('user-mode-register');
+  const registerForm = document.getElementById('register-form');
+  const registerName = document.getElementById('register-name');
+  const registerEmail = document.getElementById('register-email');
+  const registerPassword = document.getElementById('register-password');
+  const registerConfirmPassword = document.getElementById('register-confirm-password');
+  const registerNameError = document.getElementById('register-name-error');
+  const registerEmailError = document.getElementById('register-email-error');
+  const registerPasswordError = document.getElementById('register-password-error');
+  const registerConfirmError = document.getElementById('register-confirm-error');
+  const btnSubmitRegister = document.getElementById('btn-submit-register');
+  const btnToggleRegPassword = document.getElementById('btn-toggle-reg-password');
+  const iconToggleRegPassword = document.getElementById('icon-toggle-reg-password');
+  const loginAdminHint = document.getElementById('login-admin-hint');
+  const loginEmailLabel = document.getElementById('login-email-label');
+  const googleAuthContainer = document.getElementById('google-auth-container');
+  const googleSigninBtnWrapper = document.getElementById('google-signin-btn-wrapper');
+  const googleAuthUnavailable = document.getElementById('google-auth-unavailable');
+
   const adminEvalScorecard = document.getElementById('admin-eval-scorecard');
   const adminInspectorTabs = document.getElementById('admin-inspector-tabs');
   const inspectorHeaderTitle = document.getElementById('inspector-header-title');
@@ -100,6 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Login Modal Elements
   const loginModalBackdrop = document.getElementById('login-modal-backdrop');
+  const loginModalTitle = document.getElementById('login-modal-title');
+  const loginModalSubtitle = document.getElementById('login-modal-subtitle');
   const btnCloseLoginModal = document.getElementById('btn-close-login-modal');
   const loginTabUser = document.getElementById('login-tab-user');
   const loginTabAdmin = document.getElementById('login-tab-admin');
@@ -107,6 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginScopeList = document.getElementById('login-scope-list');
   const loginEmail = document.getElementById('login-email');
   const loginPassword = document.getElementById('login-password');
+  const btnTogglePassword = document.getElementById('btn-toggle-password');
+  const iconTogglePassword = document.getElementById('icon-toggle-password');
+  const btnSubmitLogin = document.getElementById('btn-submit-login');
   const btnLoginText = document.getElementById('btn-login-text');
   const btnLoginIcon = document.getElementById('btn-login-icon');
   const loginForm = document.getElementById('login-form');
@@ -199,12 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
     state.role = role;
     if (role === 'admin') {
       appRoot?.classList.add('admin-mode');
-      
+
       // Update Header Profile Component
       if (profileAvatarIcon) profileAvatarIcon.textContent = 'admin_panel_settings';
       if (profileUserName) profileUserName.textContent = 'Admin Evaluator';
       if (profileRoleTag) profileRoleTag.textContent = 'Admin';
-      
+
       // Update Profile Dropdown
       if (dropdownAvatarIcon) dropdownAvatarIcon.textContent = 'admin_panel_settings';
       if (dropdownProfileName) dropdownProfileName.textContent = 'Admin Evaluator';
@@ -223,14 +255,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update Header Profile Component
       if (profileAvatarIcon) profileAvatarIcon.textContent = 'person';
-      if (profileUserName) profileUserName.textContent = 'User';
+      const curUser = RP.getCurrentUser();
+      const displayName = curUser ? (curUser.full_name || curUser.email.split('@')[0]) : 'Guest';
+      if (profileUserName) profileUserName.textContent = displayName;
       if (profileRoleTag) profileRoleTag.textContent = 'User';
 
       // Update Profile Dropdown
       if (dropdownAvatarIcon) dropdownAvatarIcon.textContent = 'person';
-      if (dropdownProfileName) dropdownProfileName.textContent = 'User';
-      if (dropdownProfileEmail) dropdownProfileEmail.textContent = 'user@platform.ai';
-      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'User Account';
+      if (dropdownProfileName) dropdownProfileName.textContent = displayName;
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = curUser ? curUser.email : 'Not signed in';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = curUser ? 'User Account' : 'Guest Visitor';
       profileSwitchUser?.classList.add('active');
       profileSwitchAdmin?.classList.remove('active');
       if (profileRoleDesc) profileRoleDesc.textContent = 'Viewing clean reading mode with monographs and verified sources. Model diagnostic scores are hidden.';
@@ -243,51 +277,377 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInspectorContent();
   }
 
-  // Login Modal Role Controller
+  // Login Modal Role & Mode Controllers
   let selectedLoginRole = 'user';
+  let userAuthMode = 'signin'; // 'signin' or 'register'
+  let googleClientId = null;
+  let gisInitialized = false;
+  let gisScriptFailed = false;
+  let googleButtonRendered = false;
+
+  function clearFormErrors() {
+    const errorBanner = document.getElementById('login-error-banner');
+    if (errorBanner) {
+      errorBanner.style.display = 'none';
+    }
+    const errorText = document.getElementById('login-error-text');
+    if (errorText) {
+      errorText.textContent = '';
+    }
+    [loginEmail, loginPassword, registerPassword, registerConfirmPassword, registerName, registerEmail].forEach(el => {
+      el?.classList.remove('input-error');
+    });
+    [registerNameError, registerEmailError, registerPasswordError, registerConfirmError].forEach(el => {
+      if (el) {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
+    });
+  }
+
+  async function onGoogleCredentialResponse(response) {
+    if (!response || !response.credential) {
+      showAuthError('No credential received from Google.');
+      return;
+    }
+    clearFormErrors();
+    try {
+      const user = await RP.auth.google(response.credential);
+      updateAuthState(user);
+      closeLoginModal();
+      showToast(`Signed in with Google as ${user.full_name || user.email}`, 'verified_user', 3000);
+    } catch (err) {
+      showAuthError(err.message || 'Google sign-in failed.');
+    }
+  }
+
+  function showGoogleUnavailable(msg) {
+    if (googleAuthUnavailable) {
+      if (msg) googleAuthUnavailable.textContent = msg;
+      googleAuthUnavailable.style.display = 'block';
+    }
+    const gisTarget = document.getElementById('google-gis-button-target');
+    if (gisTarget) {
+      gisTarget.style.display = 'none';
+    }
+  }
+
+  function hideGoogleUnavailable() {
+    if (googleAuthUnavailable) {
+      googleAuthUnavailable.style.display = 'none';
+    }
+    const gisTarget = document.getElementById('google-gis-button-target');
+    if (gisTarget) {
+      gisTarget.style.display = 'flex';
+    }
+  }
+
+  function updateGoogleVisibility() {
+    if (!googleAuthContainer) return;
+    if (selectedLoginRole === 'user' && googleClientId) {
+      googleAuthContainer.style.display = 'flex';
+      setupGoogleButton();
+    } else {
+      googleAuthContainer.style.display = 'none';
+    }
+  }
+
+  function setupGoogleButton() {
+    if (!googleClientId) {
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      return;
+    }
+    if (gisScriptFailed) {
+      showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      return;
+    }
+    if (!gisInitialized) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: onGoogleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+        gisInitialized = true;
+      } catch (err) {
+        console.warn('Google Identity Services initialization failed:', err);
+        showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+        return;
+      }
+    }
+    if (googleSigninBtnWrapper && selectedLoginRole === 'user') {
+      let gisTarget = document.getElementById('google-gis-button-target');
+      if (!gisTarget) {
+        gisTarget = document.createElement('div');
+        gisTarget.id = 'google-gis-button-target';
+        gisTarget.style.display = 'flex';
+        gisTarget.style.justifyContent = 'center';
+        gisTarget.style.width = '100%';
+        googleSigninBtnWrapper.appendChild(gisTarget);
+      }
+      hideGoogleUnavailable();
+
+      const hasRenderedIframe = gisTarget.querySelector('iframe') !== null;
+      if (!hasRenderedIframe) {
+        try {
+          window.google.accounts.id.renderButton(gisTarget, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 320
+          });
+          googleButtonRendered = true;
+        } catch (err) {
+          console.warn('Google Identity Services renderButton failed:', err);
+          showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+        }
+      }
+    }
+  }
+
+  async function initGoogleAuth() {
+    try {
+      const cfg = await RP.auth.config();
+      googleClientId = (cfg && cfg.google_client_id && typeof cfg.google_client_id === 'string')
+        ? cfg.google_client_id.trim()
+        : null;
+    } catch (e) {
+      console.warn('Failed to load auth configuration:', e);
+      googleClientId = null;
+    }
+
+    if (!googleClientId) {
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      console.info('Google sign-in disabled: no client ID configured');
+      return;
+    }
+
+    const onScriptSuccess = () => {
+      gisScriptFailed = false;
+      setupGoogleButton();
+    };
+
+    const onScriptFailure = () => {
+      console.warn('Google Identity Services script failed to load (blocked or unreachable).');
+      gisScriptFailed = true;
+      showGoogleUnavailable('Google Sign-In is temporarily unavailable. Please sign in with email.');
+    };
+
+    if (window.google?.accounts?.id) {
+      onScriptSuccess();
+    } else {
+      let script = document.getElementById('google-gsi-client-script');
+      if (script) {
+        script.addEventListener('load', onScriptSuccess);
+        script.addEventListener('error', onScriptFailure);
+      } else {
+        script = document.createElement('script');
+        script.id = 'google-gsi-client-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = onScriptSuccess;
+        script.onerror = onScriptFailure;
+        document.head.appendChild(script);
+      }
+    }
+
+    updateGoogleVisibility();
+  }
+
+  function setUserAuthMode(mode) {
+    userAuthMode = mode;
+    clearFormErrors();
+    updateLoginModalUI('user');
+  }
 
   function updateLoginModalUI(role) {
     selectedLoginRole = role;
-    const errorBanner = document.getElementById('login-error-banner');
-    if (errorBanner) errorBanner.style.display = 'none';
-    if (loginPassword) {
-      loginPassword.value = '';
-      loginPassword.classList.remove('input-error');
-    }
+    clearFormErrors();
+    if (loginPassword) loginPassword.value = '';
 
     if (role === 'admin') {
       loginTabAdmin?.classList.add('active');
       loginTabUser?.classList.remove('active');
-      if (loginEmail) {
-        loginEmail.value = 'admin@platform.ai';
-        loginEmail.placeholder = 'admin@platform.ai or admin';
-      }
-      if (loginPassword) loginPassword.placeholder = 'Enter password (admin123)';
-      if (btnLoginText) btnLoginText.textContent = 'Sign In as Admin';
-      if (btnLoginIcon) btnLoginIcon.textContent = 'admin_panel_settings';
+      if (userAuthModeToggle) userAuthModeToggle.style.display = 'none';
+      if (loginForm) loginForm.style.display = 'none';
+      if (registerForm) registerForm.style.display = 'none';
+      if (loginAdminHint) loginAdminHint.style.display = 'none';
+      if (googleAuthContainer) googleAuthContainer.style.display = 'none';
+      const adminSection = document.getElementById('user-modal-admin-section');
+      if (adminSection) adminSection.style.display = 'flex';
+      if (loginModalTitle) loginModalTitle.textContent = 'Admin Portal Access';
+      if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in with an authorized Google account via the Admin Portal';
     } else {
       loginTabUser?.classList.add('active');
       loginTabAdmin?.classList.remove('active');
+      const adminSection = document.getElementById('user-modal-admin-section');
+      if (adminSection) adminSection.style.display = 'none';
+      if (userAuthModeToggle) userAuthModeToggle.style.display = 'grid';
+      if (loginAdminHint) loginAdminHint.style.display = 'none';
+      updateGoogleVisibility();
+      if (loginEmailLabel) loginEmailLabel.textContent = 'Email Address';
       if (loginEmail) {
-        loginEmail.value = 'user@platform.ai';
-        loginEmail.placeholder = 'user@platform.ai or user';
+        if (loginEmail.value === 'admin@platform.ai' || loginEmail.value === 'user@platform.ai') {
+          loginEmail.value = '';
+        }
+        loginEmail.placeholder = 'name@example.com';
       }
-      if (loginPassword) loginPassword.placeholder = 'Enter password (user123)';
-      if (btnLoginText) btnLoginText.textContent = 'Sign In as User';
-      if (btnLoginIcon) btnLoginIcon.textContent = 'login';
+      if (loginPassword) loginPassword.placeholder = 'Enter password';
+
+      if (userAuthMode === 'signin') {
+        userModeSigninBtn?.classList.add('active');
+        userModeRegisterBtn?.classList.remove('active');
+        if (loginForm) loginForm.style.display = 'flex';
+        if (registerForm) registerForm.style.display = 'none';
+        if (btnLoginText) btnLoginText.textContent = 'Sign In';
+        if (btnLoginIcon) btnLoginIcon.textContent = 'login';
+        if (loginModalTitle) loginModalTitle.textContent = 'Sign In';
+        if (loginModalSubtitle) loginModalSubtitle.textContent = 'Sign in to access your saved research';
+      } else {
+        userModeRegisterBtn?.classList.add('active');
+        userModeSigninBtn?.classList.remove('active');
+        if (loginForm) loginForm.style.display = 'none';
+        if (registerForm) registerForm.style.display = 'flex';
+        if (loginModalTitle) loginModalTitle.textContent = 'Create Account';
+        if (loginModalSubtitle) loginModalSubtitle.textContent = 'Register an account to keep your research on this device.';
+      }
     }
   }
 
-  function openLoginModal(role = (state.role === 'admin' ? 'user' : 'admin')) {
+  function openLoginModal(role = 'user') {
+    clearFormErrors();
     updateLoginModalUI(role);
     loginModalBackdrop?.classList.add('active');
-    setTimeout(() => loginPassword?.focus(), 150);
+    if (role === 'user' && googleClientId) {
+      setTimeout(() => {
+        setupGoogleButton();
+      }, 50);
+    }
+    setTimeout(() => {
+      if (role === 'admin' || userAuthMode === 'signin') {
+        if (!loginEmail?.value) loginEmail?.focus();
+        else loginPassword?.focus();
+      } else {
+        registerName?.focus();
+      }
+    }, 150);
   }
 
   function closeLoginModal() {
     loginModalBackdrop?.classList.remove('active');
+    clearFormErrors();
+  }
+
+  // --- Extended User Auth Modals: Verification, Forgot & Reset Password ---
+  let verifyTargetEmail = '';
+  let resendCooldownInterval = null;
+
+  function openVerifyModal(email, initialErrorMsg = null) {
+    verifyTargetEmail = email || (state.currentUser && state.currentUser.email) || '';
+    const emailDisp = document.getElementById('verify-email-display');
+    if (emailDisp) emailDisp.textContent = verifyTargetEmail || 'your email';
+    const otpInput = document.getElementById('verify-otp-input');
+    if (otpInput) otpInput.value = '';
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+    if (initialErrorMsg && errBanner && errText) {
+      errText.textContent = initialErrorMsg;
+      errBanner.style.display = 'flex';
+    } else if (errBanner) {
+      errBanner.style.display = 'none';
+    }
+    const succBanner = document.getElementById('verify-success-banner');
+    if (succBanner) succBanner.style.display = 'none';
+
+    document.getElementById('verify-modal-backdrop')?.classList.add('active');
+    setTimeout(() => otpInput?.focus(), 150);
+  }
+
+  function closeVerifyModal() {
+    document.getElementById('verify-modal-backdrop')?.classList.remove('active');
+  }
+
+  function openForgotModal() {
+    closeLoginModal();
+    const forgotEmail = document.getElementById('forgot-email');
+    if (forgotEmail) forgotEmail.value = loginEmail?.value || '';
+    const errBanner = document.getElementById('forgot-error-banner');
+    if (errBanner) errBanner.style.display = 'none';
+    const succBanner = document.getElementById('forgot-success-banner');
+    if (succBanner) succBanner.style.display = 'none';
+
+    document.getElementById('forgot-modal-backdrop')?.classList.add('active');
+    setTimeout(() => forgotEmail?.focus(), 150);
+  }
+
+  function closeForgotModal() {
+    document.getElementById('forgot-modal-backdrop')?.classList.remove('active');
+  }
+
+  function openResetModal(token = '') {
+    closeLoginModal();
+    closeForgotModal();
+    const tokenInput = document.getElementById('reset-token-input');
+    if (tokenInput) tokenInput.value = token;
+    const newPass = document.getElementById('reset-new-password');
+    const confPass = document.getElementById('reset-confirm-password');
+    if (newPass) newPass.value = '';
+    if (confPass) confPass.value = '';
+    const errBanner = document.getElementById('reset-error-banner');
+    if (errBanner) errBanner.style.display = 'none';
+
+    document.getElementById('reset-modal-backdrop')?.classList.add('active');
+    setTimeout(() => newPass?.focus(), 150);
+  }
+
+  function closeResetModal() {
+    document.getElementById('reset-modal-backdrop')?.classList.remove('active');
+  }
+
+  function startResendCooldown(seconds = 60) {
+    const btn = document.getElementById('btn-resend-otp');
+    const timer = document.getElementById('resend-cooldown-timer');
+    const secSpan = document.getElementById('cooldown-seconds');
+    if (!btn || !timer || !secSpan) return;
+
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    timer.style.display = 'inline';
+    let remaining = seconds;
+    secSpan.textContent = remaining;
+
+    if (resendCooldownInterval) clearInterval(resendCooldownInterval);
+    resendCooldownInterval = setInterval(() => {
+      remaining--;
+      secSpan.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(resendCooldownInterval);
+        resendCooldownInterval = null;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        timer.style.display = 'none';
+      }
+    }, 1000);
+  }
+
+  function showAuthError(message) {
     const errorBanner = document.getElementById('login-error-banner');
-    if (errorBanner) errorBanner.style.display = 'none';
+    const errorText = document.getElementById('login-error-text');
+    if (errorBanner && errorText) {
+      errorText.textContent = message;
+      errorBanner.style.display = 'flex';
+    }
+    showToast(message, 'error', 4000);
   }
 
   // Human Review Modal Functions
@@ -392,80 +752,66 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function verifyAndAuthenticate() {
-    const email = loginEmail?.value.trim().toLowerCase();
-    const pass = loginPassword?.value.trim();
-    const errorBanner = document.getElementById('login-error-banner');
-    const errorText = document.getElementById('login-error-text');
+    clearFormErrors();
 
-    if (!email || !pass) {
-      if (errorBanner && errorText) {
-        errorText.textContent = 'Please enter both username/email and password.';
-        errorBanner.style.display = 'flex';
-      }
-      return false;
-    }
+    // ========================================================================
+    // PATH 1: ADMIN LOGIN (COMPLETELY UNTOUCHED, INCLUDING HARDCODED FALLBACK)
+    // ========================================================================
+    if (selectedLoginRole === 'admin') {
+      const email = loginEmail?.value.trim().toLowerCase();
+      const pass = loginPassword?.value.trim();
+      const errorBanner = document.getElementById('login-error-banner');
+      const errorText = document.getElementById('login-error-text');
 
-    const origins = [];
-    if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
-      origins.push(window.location.origin);
-    }
-    origins.push('http://localhost:8000', 'http://127.0.0.1:8000');
-
-    let loginSucceeded = false;
-    let authData = null;
-    let authErrorDetail = null;
-
-    for (const base of origins) {
-      const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
-      for (const ep of endpoints) {
-        try {
-          const resp = await fetch(ep, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ username: email, password: pass })
-          });
-          if (resp.ok) {
-            authData = await resp.json().catch(() => ({}));
-            loginSucceeded = true;
-            break;
-          } else if (resp.status === 401 || resp.status === 422) {
-            const errData = await resp.json().catch(() => ({}));
-            // If the server process is still running with the old min_length=8 schema before restart:
-            if (resp.status === 422 && (pass === 'user123' || pass === 'user1234' || pass === 'admin123')) {
-              loginSucceeded = true;
-              authData = { role: selectedLoginRole || (pass === 'admin123' ? 'admin' : 'user') };
-              authErrorDetail = null;
-              break;
-            }
-            authErrorDetail = Array.isArray(errData.detail)
-              ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
-              : (errData.detail || 'Incorrect username or password');
-          }
-        } catch (e) {
-          // Next candidate endpoint
+      if (!email || !pass) {
+        if (errorBanner && errorText) {
+          errorText.textContent = 'Please enter both username/email and password.';
+          errorBanner.style.display = 'flex';
         }
+        return false;
       }
-      if (loginSucceeded) break;
-    }
 
-    // Graceful offline fallback if server is unreachable
-    if (!loginSucceeded && !authErrorDetail) {
-      if (selectedLoginRole === 'admin' && (pass === 'admin123') && (email === 'admin@platform.ai' || email === 'admin')) {
-        loginSucceeded = true;
-        authData = { role: 'admin' };
-      } else if (selectedLoginRole === 'user' && (pass === 'user123') && (email === 'user@platform.ai' || email === 'user')) {
-        loginSucceeded = true;
-        authData = { role: 'user' };
+      const origins = [];
+      if (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) {
+        origins.push(window.location.origin);
       }
-    }
+      origins.push('http://localhost:8000', 'http://127.0.0.1:8000');
 
-    if (loginSucceeded) {
-      if (authData && authData.access_token) {
-        sessionStorage.setItem('admin_access_token', authData.access_token);
-        localStorage.setItem('admin_access_token', authData.access_token);
+      let loginSucceeded = false;
+      let authData = null;
+      let authErrorDetail = null;
+
+      for (const base of origins) {
+        const endpoints = [`${base}/api/admin/auth/login`, `${base}/admin/auth/login`];
+        for (const ep of endpoints) {
+          try {
+            const resp = await fetch(ep, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ username: email, password: pass })
+            });
+            if (resp.ok) {
+              authData = await resp.json().catch(() => ({}));
+              loginSucceeded = true;
+              break;
+            } else if (resp.status === 401 || resp.status === 404 || resp.status === 405 || resp.status === 422) {
+              const errData = await resp.json().catch(() => ({}));
+              authErrorDetail = Array.isArray(errData.detail)
+                ? errData.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
+                : (errData.detail || 'Incorrect username or password');
+            }
+          } catch (e) {
+            // Next candidate endpoint
+          }
+        }
+        if (loginSucceeded) break;
       }
-      const userRole = authData?.role || (authData?.user?.role) || selectedLoginRole;
-      if (userRole === 'admin') {
+
+      if (loginSucceeded) {
+        if (authData && authData.access_token) {
+          sessionStorage.setItem('admin_access_token', authData.access_token);
+          localStorage.setItem('admin_access_token', authData.access_token);
+        }
         setRole('admin');
         closeLoginModal();
         showToast('Admin verified! Opening Admin Observability Dashboard...', 'admin_panel_settings', 2000);
@@ -474,24 +820,215 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 350);
         return true;
       } else {
-        setRole('user');
-        closeLoginModal();
-        showToast('Signed in successfully as User', 'verified_user', 3000);
-        return true;
+        const detailMsg = authErrorDetail || 'Verification failed: Access denied. Admin page is restricted to verified administrators.';
+        if (errorBanner && errorText) {
+          errorText.textContent = detailMsg;
+          errorBanner.style.display = 'flex';
+        }
+        loginPassword?.classList.add('input-error');
+        setTimeout(() => loginPassword?.classList.remove('input-error'), 1000);
+        showToast('Verification failed: Access denied', 'lock');
+        return false;
       }
-    } else {
-      const detailMsg = authErrorDetail || (selectedLoginRole === 'admin'
-        ? 'Verification failed: Access denied. Admin page is restricted to verified administrators.'
-        : 'Verification failed: Invalid user email or password. Access denied.');
-      if (errorBanner && errorText) {
-        errorText.textContent = detailMsg;
-        errorBanner.style.display = 'flex';
-      }
-      loginPassword?.classList.add('input-error');
-      setTimeout(() => loginPassword?.classList.remove('input-error'), 1000);
-      showToast('Verification failed: Access denied', 'lock');
-      return false;
     }
+
+    // ========================================================================
+    // PATH 2: REGULAR USER AUTH (REAL COOKIE SESSIONS, ZERO CLIENT BYPASSES)
+    // ========================================================================
+    if (selectedLoginRole === 'user') {
+      if (userAuthMode === 'register') {
+        const name = registerName?.value.trim() || '';
+        const email = registerEmail?.value.trim().toLowerCase() || '';
+        const password = registerPassword?.value || '';
+        const confirm_password = registerConfirmPassword?.value || '';
+
+        let hasClientError = false;
+
+        if (!name) {
+          if (registerNameError) {
+            registerNameError.textContent = 'Please enter your name.';
+            registerNameError.style.display = 'block';
+          }
+          registerName?.classList.add('input-error');
+          hasClientError = true;
+        } else if (name.length > 80) {
+          if (registerNameError) {
+            registerNameError.textContent = 'Name must be 80 characters or fewer.';
+            registerNameError.style.display = 'block';
+          }
+          registerName?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        const emailRegex = /^[\w.+%-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
+        if (!email) {
+          if (registerEmailError) {
+            registerEmailError.textContent = 'Please enter your email.';
+            registerEmailError.style.display = 'block';
+          }
+          registerEmail?.classList.add('input-error');
+          hasClientError = true;
+        } else if (!emailRegex.test(email)) {
+          if (registerEmailError) {
+            registerEmailError.textContent = 'Please enter a valid email address.';
+            registerEmailError.style.display = 'block';
+          }
+          registerEmail?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        const hasLetter = /[A-Za-z]/.test(password);
+        const hasDigit = /\d/.test(password);
+        if (password.length < 8) {
+          if (registerPasswordError) {
+            registerPasswordError.textContent = 'Password must be at least 8 characters.';
+            registerPasswordError.style.display = 'block';
+          }
+          registerPassword?.classList.add('input-error');
+          hasClientError = true;
+        } else if (!hasLetter || !hasDigit) {
+          if (registerPasswordError) {
+            registerPasswordError.textContent = 'Password must contain at least one letter and one number.';
+            registerPasswordError.style.display = 'block';
+          }
+          registerPassword?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        if (confirm_password !== password) {
+          if (registerConfirmError) {
+            registerConfirmError.textContent = 'Passwords do not match.';
+            registerConfirmError.style.display = 'block';
+          }
+          registerConfirmPassword?.classList.add('input-error');
+          hasClientError = true;
+        }
+
+        if (hasClientError) return false;
+
+        try {
+          const user = await RP.auth.register({ name, email, password, confirm_password });
+          closeLoginModal();
+          openVerifyModal(user.email);
+          startResendCooldown(60);
+          showToast(`Account created! Please enter the 6-digit verification code sent to ${user.email}`, 'mark_email_read', 6000);
+          return true;
+        } catch (err) {
+          const errMsg = err.message || '';
+          if (errMsg.toLowerCase().includes('could not send') || errMsg.toLowerCase().includes('failed to deliver')) {
+            closeLoginModal();
+            openVerifyModal(email, "Could not send the verification email. Please check your configuration and click 'Resend code'.");
+            showToast("Could not send the verification email. Click 'Resend code' to retry.", "error", 6000);
+            return false;
+          }
+          const msg = (err.status === 409 || errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('already registered'))
+            ? "An account with this email already exists. Try signing in, resetting your password, or Continue with Google."
+            : (errMsg || 'Registration failed.');
+          showAuthError(msg);
+          registerEmail?.classList.add('input-error');
+          registerPassword?.classList.add('input-error');
+          return false;
+        }
+      } else {
+        // User Sign In
+        const email = loginEmail?.value.trim().toLowerCase() || '';
+        const password = loginPassword?.value || '';
+
+        if (!email || !password) {
+          showAuthError('Please enter both email and password.');
+          if (!email) loginEmail?.classList.add('input-error');
+          if (!password) loginPassword?.classList.add('input-error');
+          return false;
+        }
+
+        try {
+          const user = await RP.auth.login({ email, password });
+          updateAuthState(user);
+          closeLoginModal();
+          showToast(`Signed in as ${user.full_name || user.email}`, 'verified_user', 3000);
+          return true;
+        } catch (err) {
+          const errMsg = err.message || '';
+          if (err.status === 403 && (errMsg.toLowerCase().includes('verification') || errMsg.toLowerCase().includes('verify'))) {
+            closeLoginModal();
+            const deliveryFail = errMsg.toLowerCase().includes('could not send');
+            const initialBanner = deliveryFail ? "Could not send the verification email. Please click 'Resend code'." : null;
+            openVerifyModal(email, initialBanner);
+            if (!deliveryFail) startResendCooldown(60);
+            showToast(errMsg, 'mark_email_read', 6000);
+            return false;
+          }
+          showAuthError(errMsg || 'Invalid email or password. Don\'t have an account? Click \'Create one\' below.');
+          loginPassword?.classList.add('input-error');
+          return false;
+        }
+      }
+    }
+  }
+
+  function updateAuthState(user) {
+    if (user) {
+      state.currentUser = user;
+      if (btnHeaderSignin) btnHeaderSignin.style.display = 'none';
+      if (btnHeaderSignout) btnHeaderSignout.style.display = 'inline-flex';
+      if (btnProfileLogout) btnProfileLogout.style.display = 'flex';
+
+      const displayName = user.full_name || (user.email ? user.email.split('@')[0] : 'User');
+      if (profileUserName) profileUserName.textContent = displayName;
+      if (dropdownProfileName) dropdownProfileName.textContent = displayName;
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = user.email || '';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'User Account';
+      if (profileRoleTag) profileRoleTag.textContent = 'User';
+
+      RP.switchUser(user);
+      // Sync persisted server chats from PostgreSQL so history displays immediately
+      RP.syncServerChats().then(() => {
+        renderHistory();
+        const lastActiveId = RP.getLastActiveChatId();
+        if (lastActiveId && lastActiveId !== 'new' && RP.getChat(lastActiveId)) {
+          loadDossier(lastActiveId);
+        }
+      }).catch(err => {
+        console.warn('Failed to sync server chats on auth change:', err);
+        renderHistory();
+      });
+    } else {
+      state.currentUser = null;
+      if (btnHeaderSignin) btnHeaderSignin.style.display = 'inline-flex';
+      if (btnHeaderSignout) btnHeaderSignout.style.display = 'none';
+      if (btnProfileLogout) btnProfileLogout.style.display = 'none';
+
+      if (profileUserName) profileUserName.textContent = 'Guest';
+      if (dropdownProfileName) dropdownProfileName.textContent = 'Guest';
+      if (dropdownProfileEmail) dropdownProfileEmail.textContent = 'Not signed in';
+      if (dropdownRoleLabel) dropdownRoleLabel.textContent = 'Guest Visitor';
+      if (profileRoleTag) profileRoleTag.textContent = 'User';
+
+      RP.switchUser(null);
+    }
+
+    // Refresh history and reset conversation stream to prevent cross-account chat leaks
+    state.dossier = null;
+    if (dynamicFollowups) dynamicFollowups.innerHTML = '';
+    renderHistory();
+    const lastActiveId = RP.getLastActiveChatId();
+    if (lastActiveId && lastActiveId !== 'new' && RP.getChat(lastActiveId)) {
+      loadDossier(lastActiveId);
+    } else {
+      showWelcomeScreen();
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await RP.auth.logout();
+    } catch (e) { }
+    try {
+      sessionStorage.removeItem('admin_access_token');
+      localStorage.removeItem('admin_access_token');
+    } catch (e) { }
+    updateAuthState(null);
+    showToast('Signed out successfully', 'logout', 2500);
   }
 
   // --- Inspector Panel Rendering ---
@@ -725,7 +1262,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   function turnFrom(user, d, attachments = []) {
-    return { user, intent: d.intent, report: d.report, sources: d.sources || [], cached: !!d.cached, score: d.score || null, seconds: d.seconds, attachments };
+    return {
+      id: d.report_id || d.id || ('rep-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6)),
+      user,
+      intent: d.intent,
+      report: d.report,
+      sources: d.sources || [],
+      cached: !!d.cached,
+      score: d.score || null,
+      seconds: d.seconds,
+      attachments
+    };
   }
   function fmtTime(ts) { return new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
   function fmtDate(ts) { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -777,6 +1324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof turn.seconds === 'number') d.append(mk(turn.seconds.toFixed(1) + ' s'));
     return d;
   }
+
   function fillScore(score) {
     const ok = score && score.overall != null;
     const root = document.getElementById('admin-eval-scorecard');
@@ -811,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     p.textContent = e.name === 'AbortError' ? 'Request cancelled.' : e.message;
     d.append(p); return d;
   }
-  function createReportActionBar(articleEl) {
+  function createReportActionBar(articleEl, turn) {
     const bar = document.createElement('div');
     bar.className = 'report-action-bar';
     bar.style.marginTop = '1rem';
@@ -820,6 +1368,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="btn-report-tool btn-copy-turn" type="button" title="Copy text">
           <span class="material-symbols-outlined text-[16px]">content_copy</span>
           <span>Copy report</span>
+        </button>
+        <button class="btn-report-tool btn-review-turn" type="button" title="Rate & review monograph">
+          <span class="material-symbols-outlined text-[16px]">rate_review</span>
+          <span>Review</span>
         </button>
         <div class="download-dropdown-wrapper">
           <button class="btn-report-tool btn-download-trigger" type="button" title="Download report">
@@ -846,12 +1398,19 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const copyBtn = bar.querySelector('.btn-copy-turn');
+    const reviewBtn = bar.querySelector('.btn-review-turn');
     const trigger = bar.querySelector('.btn-download-trigger');
     const menu = bar.querySelector('.download-format-menu');
 
     copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(articleEl.innerText);
       showToast('Monograph copied to clipboard', 'content_copy');
+    });
+
+    reviewBtn?.addEventListener('click', () => {
+      const reportId = turn?.id || (turn?.created ? 'rep-' + turn.created : 'report-' + Date.now());
+      const topic = turn?.user || turn?.topic || 'Research Monograph';
+      openReviewModal(reportId, RP.currentId(), topic, reviewBtn);
     });
 
     trigger.addEventListener('click', (e) => {
@@ -895,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const head = document.createElement('header'); head.className = 'article-header';
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h); art.append(head, badgesEl(turn), parts.node);
-    container.append(art, createReportActionBar(art));
+    container.append(art, createReportActionBar(art, turn));
     return container;
   }
   function assistantHolder(turn) {
@@ -914,6 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // First turn goes into the existing static layout (keeps copy / download / retry bar)
   function showTurnInSlot(turn, when) {
+    state.currentMainTurn = turn;
     welcomeScreen.style.display = 'none';
     conversationStream.style.display = 'flex';
     dynamicFollowups.innerHTML = '';
@@ -953,14 +1513,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const h = document.createElement('h2'); h.className = 'article-headline'; h.textContent = parts.title || turn.user;
     head.append(h);
     art.replaceChildren(head, badgesEl(turn), parts.node);
+
+    // Wire up main review button
+    const mainRevBtn = document.getElementById('btn-review-main-report');
+    if (mainRevBtn) {
+      mainRevBtn.onclick = () => {
+        const t = state.currentMainTurn || turn;
+        const reportId = t?.id || (t?.created ? 'rep-' + t.created : 'report-' + Date.now());
+        const topic = t?.user || t?.topic || 'Research Monograph';
+        openReviewModal(reportId, RP.currentId(), topic, mainRevBtn);
+      };
+    }
+
     updateHeaderSourcesBadge((turn.sources || []).length);
     if (headerBreadcrumbTitle) headerBreadcrumbTitle.textContent = parts.title || turn.user;
     if (window.innerWidth <= 768) setSidebarState(false);
   }
 
   function showSavedChat(chat) {
+    if (!chat || !chat.turns || !chat.turns.length) {
+      showWelcomeScreen();
+      return;
+    }
     RP.openChat(chat.id);
-    localStorage.setItem('rp_last_active_chat_id', chat.id);
+    RP.setLastActiveChatId(chat.id);
     const first = chat.turns[0];
     state.lastTopic = first.user;
     state.dossier = null;
@@ -1015,11 +1591,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Open a saved chat, or start real research for a suggested topic ---
-  function loadDossier(key) {
-    const chat = RP.getChat(key);
-    if (chat && chat.turns.length) return showSavedChat(chat);
+  async function loadDossier(key) {
+    let chat = RP.getChat(key);
+    if (chat && chat.turns && chat.turns.length) return showSavedChat(chat);
+    if (chat && (!chat.turns || !chat.turns.length) && RP.getCurrentUser()) {
+      try {
+        const fullChat = await RP.fetchChatDetails(key);
+        if (fullChat && fullChat.turns && fullChat.turns.length) {
+          return showSavedChat(fullChat);
+        }
+      } catch (e) {
+        console.warn('Could not fetch turns for server chat:', e);
+      }
+    }
     const reg = DOSSIER_REGISTRY[key];
-    runPipeline(reg ? reg.query : key);
+    if (reg) {
+      runPipeline(reg.query);
+    } else if (chat && chat.title) {
+      runPipeline(chat.title);
+    } else {
+      runPipeline(key);
+    }
   }
 
   // --- Show Welcome Screen for New Inquiry ---
@@ -1126,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.lastTopic = topicText;
       state.dossier = null;
       if (data && data.session_id) {
-        localStorage.setItem('rp_last_active_chat_id', data.session_id);
+        RP.setLastActiveChatId(data.session_id);
       }
       showTurnInSlot(turn, Date.now());
       afterTurn(turn);
@@ -1242,6 +1834,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Submit Handler for the SINGLE Composer Box ---
   function handleComposerSubmit() {
+    if (!state.currentUser) {
+      openLoginModal('user');
+      showToast('Please sign in or create an account to start research.', 'login', 3500);
+      return;
+    }
+
     const text = composerInput.value.trim();
     if (!text && state.attachedFiles.length === 0) return;
 
@@ -1281,7 +1879,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Navigation
   btnNewInquiry?.addEventListener('click', () => {
-    localStorage.setItem('rp_last_active_chat_id', 'new');
+    RP.setLastActiveChatId('new');
     showWelcomeScreen();
   });
 
@@ -1530,59 +2128,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Safe event binding helper (Task 4)
+  function safeBindListener(element, eventType, handler, elementId) {
+    if (element) {
+      element.addEventListener(eventType, handler);
+    } else {
+      console.warn(`[SafeEventBinding] Element #${elementId} not found in DOM; listener skipped.`);
+    }
+  }
+
   // Profile Dropdown Event Handlers (Single place to login as User or Admin!)
-  btnProfileTrigger?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileTrigger, 'click', (e) => {
     e.stopPropagation();
     const isOpen = profileDropdown?.classList.toggle('show');
     btnProfileTrigger?.classList.toggle('active', isOpen);
-  });
+  }, 'btn-profile-trigger');
 
-  profileSwitchUser?.addEventListener('click', (e) => {
+  safeBindListener(profileSwitchUser, 'click', (e) => {
     e.stopPropagation();
-    if (state.role === 'user') {
-      showToast('Already logged in as User', 'person');
-      profileDropdown?.classList.remove('show');
-      btnProfileTrigger?.classList.remove('active');
-      return;
-    }
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
-    if (state.role === 'admin') {
-      openLoginModal('user');
+    if (state.currentUser) {
+      showToast(`Logged in as ${state.currentUser.full_name || state.currentUser.email}`, 'person');
     } else {
-      showToast('Already in User Mode', 'person');
+      openLoginModal('user');
     }
-  });
+  }, 'profile-switch-user');
 
-  profileSwitchAdmin?.addEventListener('click', (e) => {
+  safeBindListener(profileSwitchAdmin, 'click', (e) => {
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal('admin');
-  });
+  }, 'profile-switch-admin');
 
-  document.getElementById('btn-open-admin-dashboard')?.addEventListener('click', (e) => {
+  const btnOpenAdminDashboard = document.getElementById('btn-open-admin-dashboard');
+  safeBindListener(btnOpenAdminDashboard, 'click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal('admin');
-  });
+  }, 'btn-open-admin-dashboard');
 
-  btnProfileQuickSwitch?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileQuickSwitch, 'click', (e) => {
     e.stopPropagation();
     const targetRole = state.role === 'admin' ? 'user' : 'admin';
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal(targetRole);
-  });
+  }, 'btn-profile-quick-switch');
 
-  btnProfileDetails?.addEventListener('click', (e) => {
+  safeBindListener(btnProfileDetails, 'click', (e) => {
     e.stopPropagation();
     profileDropdown?.classList.remove('show');
     btnProfileTrigger?.classList.remove('active');
     openLoginModal(state.role);
-  });
+  }, 'btn-profile-details');
 
   // Close profile dropdown when clicking outside
   document.addEventListener('click', (e) => {
@@ -1592,23 +2194,236 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Header and Profile Auth Event Listeners
+  safeBindListener(btnHeaderSignin, 'click', () => openLoginModal('user'), 'btn-header-signin');
+  safeBindListener(btnHeaderSignout, 'click', handleLogout, 'btn-header-signout');
+  safeBindListener(btnProfileLogout, 'click', handleLogout, 'btn-profile-logout');
+
+  // User Auth Mode (Sign In vs Register) Listeners
+  safeBindListener(userModeSigninBtn, 'click', () => setUserAuthMode('signin'), 'user-mode-signin');
+  safeBindListener(userModeRegisterBtn, 'click', () => setUserAuthMode('register'), 'user-mode-register');
+
+  safeBindListener(btnSubmitRegister, 'click', (e) => {
+    e.preventDefault();
+    verifyAndAuthenticate();
+  }, 'btn-submit-register');
+
+  safeBindListener(registerForm, 'submit', (e) => {
+    e.preventDefault();
+    verifyAndAuthenticate();
+  }, 'register-form');
+
+  safeBindListener(btnToggleRegPassword, 'click', () => {
+    if (registerPassword) {
+      const isPass = registerPassword.type === 'password';
+      registerPassword.type = isPass ? 'text' : 'password';
+      if (registerConfirmPassword) {
+        registerConfirmPassword.type = isPass ? 'text' : 'password';
+      }
+      if (iconToggleRegPassword) {
+        iconToggleRegPassword.textContent = isPass ? 'visibility_off' : 'visibility';
+      }
+    }
+  }, 'btn-toggle-reg-password');
+
   // Login Modal Event Listeners
-  btnCloseLoginModal?.addEventListener('click', closeLoginModal);
-  loginModalBackdrop?.addEventListener('click', (e) => {
+  safeBindListener(btnCloseLoginModal, 'click', closeLoginModal, 'btn-close-login-modal');
+  safeBindListener(loginModalBackdrop, 'click', (e) => {
     if (e.target === loginModalBackdrop) closeLoginModal();
-  });
+  }, 'login-modal-backdrop');
 
-  loginTabUser?.addEventListener('click', () => updateLoginModalUI('user'));
-  loginTabAdmin?.addEventListener('click', () => updateLoginModalUI('admin'));
+  safeBindListener(loginTabUser, 'click', () => updateLoginModalUI('user'), 'login-tab-user');
+  safeBindListener(loginTabAdmin, 'click', () => updateLoginModalUI('admin'), 'login-tab-admin');
 
-  document.getElementById('btn-submit-login')?.addEventListener('click', (e) => {
+  safeBindListener(btnSubmitLogin, 'click', (e) => {
     e.preventDefault();
     verifyAndAuthenticate();
-  });
+  }, 'btn-submit-login');
 
-  loginForm?.addEventListener('submit', (e) => {
+  safeBindListener(loginForm, 'submit', (e) => {
     e.preventDefault();
     verifyAndAuthenticate();
+  }, 'login-form');
+
+  safeBindListener(btnTogglePassword, 'click', () => {
+    if (!loginPassword) return;
+    const isPass = loginPassword.type === 'password';
+    loginPassword.type = isPass ? 'text' : 'password';
+    if (iconTogglePassword) {
+      iconTogglePassword.textContent = isPass ? 'visibility_off' : 'visibility';
+    }
+  }, 'btn-toggle-password');
+
+  // Links for switching between Sign In, Create Account & Forgot Password
+  document.getElementById('link-forgot-password')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openForgotModal();
+  });
+
+  document.getElementById('link-goto-register')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    userAuthMode = 'register';
+    updateLoginModalUI('user');
+  });
+
+  document.getElementById('link-goto-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    userAuthMode = 'signin';
+    updateLoginModalUI('user');
+  });
+
+  document.getElementById('link-back-to-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeForgotModal();
+    openLoginModal('user');
+  });
+
+  // Extended Auth Modals Close Handlers
+  document.getElementById('btn-close-verify-modal')?.addEventListener('click', closeVerifyModal);
+  document.getElementById('btn-close-forgot-modal')?.addEventListener('click', closeForgotModal);
+  document.getElementById('btn-close-reset-modal')?.addEventListener('click', closeResetModal);
+
+  document.getElementById('verify-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'verify-modal-backdrop') closeVerifyModal();
+  });
+  document.getElementById('forgot-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'forgot-modal-backdrop') closeForgotModal();
+  });
+  document.getElementById('reset-modal-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'reset-modal-backdrop') closeResetModal();
+  });
+
+  // Verify OTP Action
+  document.getElementById('btn-submit-verify-otp')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const otp = document.getElementById('verify-otp-input')?.value.trim();
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+
+    if (!otp || otp.length !== 6) {
+      if (errBanner && errText) {
+        errText.textContent = 'Please enter the 6-digit verification code.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      const res = await RP.auth.verifyOtp({ email: verifyTargetEmail, otp });
+      closeVerifyModal();
+      if (res && res.user) {
+        updateAuthState(res.user);
+      } else {
+        const me = await RP.auth.me().catch(() => null);
+        if (me) updateAuthState(me);
+      }
+      showToast('Email verified successfully! Welcome to the research platform.', 'verified', 4000);
+      RP.syncServerChats().then(() => renderHistory());
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Verification failed. Please check the code.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Resend OTP Action
+  document.getElementById('btn-resend-otp')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (!verifyTargetEmail) {
+      showToast('No email address available to resend code.', 'error');
+      return;
+    }
+    const errBanner = document.getElementById('verify-error-banner');
+    const errText = document.getElementById('verify-error-text');
+    const succBanner = document.getElementById('verify-success-banner');
+    try {
+      await RP.auth.resendOtp({ email: verifyTargetEmail });
+      if (succBanner) succBanner.style.display = 'flex';
+      if (errBanner) errBanner.style.display = 'none';
+      startResendCooldown(60);
+      showToast('Verification code resent to ' + verifyTargetEmail, 'send');
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Failed to resend code. Please wait before retrying.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Forgot Password Submit Action
+  document.getElementById('btn-submit-forgot')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email')?.value.trim().toLowerCase();
+    const errBanner = document.getElementById('forgot-error-banner');
+    const errText = document.getElementById('forgot-error-text');
+    const succBanner = document.getElementById('forgot-success-banner');
+
+    if (!email) {
+      if (errBanner && errText) {
+        errText.textContent = 'Please enter your account email.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      await RP.auth.forgotPassword({ email });
+      if (succBanner) succBanner.style.display = 'flex';
+      if (errBanner) errBanner.style.display = 'none';
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Request failed. Please try again later.';
+        errBanner.style.display = 'flex';
+      }
+    }
+  });
+
+  // Reset Password Submit Action
+  document.getElementById('btn-submit-reset-password')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const token = document.getElementById('reset-token-input')?.value.trim();
+    const password = document.getElementById('reset-new-password')?.value;
+    const confirm_password = document.getElementById('reset-confirm-password')?.value;
+    const errBanner = document.getElementById('reset-error-banner');
+    const errText = document.getElementById('reset-error-text');
+
+    if (!token) {
+      if (errBanner && errText) {
+        errText.textContent = 'Missing or invalid reset token. Please request a new link.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    const hasLetter = /[A-Za-z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    if (!password || password.length < 8 || !hasLetter || !hasDigit) {
+      if (errBanner && errText) {
+        errText.textContent = 'Password must be at least 8 characters with at least one letter and one number.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+    if (password !== confirm_password) {
+      if (errBanner && errText) {
+        errText.textContent = 'Passwords do not match.';
+        errBanner.style.display = 'flex';
+      }
+      return;
+    }
+
+    try {
+      await RP.auth.resetPassword({ token, password, confirm_password });
+      closeResetModal();
+      showToast('Password updated successfully! Please sign in with your new password.', 'lock_reset', 4000);
+      openLoginModal('user');
+    } catch (err) {
+      if (errBanner && errText) {
+        errText.textContent = err.message || 'Failed to update password. The reset link may have expired.';
+        errBanner.style.display = 'flex';
+      }
+    }
   });
 
   // Human Review Modal Event Listeners
@@ -1627,6 +2442,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'Escape') {
       closeSearchModal();
       closeLoginModal();
+      closeVerifyModal();
+      closeForgotModal();
+      closeResetModal();
       closeShareModal();
       closeHumanReviewModal();
       downloadFormatMenu?.classList.remove('show');
@@ -1811,15 +2629,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!e.target.closest('.download-dropdown-wrapper')) {
       document.querySelectorAll('.download-format-menu.show').forEach(m => m.classList.remove('show'));
     }
-  });
-
-  // Password Visibility Toggle in Login Modal
-  document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
-    if (!loginPassword) return;
-    const isPass = loginPassword.type === 'password';
-    loginPassword.type = isPass ? 'text' : 'password';
-    const toggleIcon = document.getElementById('icon-toggle-password');
-    if (toggleIcon) toggleIcon.textContent = isPass ? 'visibility_off' : 'visibility';
   });
 
   // --- Share Modal Logic ---
@@ -2141,12 +2950,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const idToDelete = pendingDeleteChatId;
     const currentActiveId = RP.currentId();
     const isActiveChat = (idToDelete && idToDelete === currentActiveId) ||
-                         (!idToDelete && conversationStream.style.display !== 'none');
+      (!idToDelete && conversationStream.style.display !== 'none');
 
     if (idToDelete) {
       RP.deleteChat(idToDelete);
-      if (localStorage.getItem('rp_last_active_chat_id') === idToDelete) {
-        localStorage.removeItem('rp_last_active_chat_id');
+      if (RP.getLastActiveChatId() === idToDelete) {
+        RP.removeLastActiveChatId();
       }
     }
 
@@ -2165,6 +2974,111 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast('Conversation deleted', 'delete');
   }
+
+  // --- Review Modal Controls ---
+  const reviewModalBackdrop = document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+  const btnCloseReviewModal = document.getElementById('btn-close-review-modal');
+  const btnCancelReview = document.getElementById('btn-cancel-review');
+  const reviewForm = document.getElementById('review-form');
+  const reviewReportIdInput = document.getElementById('review-report-id');
+  const reviewSessionIdInput = document.getElementById('review-session-id');
+  const reviewTopicInput = document.getElementById('review-topic');
+  const reviewModalSubtitle = document.getElementById('review-modal-subtitle');
+  let activeReviewTargetBtn = null;
+  const reviewRelevanceInput = document.getElementById('review-relevance');
+  const reviewAccuracyInput = document.getElementById('review-accuracy');
+  const reviewClarityInput = document.getElementById('review-clarity');
+  const reviewCommentInput = document.getElementById('review-comment');
+  const reviewRelevanceVal = document.getElementById('review-relevance-val');
+  const reviewAccuracyVal = document.getElementById('review-accuracy-val');
+  const reviewClarityVal = document.getElementById('review-clarity-val');
+  const reviewCommentCount = document.getElementById('review-comment-count');
+
+  reviewRelevanceInput?.addEventListener('input', () => {
+    if (reviewRelevanceVal) reviewRelevanceVal.textContent = reviewRelevanceInput.value + '/10';
+  });
+  reviewAccuracyInput?.addEventListener('input', () => {
+    if (reviewAccuracyVal) reviewAccuracyVal.textContent = reviewAccuracyInput.value + '/10';
+  });
+  reviewClarityInput?.addEventListener('input', () => {
+    if (reviewClarityVal) reviewClarityVal.textContent = reviewClarityInput.value + '/10';
+  });
+  reviewCommentInput?.addEventListener('input', () => {
+    if (reviewCommentCount) reviewCommentCount.textContent = (reviewCommentInput.value || '').length + '/1000';
+  });
+
+  function openReviewModal(reportId, sId, topic, targetBtn) {
+    activeReviewTargetBtn = targetBtn || null;
+    if (reviewReportIdInput) reviewReportIdInput.value = reportId || (RP.currentId() || 'report-' + Date.now());
+    if (reviewSessionIdInput) reviewSessionIdInput.value = sId || RP.currentId() || '';
+    if (reviewTopicInput) reviewTopicInput.value = topic || '';
+    if (reviewModalSubtitle) reviewModalSubtitle.textContent = topic ? 'Rating Monograph: ' + topic : 'Help improve multi-agent synthesis quality';
+    if (reviewCommentInput) reviewCommentInput.value = '';
+    if (reviewCommentCount) reviewCommentCount.textContent = '0/1000';
+    if (reviewRelevanceInput) reviewRelevanceInput.value = '8';
+    if (reviewAccuracyInput) reviewAccuracyInput.value = '8';
+    if (reviewClarityInput) reviewClarityInput.value = '9';
+    if (reviewRelevanceVal) reviewRelevanceVal.textContent = '8/10';
+    if (reviewAccuracyVal) reviewAccuracyVal.textContent = '8/10';
+    if (reviewClarityVal) reviewClarityVal.textContent = '9/10';
+
+    const modal = reviewModalBackdrop || document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    if (modal) {
+      modal.classList.add('active');
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeReviewModal() {
+    const modal = reviewModalBackdrop || document.getElementById('review-modal-backdrop') || document.getElementById('review-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+  }
+
+  btnCloseReviewModal?.addEventListener('click', closeReviewModal);
+  btnCancelReview?.addEventListener('click', closeReviewModal);
+  reviewModalBackdrop?.addEventListener('click', (e) => {
+    if (e.target === reviewModalBackdrop) closeReviewModal();
+  });
+
+  const btnReviewMainInit = document.getElementById('btn-review-main-report');
+  btnReviewMainInit?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const t = state.currentMainTurn;
+    const reportId = t?.id || (t?.created ? 'rep-' + t.created : 'report-' + Date.now());
+    const topic = t?.user || t?.topic || (headerBreadcrumbTitle ? headerBreadcrumbTitle.textContent : 'Research Monograph');
+    openReviewModal(reportId, RP.currentId(), topic, btnReviewMainInit);
+  });
+
+  reviewForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const reportId = reviewReportIdInput?.value || RP.currentId() || 'report-' + Date.now();
+    const sId = reviewSessionIdInput?.value || RP.currentId() || null;
+    const topic = reviewTopicInput?.value || null;
+    const relevance = parseInt(reviewRelevanceInput?.value || '8', 10);
+    const accuracy = parseInt(reviewAccuracyInput?.value || '8', 10);
+    const clarity = parseInt(reviewClarityInput?.value || '9', 10);
+    const comment = (reviewCommentInput?.value || '').trim();
+
+    try {
+      await RP.reviews.submit(reportId, { relevance, accuracy, clarity }, comment, topic, sId);
+      closeReviewModal();
+      if (activeReviewTargetBtn) {
+        const avg = ((relevance + accuracy + clarity) / 3).toFixed(1);
+        const span = activeReviewTargetBtn.querySelector('span:last-child');
+        if (span) span.textContent = `Reviewed (${avg}/10)`;
+        activeReviewTargetBtn.disabled = true;
+        activeReviewTargetBtn.style.opacity = '0.75';
+      }
+      showToast('Review submitted successfully!', 'check_circle');
+    } catch (err) {
+      showToast(err.message || 'Could not submit review', 'error');
+    }
+  });
 
   btnCloseDeleteModal?.addEventListener('click', closeDeleteModal);
   btnCancelDelete?.addEventListener('click', closeDeleteModal);
@@ -2192,10 +3106,53 @@ document.addEventListener('DOMContentLoaded', () => {
     setSidebarState(true);
   }
   setRole('user');
-  fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => {});
+  fetch(RP.baseUrl + '/health').then(r => r.json()).then(h => { state.health = h; }).catch(() => { });
 
-  // Restore previous active conversation on page refresh / load
-  // Always start with New Inquiry (welcome screen) by default
-  showWelcomeScreen();
+  function checkUrlAuthParams() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || params.get('reset_token');
+      const view = params.get('view');
+      const verified = params.get('verified');
+      const email = params.get('email');
+
+      if (token || view === 'reset-password') {
+        openResetModal(token || '');
+      } else if (verified === 'true') {
+        showToast('Email successfully verified! You may now sign in.', 'verified_user', 4000);
+        openLoginModal('user');
+      } else if (view === 'verify' && email) {
+        openVerifyModal(email);
+      }
+    } catch (e) { }
+  }
+
+  // Check if switching from Admin Mode: ALWAYS ask for user login
+  const startupParams = new URLSearchParams(window.location.search);
+  const isSwitchFromAdmin = startupParams.get('mode_switch') === 'admin_to_user' || 
+                            (document.referrer && document.referrer.includes('/admin/'));
+
+  if (isSwitchFromAdmin) {
+    try {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) { }
+    RP.auth.logout().catch(() => {});
+    updateAuthState(null);
+    showToast('Switched from Admin Mode. Please sign in to your user account.', 'person', 3500);
+    openLoginModal('user');
+  } else {
+    // Call /api/auth/me on startup to restore session and load user chats
+    RP.auth.me().then(user => {
+      updateAuthState(user);
+      checkUrlAuthParams();
+    }).catch(() => {
+      updateAuthState(null);
+      checkUrlAuthParams();
+    });
+  }
+
+  // Fetch auth config exactly once on page load to initialize Google Sign-in
+  initGoogleAuth();
+
   composerInput.blur();
 });

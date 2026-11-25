@@ -29,6 +29,7 @@ class HumanReviewScore(BaseModel):
     feedback_notes: Optional[str] = Field(None, max_length=1000)
     flagged_for_rerun: bool = False
     reviewed: bool = True  # Indicates this human review has been submitted/reviewed
+    is_expert: bool = False
 
 
 class QualityFilter(BaseModel):

@@ -79,10 +79,38 @@ class ReportResponse(BaseModel):
     seconds: float
 
 
-def _sources_from(search_results):
+import re
+
+def _sources_from(search_results, report: str = ""):
+    """
+    Return only sources that are actually cited in the report.
+    Extracts citation numbers like [1], [2][3] from the report text
+    and returns only those sources.
+    """
+    if not search_results:
+        return []
+
+    # Extract all citation numbers from the report (e.g., [1], [2][3], [4,5])
+    cited_numbers = set()
+    # Match patterns like [1], [2][3], [1, 2], [1,2,3]
+    for match in re.finditer(r'\[(\d+(?:[,;\s]+\d+)*)\]', report):
+        # Split by comma, semicolon, or whitespace
+        for num_str in re.split(r'[,;\s]+', match.group(1)):
+            if num_str.isdigit():
+                cited_numbers.add(int(num_str))
+
+    # If no citations found in report, return all sources (fallback)
+    if not cited_numbers:
+        return [
+            {"n": i + 1, "title": r.get("title") or r.get("url"), "url": r.get("url")}
+            for i, r in enumerate(search_results or [])
+        ]
+
+    # Return only cited sources, maintaining original numbering
     return [
         {"n": i + 1, "title": r.get("title") or r.get("url"), "url": r.get("url")}
         for i, r in enumerate(search_results or [])
+        if (i + 1) in cited_numbers
     ]
 
 
@@ -306,7 +334,7 @@ def generate(req: TopicRequest, request: Request):
                 log.warning(f"Failed to log user activity: {e}")
 
             return ReportResponse(session_id=session_id, topic=req.topic, intent="new_research",
-                                  report=c_report, sources=_sources_from(c_results), cached=True,
+                                  report=c_report, sources=_sources_from(c_results, c_report), cached=True,
                                   score=c_score, seconds=round(time.time() - start, 2))
 
     # 3. Agent pipeline (the router inside decides new research / modify / question)
@@ -590,7 +618,7 @@ def generate(req: TopicRequest, request: Request):
         log.warning(f"Failed to log user activity: {e}")
 
     return ReportResponse(session_id=session_id, topic=req.topic, intent=intent, report=report,
-                          sources=_sources_from(search_results), cached=False, score=score,
+                          sources=_sources_from(search_results, report), cached=False, score=score,
                           seconds=round(time.time() - start, 2))
 
 
@@ -693,7 +721,7 @@ async def generate_with_files(
                 cache_hit=True,
             )
             return ReportResponse(session_id=session_id, topic=topic, intent="new_research",
-                                  report=c_report, sources=_sources_from(c_results), cached=True,
+                                  report=c_report, sources=_sources_from(c_results, c_report), cached=True,
                                   score=c_score, seconds=round(time.time() - start, 2))
 
     # 3. Agent pipeline
@@ -933,7 +961,7 @@ async def generate_with_files(
     )
 
     return ReportResponse(session_id=session_id, topic=topic, intent=intent, report=report,
-                          sources=_sources_from(search_results), cached=False, score=score,
+                          sources=_sources_from(search_results, report), cached=False, score=score,
                           seconds=round(time.time() - start, 2))
 
 

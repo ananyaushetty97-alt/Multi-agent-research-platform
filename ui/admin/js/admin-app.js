@@ -116,9 +116,17 @@
   }
 
   // Determine API base URL
-  const API_ROOT = (window.location.origin && window.location.origin.startsWith("http"))
-    ? `${window.location.origin}/api/admin`
-    : "/api/admin";
+  const API_ROOT = (() => {
+    if (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http")) {
+      // If served by the FastAPI container directly on port 8000, use origin
+      if (window.location.port === "8000") {
+        return `${window.location.origin}/api/admin`;
+      }
+      // Otherwise, the static server is on port 3000 or similar; target the FastAPI backend at port 8000
+      return `${window.location.protocol}//${window.location.hostname}:8000/api/admin`;
+    }
+    return "http://127.0.0.1:8000/api/admin";
+  })();
 
   // Initialize on DOM ready
   document.addEventListener("DOMContentLoaded", async () => {

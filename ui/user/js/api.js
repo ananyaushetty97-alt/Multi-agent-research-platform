@@ -4,9 +4,15 @@
 
 const RP = (() => {
   // Dynamically use current origin when served by FastAPI, or fallback for direct file preview
-  const API_BASE = (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http"))
-    ? window.location.origin
-    : "http://127.0.0.1:8000";
+  const API_BASE = (() => {
+    if (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http")) {
+      if (window.location.port === "8000") {
+        return window.location.origin;
+      }
+      return `${window.location.protocol}//${window.location.hostname}:8000`;
+    }
+    return "http://127.0.0.1:8000";
+  })();
   const KEY = "rp_history_v1";
   let sessionId = null;
 
